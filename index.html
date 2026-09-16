@@ -9,121 +9,99 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --shell:#e6eaee;
-    --surface:#ffffff;
-    --line:#ccd5dd;
-    --ink:#161d26;
-    --muted:#5e6b7a;
-    --steel:#1d4e6b;
-    --alarm:#a52019;
-    --alarm-bg:#fbe7e5;
-    --good:#2c6e49;
-    --good-bg:#e4f0e8;
+    --shell:#e6eaee; --surface:#ffffff; --line:#ccd5dd;
+    --ink:#161d26; --muted:#5e6b7a; --steel:#1d4e6b;
+    --alarm:#a52019; --alarm-bg:#fbe7e5;
+    --good:#2c6e49; --good-bg:#e4f0e8;
     --radius:4px;
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
   body{
-    background:var(--shell);
-    color:var(--ink);
+    background:var(--shell);color:var(--ink);
     font-family:"IBM Plex Sans Arabic",system-ui,-apple-system,"Segoe UI",sans-serif;
-    font-size:14px;
-    line-height:1.55;
-    font-variant-numeric:tabular-nums;
+    font-size:14px;line-height:1.55;font-variant-numeric:tabular-nums;
   }
-  .wrap{max-width:1280px;margin:0 auto;padding:20px 16px 64px}
+  .wrap{max-width:1320px;margin:0 auto;padding:20px 16px 64px}
 
-  /* ---------- header ---------- */
-  header{
-    display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;
-    justify-content:space-between;
-    padding-bottom:14px;border-bottom:2px solid var(--ink);
-  }
+  header{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;
+    justify-content:space-between;padding-bottom:14px;border-bottom:2px solid var(--ink)}
   h1{font-size:22px;font-weight:700;margin:0;letter-spacing:-.2px}
-  h1 small{display:block;font-size:13px;font-weight:400;color:var(--muted);letter-spacing:0}
+  h1 small{display:block;font-size:13px;font-weight:400;color:var(--muted)}
   .head-actions{display:flex;gap:8px;align-items:center}
 
-  button{
-    font-family:inherit;font-size:13px;font-weight:500;
+  button{font-family:inherit;font-size:13px;font-weight:500;
     border:1px solid var(--line);background:var(--surface);color:var(--ink);
-    padding:7px 14px;border-radius:var(--radius);cursor:pointer;
-  }
+    padding:7px 14px;border-radius:var(--radius);cursor:pointer}
   button:hover{border-color:var(--steel);color:var(--steel)}
   button:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
   button.primary{background:var(--steel);border-color:var(--steel);color:#fff}
   button.primary:hover{background:#17405a;color:#fff}
   button[disabled]{opacity:.5;cursor:default}
 
-  /* ---------- stats ---------- */
-  .stats{
-    display:flex;flex-wrap:wrap;background:var(--surface);
-    border:1px solid var(--line);border-top:none;
-  }
+  .stats{display:flex;flex-wrap:wrap;background:var(--surface);
+    border:1px solid var(--line);border-top:none}
   .stat{flex:1 1 150px;padding:14px 18px;border-inline-start:1px solid var(--line)}
   .stat:first-child{border-inline-start:none}
   .stat b{display:block;font-size:26px;font-weight:600;line-height:1.2}
   .stat span{font-size:12px;color:var(--muted)}
   .stat.bad b{color:var(--alarm)}
 
-  /* ---------- filters ---------- */
-  .filters{
-    display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;
-    padding:14px 0;
-  }
+  .filters{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;padding:14px 0}
   .field{display:flex;flex-direction:column;gap:4px}
   .field label{font-size:12px;color:var(--muted)}
-  input,select{
-    font-family:inherit;font-size:13px;color:var(--ink);
+  input,select{font-family:inherit;font-size:13px;color:var(--ink);
     border:1px solid var(--line);background:var(--surface);
-    padding:7px 10px;border-radius:var(--radius);min-width:150px;
-  }
+    padding:7px 10px;border-radius:var(--radius);min-width:160px}
   input:focus,select:focus{outline:2px solid var(--steel);outline-offset:-1px;border-color:var(--steel)}
   .check{display:flex;align-items:center;gap:6px;font-size:13px;padding-bottom:7px;cursor:pointer}
   .check input{min-width:auto;width:16px;height:16px;accent-color:var(--alarm)}
+  .filters button{margin-bottom:0}
 
-  /* ---------- tabs ---------- */
   .tabs{display:flex;gap:2px;margin-top:4px}
-  .tab{
-    border:1px solid var(--line);border-bottom:none;background:#dde3e9;
+  .tab{border:1px solid var(--line);border-bottom:none;background:#dde3e9;
     padding:9px 18px;font-size:13px;font-weight:500;cursor:pointer;
-    border-radius:var(--radius) var(--radius) 0 0;color:var(--muted);
-  }
+    border-radius:var(--radius) var(--radius) 0 0;color:var(--muted)}
   .tab[aria-selected="true"]{background:var(--surface);color:var(--ink);font-weight:600}
 
-  /* ---------- table ---------- */
   .panel{background:var(--surface);border:1px solid var(--line);overflow-x:auto}
   table{width:100%;border-collapse:collapse;font-size:13px}
   th,td{padding:8px 12px;text-align:right;border-bottom:1px solid #e8edf1;white-space:nowrap}
-  thead th{
-    position:sticky;top:0;background:#f1f4f7;font-weight:600;font-size:12px;
-    color:var(--muted);cursor:pointer;user-select:none;border-bottom:1px solid var(--line);
-  }
+  thead th{position:sticky;top:0;background:#f1f4f7;font-weight:600;font-size:12px;
+    color:var(--muted);cursor:pointer;user-select:none;border-bottom:1px solid var(--line);z-index:2}
   thead th:hover{color:var(--steel)}
   thead th[data-dir]::after{content:attr(data-dir);margin-inline-start:5px;color:var(--steel)}
   tbody tr:hover{background:#f7f9fb}
   td.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;direction:ltr;text-align:right}
+  td.num{text-align:center}
   td.hours{font-weight:600;text-align:center}
   .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600}
   .pill.bad{background:var(--alarm-bg);color:var(--alarm)}
   .pill.ok{background:var(--good-bg);color:var(--good)}
   tr.bad td.hours{background:var(--alarm-bg);color:var(--alarm)}
   tr.ok td.hours{color:var(--good)}
-  .dates{white-space:normal;color:var(--muted);font-size:12.5px;line-height:1.9;direction:ltr;text-align:right}
-  .dates i{
-    font-style:normal;background:var(--alarm-bg);color:var(--alarm);
-    padding:1px 7px;border-radius:3px;margin-inline-start:5px;display:inline-block;
-  }
-  .bar{height:5px;background:#e8edf1;border-radius:3px;overflow:hidden;min-width:70px}
+  .miss{font-weight:600;text-align:center;background:var(--alarm-bg);color:var(--alarm)}
+  .miss.zero{background:var(--good-bg);color:var(--good)}
+  .bar{height:5px;background:#e8edf1;border-radius:3px;overflow:hidden;min-width:80px}
   .bar b{display:block;height:100%;background:var(--alarm)}
+  .bar.ok b{background:var(--good)}
+  .toggle{border:none;background:none;color:var(--steel);padding:0;font-size:12.5px;cursor:pointer;text-decoration:underline}
+  tr.detail td{background:#f7f9fb;white-space:normal;padding:10px 14px}
+  .dates{direction:ltr;text-align:right;line-height:2}
+  .dates i{font-style:normal;background:var(--alarm-bg);color:var(--alarm);
+    padding:2px 8px;border-radius:3px;margin-inline-start:6px;display:inline-block;font-size:12.5px}
 
   .note{padding:40px 20px;text-align:center;color:var(--muted)}
   .note.error{color:var(--alarm)}
-  .foot{margin-top:10px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+  .note a{color:var(--steel)}
+  .note code{background:#eef2f5;padding:2px 6px;border-radius:3px;direction:ltr;display:inline-block}
+  .foot{margin-top:10px;font-size:12px;color:var(--muted);display:flex;
+    justify-content:space-between;flex-wrap:wrap;gap:8px}
 
   @media (max-width:640px){
     .stat{flex:1 1 50%}
     h1{font-size:19px}
-    input,select{min-width:130px}
+    input,select{min-width:135px}
   }
 </style>
 </head>
@@ -144,6 +122,11 @@
 
   <div class="filters">
     <div class="field">
+      <label for="q">دور على يوزر (اكتب الأرقام بس)</label>
+      <input type="search" id="q" list="userlist" placeholder="403437" autocomplete="off">
+      <datalist id="userlist"></datalist>
+    </div>
+    <div class="field">
       <label for="from">من تاريخ</label>
       <input type="date" id="from">
     </div>
@@ -155,16 +138,13 @@
       <label for="room">الروم</label>
       <select id="room"><option value="">كل رومات SF</option></select>
     </div>
-    <div class="field">
-      <label for="q">دور على يوزر</label>
-      <input type="search" id="q" placeholder="me123456@meti.ai">
-    </div>
     <label class="check"><input type="checkbox" id="onlyBad"> تحت التارجت بس</label>
+    <button id="reset">مسح الفلاتر</button>
   </div>
 
   <div class="tabs" role="tablist">
-    <button class="tab" role="tab" id="tab-daily" aria-selected="true">يوم بيوم</button>
-    <button class="tab" role="tab" id="tab-users" aria-selected="false">الأيام الناقصة لكل يوزر</button>
+    <button class="tab" role="tab" id="tab-users" aria-selected="true">كل اليوزرات</button>
+    <button class="tab" role="tab" id="tab-daily" aria-selected="false">يوم بيوم</button>
   </div>
 
   <div class="panel">
@@ -182,22 +162,27 @@
 /* ===== إعدادات ===== */
 var API = "https://script.google.com/macros/s/AKfycbzoZuqCeMHQd37WmloJU98nvzIE-6Rb8TIBdJRd5k8ND72rNeka-8Wu9DXn5NSgzqYaXA/exec";
 
-var state = { rows: [], target: 5.5, view: "daily", sort: { key: "date", dir: -1 } };
+var state = {
+  rows: [], target: 5.5, view: "users",
+  sortDaily: { key: "date", dir: -1 },
+  sortUsers: { key: "missed", dir: -1 },
+  open: {}
+};
 
-/* ===== JSONP (لازم كده عشان GitHub Pages يقدر يكلم Apps Script) ===== */
+/* ===== JSONP ===== */
 function jsonp(url, cb, onErr) {
   var name = "cb_" + Date.now() + Math.floor(Math.random() * 1e6);
   var s = document.createElement("script");
   var done = false;
   var timer = setTimeout(function () {
     if (!done) { cleanup(); onErr("الطلب أخد وقت طويل. اتأكد إن الـ deployment شغال ومتاح لأي حد."); }
-  }, 30000);
-
-  window[name] = function (data) { done = true; clearTimeout(timer); cleanup(); cb(data); };
+  }, 40000);
+  window[name] = function (d) { done = true; clearTimeout(timer); cleanup(); cb(d); };
   function cleanup() { try { delete window[name]; } catch (e) { window[name] = undefined; } s.remove(); }
-
   s.src = url + (url.indexOf("?") === -1 ? "?" : "&") + "callback=" + name + "&_=" + Date.now();
-  s.onerror = function () { if (!done) { clearTimeout(timer); cleanup(); onErr("مش قادر يوصل للويب آب. راجع اللينك وصلاحيات الـ deployment."); } };
+  s.onerror = function () {
+    if (!done) { clearTimeout(timer); cleanup(); onErr("مش قادر يوصل للويب آب. راجع اللينك وصلاحيات الـ deployment."); }
+  };
   document.body.appendChild(s);
 }
 
@@ -215,38 +200,65 @@ function load() {
     state.target = res.target || 5.5;
 
     var rooms = (res.meta && res.meta.rooms) || [];
-    var sel = document.getElementById("room");
-    sel.innerHTML = '<option value="">كل رومات SF</option>' +
+    document.getElementById("room").innerHTML =
+      '<option value="">كل رومات SF</option>' +
       rooms.map(function (r) { return '<option>' + esc(r) + '</option>'; }).join("");
 
-    document.getElementById("sub").textContent =
-      "التارجت " + state.target + " ساعة · " + (res.meta ? res.meta.minDate + " ← " + res.meta.maxDate : "");
+    var users = {};
+    state.rows.forEach(function (r) { users[r.user] = 1; });
+    document.getElementById("userlist").innerHTML =
+      Object.keys(users).sort().map(function (u) { return '<option value="' + esc(u) + '">'; }).join("");
+
+    document.getElementById("sub").textContent = state.rows.length
+      ? "التارجت " + state.target + " ساعة · " + res.meta.minDate + " ← " + res.meta.maxDate
+      : "مفيش داتا راجعة من الشيت";
     document.getElementById("stamp").textContent =
       "آخر تحديث: " + new Date(res.generatedAt).toLocaleString("ar-EG");
 
+    if (!state.rows.length) return noData();
     render();
   }, fail);
 
   function fail(msg) {
     btn.disabled = false; btn.textContent = "تحديث الداتا";
-    document.getElementById("out").innerHTML =
-      '<div class="note error">' + esc(msg) + '</div>';
+    document.getElementById("out").innerHTML = '<div class="note error">' + esc(msg) + '</div>';
   }
 }
 
+function noData() {
+  document.getElementById("stats").innerHTML = "";
+  document.getElementById("out").innerHTML =
+    '<div class="note">الويب آب اشتغل بس رجّع صفر سجلات لرومات SF.<br><br>' +
+    'افتح اللينك ده في تاب جديد وشوف الكود شايف إيه في الشيت:<br>' +
+    '<a href="' + API + '?action=debug" target="_blank" rel="noopener">فتح صفحة التشخيص</a><br><br>' +
+    '<code>headerRow: "مش لاقي"</code> يعني أسماء الأعمدة مختلفة، و<code>sfRows: 0</code> ' +
+    'يعني لاقي الأعمدة بس مفيش قيم بتبدأ بـ SF في عمود الروم.</div>';
+}
+
 /* ===== فلترة ===== */
+function digits(s) { return String(s).replace(/\D+/g, ""); }
+
+function matchUser(user, q) {
+  if (!q) return true;
+  var u = user.toLowerCase();
+  if (u.indexOf(q.toLowerCase()) > -1) return true;
+  var qd = digits(q);
+  if (qd && digits(user).indexOf(qd) > -1) return true;
+  return false;
+}
+
 function filtered() {
   var from = document.getElementById("from").value;
   var to = document.getElementById("to").value;
   var room = document.getElementById("room").value;
-  var q = document.getElementById("q").value.trim().toLowerCase();
+  var q = document.getElementById("q").value.trim();
   var bad = document.getElementById("onlyBad").checked;
 
   return state.rows.filter(function (r) {
     if (from && r.date < from) return false;
     if (to && r.date > to) return false;
     if (room && r.room !== room) return false;
-    if (q && r.user.toLowerCase().indexOf(q) === -1) return false;
+    if (!matchUser(r.user, q)) return false;
     if (bad && r.hours >= state.target) return false;
     return true;
   });
@@ -259,44 +271,110 @@ function groupUsers(rows) {
     u.rooms[r.room] = 1; u.total++; u.sum += r.hours;
     if (r.hours < state.target) u.missed.push(r);
   });
-  return Object.keys(m).map(function (k) { return m[k]; });
+  return Object.keys(m).map(function (k) {
+    var u = m[k];
+    u.avg = u.total ? u.sum / u.total : 0;
+    u.pct = u.total ? u.missed.length / u.total : 0;
+    u.roomText = Object.keys(u.rooms).join("، ");
+    u.missedCount = u.missed.length;
+    u.missed.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+    return u;
+  });
 }
 
 /* ===== رسم ===== */
 function render() {
+  if (!state.rows.length) return noData();
   var rows = filtered();
   renderStats(rows);
-  if (state.view === "daily") renderDaily(rows); else renderUsers(rows);
+  if (state.view === "users") renderUsers(rows); else renderDaily(rows);
 }
 
 function renderStats(rows) {
-  var users = {}, bad = 0, sum = 0;
-  rows.forEach(function (r) { users[r.user] = 1; sum += r.hours; if (r.hours < state.target) bad++; });
-  var n = rows.length;
-  var badUsers = {};
-  rows.forEach(function (r) { if (r.hours < state.target) badUsers[r.user] = 1; });
-
+  var users = {}, badUsers = {}, bad = 0, sum = 0;
+  rows.forEach(function (r) {
+    users[r.user] = 1; sum += r.hours;
+    if (r.hours < state.target) { bad++; badUsers[r.user] = 1; }
+  });
   document.getElementById("stats").innerHTML =
     stat(Object.keys(users).length, "يوزر") +
-    stat(n, "سجل") +
+    stat(rows.length, "سجل") +
     stat(bad, "يوم تحت التارجت", true) +
     stat(Object.keys(badUsers).length, "يوزر عنده يوم ناقص", true) +
-    stat(n ? (sum / n).toFixed(2) : "0.00", "متوسط الساعات");
+    stat(rows.length ? (sum / rows.length).toFixed(2) : "0.00", "متوسط الساعات");
 }
 function stat(v, label, bad) {
   return '<div class="stat' + (bad ? ' bad' : '') + '"><b>' + v + '</b><span>' + label + '</span></div>';
 }
 
-function sortRows(rows) {
-  var k = state.sort.key, d = state.sort.dir;
-  return rows.slice().sort(function (a, b) {
-    var x = a[k], y = b[k];
-    if (typeof x === "number" && typeof y === "number") return (x - y) * d;
+function sortBy(arr, s) {
+  return arr.slice().sort(function (a, b) {
+    var x = a[s.key], y = b[s.key];
+    if (typeof x === "number" && typeof y === "number") return (x - y) * s.dir;
     x = String(x || ""); y = String(y || "");
-    return x < y ? -d : (x > y ? d : 0);
+    return x < y ? -s.dir : (x > y ? s.dir : 0);
   });
 }
 
+function th(cols, s) {
+  return '<thead><tr>' + cols.map(function (c) {
+    var dir = s.key === c.k ? (s.dir === 1 ? ' data-dir="↑"' : ' data-dir="↓"') : "";
+    return '<th data-k="' + c.k + '"' + dir + '>' + c.t + '</th>';
+  }).join("") + '</tr></thead>';
+}
+
+/* --- كل اليوزرات --- */
+function renderUsers(rows) {
+  var list = groupUsers(rows);
+  document.getElementById("count").textContent = list.length + " يوزر معروض";
+  if (!list.length) return empty();
+
+  var cols = [
+    { k: "user", t: "اليوزر" }, { k: "roomText", t: "الروم" },
+    { k: "total", t: "أيام مسجلة" }, { k: "missedCount", t: "أيام ناقصة" },
+    { k: "pct", t: "نسبة النقص" }, { k: "avg", t: "متوسط الساعات" },
+    { k: "sum", t: "إجمالي الساعات" }, { k: "x", t: "التفاصيل" }
+  ];
+
+  var html = '<table>' + th(cols, state.sortUsers) + '<tbody>';
+
+  sortBy(list, state.sortUsers).forEach(function (u) {
+    var pct = Math.round(u.pct * 100);
+    var open = !!state.open[u.user];
+    html += '<tr>' +
+      '<td class="mono">' + esc(u.user) + '</td>' +
+      '<td>' + esc(u.roomText) + '</td>' +
+      '<td class="num">' + u.total + '</td>' +
+      '<td class="miss' + (u.missedCount ? '' : ' zero') + '">' + u.missedCount + '</td>' +
+      '<td><div class="bar' + (u.missedCount ? '' : ' ok') + '"><b style="width:' + pct + '%"></b></div>' +
+        '<span style="font-size:12px;color:var(--muted)">' + pct + '%</span></td>' +
+      '<td class="num">' + u.avg.toFixed(2) + '</td>' +
+      '<td class="num">' + u.sum.toFixed(2) + '</td>' +
+      '<td>' + (u.missedCount
+        ? '<button class="toggle" data-u="' + esc(u.user) + '">' + (open ? "إخفاء" : "الأيام الناقصة") + '</button>'
+        : '<span style="color:var(--muted)">—</span>') + '</td>' +
+      '</tr>';
+
+    if (open && u.missedCount) {
+      html += '<tr class="detail"><td colspan="8"><div class="dates">' +
+        u.missed.map(function (m) {
+          return '<i>' + m.date + " · " + m.hours.toFixed(2) + " ساعة</i>";
+        }).join("") + '</div></td></tr>';
+    }
+  });
+
+  document.getElementById("out").innerHTML = html + '</tbody></table>';
+  bindSort(state.sortUsers);
+  Array.prototype.forEach.call(document.querySelectorAll(".toggle"), function (b) {
+    b.onclick = function () {
+      var u = b.getAttribute("data-u");
+      state.open[u] = !state.open[u];
+      render();
+    };
+  });
+}
+
+/* --- يوم بيوم --- */
 function renderDaily(rows) {
   document.getElementById("count").textContent = rows.length + " سجل معروض";
   if (!rows.length) return empty();
@@ -304,15 +382,11 @@ function renderDaily(rows) {
   var cols = [
     { k: "user", t: "اليوزر" }, { k: "date", t: "التاريخ" }, { k: "room", t: "الروم" },
     { k: "shift", t: "الشيفت" }, { k: "pc", t: "الجهاز" }, { k: "att", t: "الحضور" },
-    { k: "hours", t: "الساعات" }, { k: "status", t: "الحالة" }
+    { k: "hours", t: "الساعات" }, { k: "hours", t: "الحالة" }
   ];
 
-  var html = '<table><thead><tr>' + cols.map(function (c) {
-    var dir = state.sort.key === c.k ? (state.sort.dir === 1 ? ' data-dir="↑"' : ' data-dir="↓"') : "";
-    return '<th data-k="' + c.k + '"' + dir + '>' + c.t + '</th>';
-  }).join("") + '</tr></thead><tbody>';
-
-  sortRows(rows).forEach(function (r) {
+  var html = '<table>' + th(cols, state.sortDaily) + '<tbody>';
+  sortBy(rows, state.sortDaily).forEach(function (r) {
     var bad = r.hours < state.target;
     html += '<tr class="' + (bad ? "bad" : "ok") + '">' +
       '<td class="mono">' + esc(r.user) + '</td>' +
@@ -326,57 +400,21 @@ function renderDaily(rows) {
       '</tr>';
   });
 
-  document.getElementById("out").innerHTML = html + "</tbody></table>";
-  bindSort();
-}
-
-function renderUsers(rows) {
-  var list = groupUsers(rows).filter(function (u) { return u.missed.length; })
-    .sort(function (a, b) { return b.missed.length - a.missed.length; });
-
-  document.getElementById("count").textContent = list.length + " يوزر عنده أيام ناقصة";
-  if (!list.length) {
-    document.getElementById("out").innerHTML =
-      '<div class="note">مفيش أي يوزر تحت التارجت في النطاق ده.</div>';
-    return;
-  }
-
-  var html = '<table><thead><tr>' +
-    '<th>اليوزر</th><th>الروم</th><th>أيام ناقصة</th><th>إجمالي الأيام</th>' +
-    '<th>نسبة النقص</th><th>متوسط الساعات</th><th>التواريخ الناقصة</th>' +
-    '</tr></thead><tbody>';
-
-  list.forEach(function (u) {
-    var pct = Math.round(u.missed.length / u.total * 100);
-    u.missed.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
-    html += '<tr>' +
-      '<td class="mono">' + esc(u.user) + '</td>' +
-      '<td>' + esc(Object.keys(u.rooms).join("، ")) + '</td>' +
-      '<td class="hours" style="background:var(--alarm-bg);color:var(--alarm)">' + u.missed.length + '</td>' +
-      '<td style="text-align:center">' + u.total + '</td>' +
-      '<td><div class="bar"><b style="width:' + pct + '%"></b></div>' +
-        '<span style="font-size:12px;color:var(--muted)">' + pct + '%</span></td>' +
-      '<td style="text-align:center">' + (u.sum / u.total).toFixed(2) + '</td>' +
-      '<td class="dates">' + u.missed.map(function (m) {
-        return '<i>' + m.date + " · " + m.hours.toFixed(2) + '</i>';
-      }).join("") + '</td>' +
-      '</tr>';
-  });
-
-  document.getElementById("out").innerHTML = html + "</tbody></table>";
+  document.getElementById("out").innerHTML = html + '</tbody></table>';
+  bindSort(state.sortDaily);
 }
 
 function empty() {
   document.getElementById("out").innerHTML =
-    '<div class="note">مفيش نتايج بالفلاتر دي. جرب توسّع نطاق التاريخ أو تمسح البحث.</div>';
+    '<div class="note">مفيش نتايج بالفلاتر دي. امسح الفلاتر أو وسّع نطاق التاريخ.</div>';
 }
 
-function bindSort() {
-  Array.prototype.forEach.call(document.querySelectorAll("th[data-k]"), function (th) {
-    th.onclick = function () {
-      var k = th.getAttribute("data-k");
-      if (k === "status") k = "hours";
-      state.sort = { key: k, dir: state.sort.key === k ? -state.sort.dir : 1 };
+function bindSort(s) {
+  Array.prototype.forEach.call(document.querySelectorAll("th[data-k]"), function (el) {
+    el.onclick = function () {
+      var k = el.getAttribute("data-k");
+      if (k === "x") return;
+      if (s.key === k) s.dir = -s.dir; else { s.key = k; s.dir = 1; }
       render();
     };
   });
@@ -388,20 +426,18 @@ function downloadCSV() {
   if (state.view === "daily") {
     name = "sf-active-time";
     lines = [["User", "Date", "Room", "Shift", "PC", "Attendance", "Hours", "Status"]];
-    sortRows(rows).forEach(function (r) {
+    sortBy(rows, state.sortDaily).forEach(function (r) {
       lines.push([r.user, r.date, r.room, r.shift, r.pc, r.att,
         r.hours.toFixed(2), r.hours < state.target ? "Below" : "OK"]);
     });
   } else {
-    name = "sf-missed-days";
-    lines = [["User", "Rooms", "Missed Days", "Total Days", "Miss %", "Avg Hours", "Missed Dates"]];
-    groupUsers(rows).filter(function (u) { return u.missed.length; })
-      .sort(function (a, b) { return b.missed.length - a.missed.length; })
-      .forEach(function (u) {
-        lines.push([u.user, Object.keys(u.rooms).join(" / "), u.missed.length, u.total,
-          Math.round(u.missed.length / u.total * 100) + "%", (u.sum / u.total).toFixed(2),
-          u.missed.map(function (m) { return m.date + " (" + m.hours.toFixed(2) + ")"; }).join(" | ")]);
-      });
+    name = "sf-users";
+    lines = [["User", "Rooms", "Total Days", "Missed Days", "Miss %", "Avg Hours", "Total Hours", "Missed Dates"]];
+    sortBy(groupUsers(rows), state.sortUsers).forEach(function (u) {
+      lines.push([u.user, u.roomText.replace(/، /g, " / "), u.total, u.missedCount,
+        Math.round(u.pct * 100) + "%", u.avg.toFixed(2), u.sum.toFixed(2),
+        u.missed.map(function (m) { return m.date + " (" + m.hours.toFixed(2) + ")"; }).join(" | ")]);
+    });
   }
 
   var csv = "\uFEFF" + lines.map(function (r) {
@@ -421,19 +457,29 @@ function esc(s) {
   });
 }
 
-/* ===== ربط الأحداث ===== */
-["from", "to", "room", "q", "onlyBad"].forEach(function (id) {
-  var el = document.getElementById(id);
-  el.addEventListener(el.tagName === "INPUT" && el.type === "search" ? "input" : "change", render);
+/* ===== الأحداث ===== */
+["from", "to", "room", "onlyBad"].forEach(function (id) {
+  document.getElementById(id).addEventListener("change", render);
 });
-document.getElementById("tab-daily").onclick = function () { setView("daily", this); };
-document.getElementById("tab-users").onclick = function () { setView("users", this); };
-function setView(v, btn) {
+document.getElementById("q").addEventListener("input", render);
+
+document.getElementById("reset").onclick = function () {
+  ["from", "to", "q"].forEach(function (id) { document.getElementById(id).value = ""; });
+  document.getElementById("room").value = "";
+  document.getElementById("onlyBad").checked = false;
+  state.open = {};
+  render();
+};
+
+document.getElementById("tab-users").onclick = function () { setView("users"); };
+document.getElementById("tab-daily").onclick = function () { setView("daily"); };
+function setView(v) {
   state.view = v;
-  document.getElementById("tab-daily").setAttribute("aria-selected", v === "daily");
   document.getElementById("tab-users").setAttribute("aria-selected", v === "users");
+  document.getElementById("tab-daily").setAttribute("aria-selected", v === "daily");
   render();
 }
+
 document.getElementById("reload").onclick = load;
 document.getElementById("csv").onclick = downloadCSV;
 
