@@ -3,105 +3,143 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>الأكتيف تايم — رومات SF</title>
+<title>SF Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root{
-    --shell:#e6eaee; --surface:#ffffff; --line:#ccd5dd;
-    --ink:#161d26; --muted:#5e6b7a; --steel:#1d4e6b;
-    --alarm:#a52019; --alarm-bg:#fbe7e5;
-    --good:#2c6e49; --good-bg:#e4f0e8;
-    --radius:4px;
+    --bg:#eef1f5;
+    --surface:#ffffff;
+    --line:#d7dde4;
+    --ink:#152033;
+    --muted:#647089;
+    --accent:#265d8f;
+    --accent-ink:#1b4569;
+    --glow:rgba(38,93,143,.30);
+    --bad:#b3261e;
+    --bad-bg:#fbe9e7;
+    --good:#1c6e4a;
+    --good-bg:#e6f4ec;
+    --radius:6px;
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
   body{
-    background:var(--shell);color:var(--ink);
+    background:var(--bg);color:var(--ink);
     font-family:"IBM Plex Sans Arabic",system-ui,-apple-system,"Segoe UI",sans-serif;
     font-size:14px;line-height:1.55;font-variant-numeric:tabular-nums;
   }
-  .wrap{max-width:1320px;margin:0 auto;padding:20px 16px 64px}
+  .wrap{max-width:1340px;margin:0 auto;padding:22px 18px 64px}
 
-  header{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;
-    justify-content:space-between;padding-bottom:14px;border-bottom:2px solid var(--ink)}
-  h1{font-size:22px;font-weight:700;margin:0;letter-spacing:-.2px}
-  h1 small{display:block;font-size:13px;font-weight:400;color:var(--muted)}
+  header{display:flex;flex-wrap:wrap;gap:14px;align-items:center;
+    justify-content:space-between;padding:16px 20px;margin-bottom:16px;
+    background:linear-gradient(135deg,var(--accent-ink),var(--accent));
+    border-radius:var(--radius);color:#fff;box-shadow:0 6px 20px rgba(27,69,105,.25)}
+  h1{font-size:21px;font-weight:700;margin:0;letter-spacing:-.2px}
+  h1 small{display:block;font-size:12.5px;font-weight:400;color:#cfe0ef;margin-top:3px}
   .head-actions{display:flex;gap:8px;align-items:center}
 
   button{font-family:inherit;font-size:13px;font-weight:500;
     border:1px solid var(--line);background:var(--surface);color:var(--ink);
-    padding:7px 14px;border-radius:var(--radius);cursor:pointer}
-  button:hover{border-color:var(--steel);color:var(--steel)}
-  button:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
-  button.primary{background:var(--steel);border-color:var(--steel);color:#fff}
-  button.primary:hover{background:#17405a;color:#fff}
-  button[disabled]{opacity:.5;cursor:default}
+    padding:8px 16px;border-radius:var(--radius);cursor:pointer;
+    transition:box-shadow .15s ease,transform .15s ease,border-color .15s ease}
+  button:hover{border-color:var(--accent);box-shadow:0 0 0 3px var(--glow),0 6px 16px rgba(38,93,143,.18);transform:translateY(-1px)}
+  button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+  button.primary{background:#ffffff;border-color:#ffffff;color:var(--accent-ink);font-weight:600}
+  button.primary:hover{box-shadow:0 0 0 3px rgba(255,255,255,.4),0 6px 16px rgba(0,0,0,.15)}
+  button.ghost{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.35);color:#fff}
+  button.ghost:hover{box-shadow:0 0 0 3px rgba(255,255,255,.25)}
+  button[disabled]{opacity:.5;cursor:default;transform:none;box-shadow:none}
 
   .stats{display:flex;flex-wrap:wrap;background:var(--surface);
-    border:1px solid var(--line);border-top:none}
-  .stat{flex:1 1 150px;padding:14px 18px;border-inline-start:1px solid var(--line)}
+    border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;margin-bottom:14px}
+  .stat{flex:1 1 150px;padding:16px 18px;border-inline-start:1px solid var(--line);
+    transition:box-shadow .15s ease,background .15s ease;cursor:default}
   .stat:first-child{border-inline-start:none}
-  .stat b{display:block;font-size:26px;font-weight:600;line-height:1.2}
+  .stat:hover{box-shadow:inset 0 0 0 2px var(--glow);background:#f6f9fc;z-index:1;position:relative}
+  .stat b{display:block;font-size:27px;font-weight:700;line-height:1.2}
   .stat span{font-size:12px;color:var(--muted)}
-  .stat.bad b{color:var(--alarm)}
+  .stat.bad b{color:var(--bad)}
 
-  .filters{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;padding:14px 0}
+  .filters{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;
+    padding:14px 16px;background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);margin-bottom:12px}
   .field{display:flex;flex-direction:column;gap:4px}
   .field label{font-size:12px;color:var(--muted)}
   input,select{font-family:inherit;font-size:13px;color:var(--ink);
     border:1px solid var(--line);background:var(--surface);
-    padding:7px 10px;border-radius:var(--radius);min-width:160px}
-  input:focus,select:focus{outline:2px solid var(--steel);outline-offset:-1px;border-color:var(--steel)}
-  .check{display:flex;align-items:center;gap:6px;font-size:13px;padding-bottom:7px;cursor:pointer}
-  .check input{min-width:auto;width:16px;height:16px;accent-color:var(--alarm)}
-  .filters button{margin-bottom:0}
+    padding:8px 10px;border-radius:var(--radius);min-width:165px;
+    transition:box-shadow .15s ease,border-color .15s ease}
+  input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--glow)}
+  .check{display:flex;align-items:center;gap:6px;font-size:13px;padding-bottom:8px;cursor:pointer}
+  .check input{min-width:auto;width:16px;height:16px;accent-color:var(--bad)}
 
-  .tabs{display:flex;gap:2px;margin-top:4px}
-  .tab{border:1px solid var(--line);border-bottom:none;background:#dde3e9;
-    padding:9px 18px;font-size:13px;font-weight:500;cursor:pointer;
-    border-radius:var(--radius) var(--radius) 0 0;color:var(--muted)}
-  .tab[aria-selected="true"]{background:var(--surface);color:var(--ink);font-weight:600}
+  .tabs{display:flex;gap:6px;margin-bottom:0}
+  .tab{border:1px solid var(--line);background:var(--surface);
+    padding:10px 20px;font-size:13px;font-weight:500;cursor:pointer;
+    border-radius:var(--radius) var(--radius) 0 0;color:var(--muted);
+    border-bottom:none;position:relative;top:1px;
+    transition:box-shadow .15s ease,color .15s ease}
+  .tab:hover{color:var(--accent-ink);box-shadow:0 -3px 0 0 var(--glow) inset}
+  .tab[aria-selected="true"]{background:var(--surface);color:var(--accent-ink);
+    font-weight:700;border-color:var(--accent);box-shadow:0 -3px 0 0 var(--accent) inset}
 
-  .panel{background:var(--surface);border:1px solid var(--line);overflow-x:auto}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:0 var(--radius) var(--radius) var(--radius);overflow-x:auto}
   table{width:100%;border-collapse:collapse;font-size:13px}
-  th,td{padding:8px 12px;text-align:right;border-bottom:1px solid #e8edf1;white-space:nowrap}
-  thead th{position:sticky;top:0;background:#f1f4f7;font-weight:600;font-size:12px;
-    color:var(--muted);cursor:pointer;user-select:none;border-bottom:1px solid var(--line);z-index:2}
-  thead th:hover{color:var(--steel)}
-  thead th[data-dir]::after{content:attr(data-dir);margin-inline-start:5px;color:var(--steel)}
-  tbody tr:hover{background:#f7f9fb}
+  th,td{padding:9px 13px;text-align:right;border-bottom:1px solid #eef1f5;white-space:nowrap}
+  thead th{position:sticky;top:0;background:#f4f6f9;font-weight:600;font-size:12px;
+    color:var(--muted);cursor:pointer;user-select:none;border-bottom:1px solid var(--line);z-index:2;
+    transition:color .15s ease,background .15s ease}
+  thead th:hover{color:var(--accent-ink);background:#eaf0f6}
+  thead th[data-dir]::after{content:attr(data-dir);margin-inline-start:5px;color:var(--accent)}
+  tbody tr{transition:box-shadow .12s ease,background .12s ease}
+  tbody tr:hover td{background:#f5f9fc;box-shadow:inset 0 1px 0 var(--accent),inset 0 -1px 0 var(--accent)}
   td.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;direction:ltr;text-align:right}
   td.num{text-align:center}
-  td.hours{font-weight:600;text-align:center}
-  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600}
-  .pill.bad{background:var(--alarm-bg);color:var(--alarm)}
+  td.hours{font-weight:700;text-align:center}
+  .pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600}
+  .pill.bad{background:var(--bad-bg);color:var(--bad)}
   .pill.ok{background:var(--good-bg);color:var(--good)}
-  tr.bad td.hours{background:var(--alarm-bg);color:var(--alarm)}
+  tr.bad td.hours{background:var(--bad-bg);color:var(--bad)}
   tr.ok td.hours{color:var(--good)}
-  .miss{font-weight:600;text-align:center;background:var(--alarm-bg);color:var(--alarm)}
+  .miss{font-weight:700;text-align:center;background:var(--bad-bg);color:var(--bad)}
   .miss.zero{background:var(--good-bg);color:var(--good)}
-  .bar{height:5px;background:#e8edf1;border-radius:3px;overflow:hidden;min-width:80px}
-  .bar b{display:block;height:100%;background:var(--alarm)}
+  .bar{height:6px;background:#e8edf3;border-radius:3px;overflow:hidden;min-width:80px}
+  .bar b{display:block;height:100%;background:var(--bad)}
   .bar.ok b{background:var(--good)}
-  .toggle{border:none;background:none;color:var(--steel);padding:0;font-size:12.5px;cursor:pointer;text-decoration:underline}
-  tr.detail td{background:#f7f9fb;white-space:normal;padding:10px 14px}
+  .toggle{border:none;background:none;color:var(--accent);padding:2px 6px;font-size:12.5px;
+    cursor:pointer;text-decoration:underline;border-radius:4px;transition:box-shadow .12s ease}
+  .toggle:hover{box-shadow:0 0 0 3px var(--glow)}
+  tr.detail td{background:#f5f9fc;white-space:normal;padding:10px 16px}
   .dates{direction:ltr;text-align:right;line-height:2}
-  .dates i{font-style:normal;background:var(--alarm-bg);color:var(--alarm);
+  .dates i{font-style:normal;background:var(--bad-bg);color:var(--bad);
     padding:2px 8px;border-radius:3px;margin-inline-start:6px;display:inline-block;font-size:12.5px}
+  .name{font-weight:600}
+  .name.empty{color:var(--muted);font-weight:400}
 
-  .note{padding:40px 20px;text-align:center;color:var(--muted)}
-  .note.error{color:var(--alarm)}
-  .note a{color:var(--steel)}
+  .note{padding:44px 20px;text-align:center;color:var(--muted)}
+  .note.error{color:var(--bad)}
+  .note a{color:var(--accent)}
   .note code{background:#eef2f5;padding:2px 6px;border-radius:3px;direction:ltr;display:inline-block}
   .foot{margin-top:10px;font-size:12px;color:var(--muted);display:flex;
     justify-content:space-between;flex-wrap:wrap;gap:8px}
 
+  .teamcard{display:flex;flex-wrap:wrap;gap:14px;padding:16px}
+  .tcard{flex:1 1 260px;background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);padding:16px;transition:box-shadow .15s ease,transform .15s ease}
+  .tcard:hover{box-shadow:0 0 0 2px var(--glow),0 10px 24px rgba(38,93,143,.14);transform:translateY(-2px)}
+  .tcard h3{margin:0 0 10px;font-size:15px;font-weight:700}
+  .tcard .big{font-size:28px;font-weight:700;color:var(--accent-ink)}
+  .tcard .row{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+  .tcard .row b{color:var(--ink);font-weight:600}
+
   @media (max-width:640px){
     .stat{flex:1 1 50%}
-    h1{font-size:19px}
+    h1{font-size:18px}
     input,select{min-width:135px}
+    header{padding:14px}
   }
 </style>
 </head>
@@ -109,46 +147,49 @@
 <div class="wrap">
 
   <header>
-    <h1>الأكتيف تايم — رومات SF
+    <h1>SF Dashboard
       <small id="sub">جاري التحميل…</small>
     </h1>
     <div class="head-actions">
-      <button id="csv">تنزيل CSV</button>
+      <button id="img" class="ghost">تنزيل صورة</button>
       <button id="reload" class="primary">تحديث الداتا</button>
     </div>
   </header>
 
-  <div class="stats" id="stats"></div>
+  <div id="capture">
+    <div class="stats" id="stats"></div>
 
-  <div class="filters">
-    <div class="field">
-      <label for="q">دور على يوزر (اكتب الأرقام بس)</label>
-      <input type="search" id="q" list="userlist" placeholder="403437" autocomplete="off">
-      <datalist id="userlist"></datalist>
+    <div class="filters">
+      <div class="field">
+        <label for="q">دور على يوزر (اكتب الأرقام بس)</label>
+        <input type="search" id="q" list="userlist" placeholder="403437" autocomplete="off">
+        <datalist id="userlist"></datalist>
+      </div>
+      <div class="field">
+        <label for="from">من تاريخ</label>
+        <input type="date" id="from">
+      </div>
+      <div class="field">
+        <label for="to">لغاية تاريخ</label>
+        <input type="date" id="to">
+      </div>
+      <div class="field">
+        <label for="room">الروم</label>
+        <select id="room"><option value="">كل رومات SF</option></select>
+      </div>
+      <label class="check"><input type="checkbox" id="onlyBad"> تحت التارجت بس</label>
+      <button id="reset">مسح الفلاتر</button>
     </div>
-    <div class="field">
-      <label for="from">من تاريخ</label>
-      <input type="date" id="from">
-    </div>
-    <div class="field">
-      <label for="to">لغاية تاريخ</label>
-      <input type="date" id="to">
-    </div>
-    <div class="field">
-      <label for="room">الروم</label>
-      <select id="room"><option value="">كل رومات SF</option></select>
-    </div>
-    <label class="check"><input type="checkbox" id="onlyBad"> تحت التارجت بس</label>
-    <button id="reset">مسح الفلاتر</button>
-  </div>
 
-  <div class="tabs" role="tablist">
-    <button class="tab" role="tab" id="tab-users" aria-selected="true">كل اليوزرات</button>
-    <button class="tab" role="tab" id="tab-daily" aria-selected="false">يوم بيوم</button>
-  </div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tab-users" aria-selected="true">كل اليوزرات</button>
+      <button class="tab" role="tab" id="tab-daily" aria-selected="false">يوم بيوم</button>
+      <button class="tab" role="tab" id="tab-teams" aria-selected="false">متوسط الفرق (QC)</button>
+    </div>
 
-  <div class="panel">
-    <div id="out"><div class="note">جاري تحميل الداتا من جوجل شيت…</div></div>
+    <div class="panel">
+      <div id="out"><div class="note">جاري تحميل الداتا من جوجل شيت…</div></div>
+    </div>
   </div>
 
   <div class="foot">
@@ -166,7 +207,7 @@ var state = {
   rows: [], target: 5.5, view: "users",
   sortDaily: { key: "date", dir: -1 },
   sortUsers: { key: "missed", dir: -1 },
-  open: {}
+  open: {}, teams: null
 };
 
 /* ===== JSONP ===== */
@@ -198,6 +239,7 @@ function load() {
 
     state.rows = res.rows || [];
     state.target = res.target || 5.5;
+    state.teams = null;
 
     var rooms = (res.meta && res.meta.rooms) || [];
     document.getElementById("room").innerHTML =
@@ -209,8 +251,9 @@ function load() {
     document.getElementById("userlist").innerHTML =
       Object.keys(users).sort().map(function (u) { return '<option value="' + esc(u) + '">'; }).join("");
 
+    var covTxt = (res.meta && res.meta.namesCoverage != null) ? " · الأسماء متاحة لـ " + res.meta.namesCoverage + "% من السجلات" : "";
     document.getElementById("sub").textContent = state.rows.length
-      ? "التارجت " + state.target + " ساعة · " + res.meta.minDate + " ← " + res.meta.maxDate
+      ? "التارجت " + state.target + " ساعة · " + res.meta.minDate + " ← " + res.meta.maxDate + covTxt
       : "مفيش داتا راجعة من الشيت";
     document.getElementById("stamp").textContent =
       "آخر تحديث: " + new Date(res.generatedAt).toLocaleString("ar-EG");
@@ -225,23 +268,33 @@ function load() {
   }
 }
 
+function loadTeams(cb) {
+  jsonp(API + "?action=teams", function (res) {
+    if (!res || !res.ok) { document.getElementById("out").innerHTML =
+      '<div class="note error">' + esc((res && res.error) || "تعذر تحميل بيانات الفرق.") + '</div>'; return; }
+    state.teams = res.teams || [];
+    cb();
+  }, function (msg) {
+    document.getElementById("out").innerHTML = '<div class="note error">' + esc(msg) + '</div>';
+  });
+}
+
 function noData() {
   document.getElementById("stats").innerHTML = "";
   document.getElementById("out").innerHTML =
     '<div class="note">الويب آب اشتغل بس رجّع صفر سجلات لرومات SF.<br><br>' +
     'افتح اللينك ده في تاب جديد وشوف الكود شايف إيه في الشيت:<br>' +
-    '<a href="' + API + '?action=debug" target="_blank" rel="noopener">فتح صفحة التشخيص</a><br><br>' +
-    '<code>headerRow: "مش لاقي"</code> يعني أسماء الأعمدة مختلفة، و<code>sfRows: 0</code> ' +
-    'يعني لاقي الأعمدة بس مفيش قيم بتبدأ بـ SF في عمود الروم.</div>';
+    '<a href="' + API + '?action=debug" target="_blank" rel="noopener">فتح صفحة التشخيص</a></div>';
 }
 
 /* ===== فلترة ===== */
 function digits(s) { return String(s).replace(/\D+/g, ""); }
 
-function matchUser(user, q) {
+function matchUser(user, name, q) {
   if (!q) return true;
-  var u = user.toLowerCase();
-  if (u.indexOf(q.toLowerCase()) > -1) return true;
+  var lower = q.toLowerCase();
+  if (user.toLowerCase().indexOf(lower) > -1) return true;
+  if (name && name.toLowerCase().indexOf(lower) > -1) return true;
   var qd = digits(q);
   if (qd && digits(user).indexOf(qd) > -1) return true;
   return false;
@@ -258,7 +311,7 @@ function filtered() {
     if (from && r.date < from) return false;
     if (to && r.date > to) return false;
     if (room && r.room !== room) return false;
-    if (!matchUser(r.user, q)) return false;
+    if (!matchUser(r.user, r.name, q)) return false;
     if (bad && r.hours >= state.target) return false;
     return true;
   });
@@ -267,7 +320,7 @@ function filtered() {
 function groupUsers(rows) {
   var m = {};
   rows.forEach(function (r) {
-    var u = m[r.user] || (m[r.user] = { user: r.user, rooms: {}, total: 0, sum: 0, missed: [] });
+    var u = m[r.user] || (m[r.user] = { user: r.user, name: r.name, rooms: {}, total: 0, sum: 0, missed: [] });
     u.rooms[r.room] = 1; u.total++; u.sum += r.hours;
     if (r.hours < state.target) u.missed.push(r);
   });
@@ -285,6 +338,7 @@ function groupUsers(rows) {
 /* ===== رسم ===== */
 function render() {
   if (!state.rows.length) return noData();
+  if (state.view === "teams") { renderTeamsTab(); return; }
   var rows = filtered();
   renderStats(rows);
   if (state.view === "users") renderUsers(rows); else renderDaily(rows);
@@ -323,6 +377,10 @@ function th(cols, s) {
   }).join("") + '</tr></thead>';
 }
 
+function nameCell(name) {
+  return name ? '<span class="name">' + esc(name) + '</span>' : '<span class="name empty">—</span>';
+}
+
 /* --- كل اليوزرات --- */
 function renderUsers(rows) {
   var list = groupUsers(rows);
@@ -330,7 +388,7 @@ function renderUsers(rows) {
   if (!list.length) return empty();
 
   var cols = [
-    { k: "user", t: "اليوزر" }, { k: "roomText", t: "الروم" },
+    { k: "name", t: "الاسم" }, { k: "user", t: "اليوزر" }, { k: "roomText", t: "الروم" },
     { k: "total", t: "أيام مسجلة" }, { k: "missedCount", t: "أيام ناقصة" },
     { k: "pct", t: "نسبة النقص" }, { k: "avg", t: "متوسط الساعات" },
     { k: "sum", t: "إجمالي الساعات" }, { k: "x", t: "التفاصيل" }
@@ -342,6 +400,7 @@ function renderUsers(rows) {
     var pct = Math.round(u.pct * 100);
     var open = !!state.open[u.user];
     html += '<tr>' +
+      '<td>' + nameCell(u.name) + '</td>' +
       '<td class="mono">' + esc(u.user) + '</td>' +
       '<td>' + esc(u.roomText) + '</td>' +
       '<td class="num">' + u.total + '</td>' +
@@ -356,7 +415,7 @@ function renderUsers(rows) {
       '</tr>';
 
     if (open && u.missedCount) {
-      html += '<tr class="detail"><td colspan="8"><div class="dates">' +
+      html += '<tr class="detail"><td colspan="9"><div class="dates">' +
         u.missed.map(function (m) {
           return '<i>' + m.date + " · " + m.hours.toFixed(2) + " ساعة</i>";
         }).join("") + '</div></td></tr>';
@@ -380,7 +439,7 @@ function renderDaily(rows) {
   if (!rows.length) return empty();
 
   var cols = [
-    { k: "user", t: "اليوزر" }, { k: "date", t: "التاريخ" }, { k: "room", t: "الروم" },
+    { k: "name", t: "الاسم" }, { k: "user", t: "اليوزر" }, { k: "date", t: "التاريخ" }, { k: "room", t: "الروم" },
     { k: "shift", t: "الشيفت" }, { k: "pc", t: "الجهاز" }, { k: "att", t: "الحضور" },
     { k: "hours", t: "الساعات" }, { k: "hours", t: "الحالة" }
   ];
@@ -389,6 +448,7 @@ function renderDaily(rows) {
   sortBy(rows, state.sortDaily).forEach(function (r) {
     var bad = r.hours < state.target;
     html += '<tr class="' + (bad ? "bad" : "ok") + '">' +
+      '<td>' + nameCell(r.name) + '</td>' +
       '<td class="mono">' + esc(r.user) + '</td>' +
       '<td class="mono">' + esc(r.date) + '</td>' +
       '<td>' + esc(r.room) + '</td>' +
@@ -402,6 +462,37 @@ function renderDaily(rows) {
 
   document.getElementById("out").innerHTML = html + '</tbody></table>';
   bindSort(state.sortDaily);
+}
+
+/* --- متوسط الفرق (QC) --- */
+function renderTeamsTab() {
+  document.getElementById("stats").innerHTML = "";
+  if (state.teams === null) {
+    document.getElementById("out").innerHTML = '<div class="note">جاري تحميل بيانات الفرق…</div>';
+    loadTeams(renderTeamsTab);
+    return;
+  }
+  var teams = state.teams;
+  document.getElementById("count").textContent = teams.length + " فريق";
+  if (!teams.length) {
+    document.getElementById("out").innerHTML = '<div class="note">مفيش بيانات Team Lead / QC في السجلات الحالية.</div>';
+    return;
+  }
+
+  var html = '<div class="teamcard">';
+  teams.forEach(function (t) {
+    var pct = Math.round(t.belowPct * 100);
+    html += '<div class="tcard">' +
+      '<h3>' + esc(t.tl) + '</h3>' +
+      '<div class="big">' + t.avgHours.toFixed(2) + '<span style="font-size:13px;color:var(--muted);font-weight:400"> ساعة/يوم</span></div>' +
+      '<div class="row"><span>عدد الأفراد</span><b>' + t.members + '</b></div>' +
+      '<div class="row"><span>إجمالي السجلات</span><b>' + t.records + '</b></div>' +
+      '<div class="row"><span>إجمالي الساعات</span><b>' + t.totalHours.toFixed(1) + '</b></div>' +
+      '<div class="row"><span>أيام تحت التارجت</span><b style="color:' + (t.below ? 'var(--bad)' : 'var(--good)') + '">' + t.below + ' (' + pct + '%)</b></div>' +
+      '</div>';
+  });
+  html += '</div>';
+  document.getElementById("out").innerHTML = html;
 }
 
 function empty() {
@@ -420,35 +511,28 @@ function bindSort(s) {
   });
 }
 
-/* ===== CSV ===== */
-function downloadCSV() {
-  var rows = filtered(), lines, name;
-  if (state.view === "daily") {
-    name = "sf-active-time";
-    lines = [["User", "Date", "Room", "Shift", "PC", "Attendance", "Hours", "Status"]];
-    sortBy(rows, state.sortDaily).forEach(function (r) {
-      lines.push([r.user, r.date, r.room, r.shift, r.pc, r.att,
-        r.hours.toFixed(2), r.hours < state.target ? "Below" : "OK"]);
-    });
-  } else {
-    name = "sf-users";
-    lines = [["User", "Rooms", "Total Days", "Missed Days", "Miss %", "Avg Hours", "Total Hours", "Missed Dates"]];
-    sortBy(groupUsers(rows), state.sortUsers).forEach(function (u) {
-      lines.push([u.user, u.roomText.replace(/، /g, " / "), u.total, u.missedCount,
-        Math.round(u.pct * 100) + "%", u.avg.toFixed(2), u.sum.toFixed(2),
-        u.missed.map(function (m) { return m.date + " (" + m.hours.toFixed(2) + ")"; }).join(" | ")]);
-    });
-  }
+/* ===== تنزيل صورة ===== */
+function downloadImage() {
+  var btn = document.getElementById("img");
+  btn.disabled = true; btn.textContent = "بيجهّز الصورة…";
 
-  var csv = "\uFEFF" + lines.map(function (r) {
-    return r.map(function (c) { return '"' + String(c == null ? "" : c).replace(/"/g, '""') + '"'; }).join(",");
-  }).join("\r\n");
-
-  var a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-  a.download = name + "-" + new Date().toISOString().slice(0, 10) + ".csv";
-  a.click();
-  URL.revokeObjectURL(a.href);
+  html2canvas(document.getElementById("capture"), {
+    backgroundColor: "#eef1f5",
+    scale: 2,
+    useCORS: true
+  }).then(function (canvas) {
+    canvas.toBlob(function (blob) {
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "sf-dashboard-" + new Date().toISOString().slice(0, 10) + ".png";
+      a.click();
+      URL.revokeObjectURL(a.href);
+      btn.disabled = false; btn.textContent = "تنزيل صورة";
+    });
+  }).catch(function () {
+    btn.disabled = false; btn.textContent = "تنزيل صورة";
+    alert("تعذر إنشاء الصورة. جرب تاني.");
+  });
 }
 
 function esc(s) {
@@ -473,15 +557,17 @@ document.getElementById("reset").onclick = function () {
 
 document.getElementById("tab-users").onclick = function () { setView("users"); };
 document.getElementById("tab-daily").onclick = function () { setView("daily"); };
+document.getElementById("tab-teams").onclick = function () { setView("teams"); };
 function setView(v) {
   state.view = v;
   document.getElementById("tab-users").setAttribute("aria-selected", v === "users");
   document.getElementById("tab-daily").setAttribute("aria-selected", v === "daily");
+  document.getElementById("tab-teams").setAttribute("aria-selected", v === "teams");
   render();
 }
 
 document.getElementById("reload").onclick = load;
-document.getElementById("csv").onclick = downloadCSV;
+document.getElementById("img").onclick = downloadImage;
 
 load();
 </script>
