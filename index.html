@@ -177,8 +177,9 @@
   .sd-name.empty{color:var(--muted);font-weight:600}
   .sd-uid{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;direction:ltr;color:var(--muted);font-size:11px}
 
-  .sd-hours{display:inline-block;min-width:56px;padding:5px 10px;border-radius:7px;
-    font-weight:900;font-size:14px;transition:transform .12s ease,box-shadow .12s ease}
+  .sd-hours{display:inline-flex;align-items:center;justify-content:center;
+    width:46px;height:46px;border-radius:50%;
+    font-weight:900;font-size:13px;transition:transform .12s ease,box-shadow .12s ease}
   .sd-hours.bad{background:var(--bad-bg);color:var(--bad)}
   .sd-hours.ok{background:var(--good-bg);color:var(--good)}
   .sd-hours:hover{transform:scale(1.08);box-shadow:0 0 0 3px var(--glow),0 8px 18px rgba(0,0,0,.18);cursor:default}
@@ -234,6 +235,7 @@
       <button class="tab" role="tab" id="tab-single" aria-selected="false">يوم واحد</button>
       <button class="tab" role="tab" id="tab-daily" aria-selected="false">يوم بيوم</button>
       <button class="tab" role="tab" id="tab-teams" aria-selected="false">متوسط الفرق (QC)</button>
+      <button class="tab" role="tab" id="tab-submit" aria-selected="false">سابمت</button>
     </div>
 
     <div class="panel">
@@ -413,6 +415,7 @@ function render() {
   if (!state.rows.length) return noData();
   if (state.view === "teams") { renderTeamsTab(); return; }
   if (state.view === "single") { renderSingleDay(); return; }
+  if (state.view === "submit") { renderSubmitTab(); return; }
   var rows = filtered();
   renderStats(rows);
   if (state.view === "users") renderUsers(rows); else renderDaily(rows);
@@ -663,6 +666,18 @@ function empty() {
     '<div class="note">مفيش نتايج بالفلاتر دي. امسح الفلاتر أو وسّع نطاق التاريخ.</div>';
 }
 
+/* --- سابمت (لسه محتاجة مصدر الداتا) ---
+ * التاب موجود هنا في مكانه في شريط التابات، لكن لسه مبني placeholder بس:
+ * المفروض هيتغذى من نفس شيت الـ Submit (أو أي شيت تاني تحدده)، بعمودين
+ * زي ما طلبت، وعدّاد لكل كيوسي + مجموع، وفلترة بيوم واحد أو رينج تواريخ.
+ * أول ما تبعتلي اسم الشيت وأسماء الأعمدة هظبطها فعليًا هنا. */
+function renderSubmitTab() {
+  document.getElementById("stats").innerHTML = "";
+  document.getElementById("count").textContent = "";
+  document.getElementById("out").innerHTML =
+    '<div class="note">تاب السابمت لسه محتاج مصدر الداتا (اسم الشيت وأسماء العمودين) عشان يتظبط بالأرقام الحقيقية.</div>';
+}
+
 /* ===== تنزيل صورة ===== */
 function downloadImage() {
   var btn = document.getElementById("img");
@@ -714,12 +729,14 @@ document.getElementById("tab-users").onclick = function () { setView("users"); }
 document.getElementById("tab-single").onclick = function () { setView("single"); };
 document.getElementById("tab-daily").onclick = function () { setView("daily"); };
 document.getElementById("tab-teams").onclick = function () { setView("teams"); };
+document.getElementById("tab-submit").onclick = function () { setView("submit"); };
 function setView(v) {
   state.view = v;
   document.getElementById("tab-users").setAttribute("aria-selected", v === "users");
   document.getElementById("tab-single").setAttribute("aria-selected", v === "single");
   document.getElementById("tab-daily").setAttribute("aria-selected", v === "daily");
   document.getElementById("tab-teams").setAttribute("aria-selected", v === "teams");
+  document.getElementById("tab-submit").setAttribute("aria-selected", v === "submit");
   document.getElementById("singleDayField").style.display = (v === "single") ? "flex" : "none";
   if (v === "single" && !document.getElementById("singleDay").value && state.rows.length) {
     var maxDate = state.rows.reduce(function (m, r) { return r.date > m ? r.date : m; }, state.rows[0].date);
