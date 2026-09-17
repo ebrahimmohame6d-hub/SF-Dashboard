@@ -152,17 +152,6 @@
   .tcard .row2 b.good{color:var(--good)}
   .tcard .row2 b.bad{color:var(--bad)}
 
-  .buffer-wrap{margin:0 18px 18px}
-  .buffer-row{display:flex;gap:0;align-items:stretch;background:var(--surface);
-    border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
-  .buffer-list{flex:1 1 auto;display:flex;flex-wrap:wrap;gap:8px;padding:16px;align-content:flex-start}
-  .buffer-chip{display:flex;align-items:center;gap:8px;padding:7px 12px;background:#f4f6fb;
-    border:1px solid var(--line);border-radius:999px;font-size:12.5px}
-  .buffer-chip .n{font-weight:700;color:var(--ink)}
-  .buffer-chip .h{font-weight:900;color:var(--accent-ink);background:#e7ecfb;padding:2px 9px;border-radius:999px}
-  .buffer-label{flex:0 0 120px;display:flex;align-items:center;justify-content:center;
-    background:linear-gradient(160deg,#54607a 0%,#7c8aa8 100%);color:#fff;font-weight:900;font-size:16px}
-
   .single-day-wrap{overflow-x:auto}
   table.single-day-table{width:100%;border-collapse:collapse;font-size:13px}
   .single-day-table thead th{position:sticky;top:0;background:#1c2f66;color:#fff;
@@ -280,7 +269,7 @@ var ROOM_PALETTE = ["#0b2f5c","#123a63","#0e4a78","#152d52","#0a3453","#1f6da3",
 var state = {
   rows: [], target: 5.5, view: "users",
   sortDaily: { key: "date", dir: -1 },
-  open: {}, teams: null, buffer: null
+  open: {}, teams: null
 };
 
 /* ===== JSONP ===== */
@@ -319,7 +308,6 @@ function load() {
     state.rows = res.rows || [];
     state.target = res.target || 5.5;
     state.teams = null;
-    state.buffer = null;
 
     if (res.minDate && document.getElementById("from").min !== res.minDate) {
       document.getElementById("from").min = res.minDate;
@@ -365,7 +353,6 @@ function loadTeams(cb) {
     if (!res || !res.ok) { document.getElementById("out").innerHTML =
       '<div class="note error">' + esc((res && res.error) || "تعذر تحميل بيانات الفرق.") + '</div>'; return; }
     state.teams = res.teams || [];
-    state.buffer = res.buffer || [];
     cb();
   }, function (msg) {
     document.getElementById("out").innerHTML = '<div class="note error">' + esc(msg) + '</div>';
@@ -647,8 +634,7 @@ function renderTeamsTab() {
     return;
   }
   var teams = state.teams;
-  var buffer = state.buffer || [];
-  document.getElementById("count").textContent = teams.length + " فريق" + (buffer.length ? " · " + buffer.length + " في الـ Buffer" : "");
+  document.getElementById("count").textContent = teams.length + " فريق";
   if (!teams.length) {
     document.getElementById("out").innerHTML = '<div class="note">مفيش سجلات لرومات الفرق المعروفة في النطاق الحالي.</div>';
     return;
@@ -668,16 +654,6 @@ function renderTeamsTab() {
       '</div>';
   });
   html += '</div>';
-
-  if (buffer.length) {
-    html += '<div class="buffer-wrap"><div class="buffer-row">' +
-      '<div class="buffer-list">' + buffer.map(function (u) {
-        return '<span class="buffer-chip"><span class="n">' + esc(u.name || u.user) + '</span>' +
-          '<span class="h">' + u.totalHours.toFixed(2) + '</span></span>';
-      }).join("") + '</div>' +
-      '<div class="buffer-label">Buffer</div>' +
-      '</div></div>';
-  }
 
   document.getElementById("out").innerHTML = html;
 }
