@@ -146,6 +146,21 @@
   .tcard .row{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
   .tcard .row b{color:var(--ink);font-weight:700}
 
+  .day-groups{display:flex;flex-direction:column;gap:16px;padding:16px}
+  .day-team{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+  .day-team-head{padding:11px 16px;color:#fff;font-weight:800;font-size:14px;
+    display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+  .day-team-body{display:flex;flex-wrap:wrap;gap:12px;padding:16px;background:var(--surface)}
+  .day-user{display:flex;flex-direction:column;align-items:center;gap:6px;width:98px;text-align:center}
+  .day-user .uname{font-size:11.5px;font-weight:700;color:var(--ink);line-height:1.25;min-height:28px}
+  .day-user .uname.empty{color:var(--muted);font-weight:500}
+  .day-user .uid{font-size:10px;color:var(--muted);direction:ltr}
+  .hour-box{width:66px;height:46px;display:flex;align-items:center;justify-content:center;
+    border-radius:9px;font-weight:900;font-size:15px;transition:transform .12s ease,box-shadow .12s ease}
+  .hour-box.bad{background:var(--bad-bg);color:var(--bad)}
+  .hour-box.ok{background:var(--good-bg);color:var(--good)}
+  .hour-box:hover{transform:translateY(-2px) scale(1.06);box-shadow:0 0 0 3px var(--glow),0 8px 18px rgba(0,0,0,.18);cursor:default}
+
   @media (max-width:640px){
     .stat{flex:1 1 45%}
     h1{font-size:19px}
@@ -184,12 +199,17 @@
         <label for="to">لغاية تاريخ</label>
         <input type="date" id="to">
       </div>
+      <div class="field" id="singleDayField" style="display:none">
+        <label for="singleDay">اختار يوم</label>
+        <input type="date" id="singleDay">
+      </div>
       <label class="check"><input type="checkbox" id="onlyBad"> تحت التارجت بس</label>
       <button id="reset">مسح الفلاتر</button>
     </div>
 
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" id="tab-users" aria-selected="true">كل اليوزرات</button>
+      <button class="tab" role="tab" id="tab-single" aria-selected="false">يوم واحد</button>
       <button class="tab" role="tab" id="tab-daily" aria-selected="false">يوم بيوم</button>
       <button class="tab" role="tab" id="tab-teams" aria-selected="false">متوسط الفرق (QC)</button>
     </div>
@@ -267,6 +287,7 @@ function load() {
 
     if (res.minDate && document.getElementById("from").min !== res.minDate) {
       document.getElementById("from").min = res.minDate;
+      document.getElementById("singleDay").min = res.minDate;
     }
 
     var users = {};
@@ -282,6 +303,12 @@ function load() {
       "آخر تحديث: " + new Date(res.generatedAt).toLocaleString("ar-EG");
 
     if (!state.rows.length) return noData();
+
+    if (state.view === "single" && !document.getElementById("singleDay").value) {
+      var maxDate = state.rows.reduce(function (m, r) { return r.date > m ? r.date : m; }, state.rows[0].date);
+      document.getElementById("singleDay").value = maxDate;
+    }
+
     render();
   }, fail);
 
@@ -361,6 +388,7 @@ function groupUsers(rows) {
 function render() {
   if (!state.rows.length) return noData();
   if (state.view === "teams") { renderTeamsTab(); return; }
+  if (state.view === "single") { renderSingleDay(); return; }
   var rows = filtered();
   renderStats(rows);
   if (state.view === "users") renderUsers(rows); else renderDaily(rows);
@@ -467,6 +495,62 @@ function missedTable(missed) {
     h += '<tr><td class="d">' + m.date + '</td><td class="h">' + m.hours.toFixed(2) + '</td></tr>';
   });
   return h + '</table>';
+}
+
+/* --- يوم واحد: عرض شبكي زي شكل الروستر --- */
+function renderSingleDay() {
+  document.getElementById("stats").innerHTML = "";
+  var day = document.getElementById("singleDay").value;
+  if (!day) {
+    document.getElementById("count").textContent = "";
+    document.getElementById("out").innerHTML = '<div class="note">اختار يوم من فوق عشان تشوف الفريق.</div>';
+    return;
+  }
+
+  var q = document.getElementById("q").value.trim();
+  var rows = state.rows.filter(function (r) { return r.date === day && matchUser(r.user, r.name, q); });
+
+  document.getElementById("count").textContent = rows.length + " يوزر ليوم " + day;
+  if (!rows.length) {
+    document.getElementById("out").innerHTML = '<div class="note">مفيش سجلات في اليوم ده.</div>';
+    return;
+  }
+
+  var groups = {};
+  rows.forEach(function (r) {
+    var key = r.team || "بدون فريق معروف";
+    (groups[key] || (groups[key] = [])).push(r);
+  });
+  var orderedKeys = TEAM_ORDER.filter(function (k) { return groups[k]; })
+    .concat(Object.keys(groups).filter(function (k) { return TEAM_ORDER.indexOf(k) === -1; }));
+
+  var html = '<div class="day-groups">';
+  orderedKeys.forEach(function (key) {
+    var members = groups[key].slice().sort(function (a, b) { return a.hours - b.hours; });
+    var col = TEAM_COLORS[key] || NO_TEAM;
+    var below = members.filter(function (m) { return m.hours < state.target; }).length;
+
+    html += '<div class="day-team">' +
+      '<div class="day-team-head" style="background:linear-gradient(90deg,' + col.c + ' 0%,' + col.c2 + ' 100%)">' +
+      '<span>' + esc(key) + '</span>' +
+      '<span style="font-weight:500;font-size:12.5px">' + members.length + ' يوزر · ' + below + ' تحت التارجت</span>' +
+      '</div><div class="day-team-body">';
+
+    members.forEach(function (m) {
+      var bad = m.hours < state.target;
+      html += '<div class="day-user">' +
+        '<div class="hour-box ' + (bad ? "bad" : "ok") + '" title="' + esc(m.user) + (m.name ? " — " + esc(m.name) : "") + '">' +
+        m.hours.toFixed(2) + '</div>' +
+        '<div class="uname' + (m.name ? "" : " empty") + '">' + (m.name ? esc(m.name) : "بدون اسم") + '</div>' +
+        '<div class="uid">' + esc(m.user) + '</div>' +
+        '</div>';
+    });
+
+    html += '</div></div>';
+  });
+  html += '</div>';
+
+  document.getElementById("out").innerHTML = html;
 }
 
 /* --- يوم بيوم --- */
@@ -586,6 +670,7 @@ function esc(s) {
 ["from", "to"].forEach(function (id) {
   document.getElementById(id).addEventListener("change", load);
 });
+document.getElementById("singleDay").addEventListener("change", render);
 document.getElementById("onlyBad").addEventListener("change", render);
 document.getElementById("q").addEventListener("input", render);
 
@@ -599,13 +684,20 @@ document.getElementById("reset").onclick = function () {
 };
 
 document.getElementById("tab-users").onclick = function () { setView("users"); };
+document.getElementById("tab-single").onclick = function () { setView("single"); };
 document.getElementById("tab-daily").onclick = function () { setView("daily"); };
 document.getElementById("tab-teams").onclick = function () { setView("teams"); };
 function setView(v) {
   state.view = v;
   document.getElementById("tab-users").setAttribute("aria-selected", v === "users");
+  document.getElementById("tab-single").setAttribute("aria-selected", v === "single");
   document.getElementById("tab-daily").setAttribute("aria-selected", v === "daily");
   document.getElementById("tab-teams").setAttribute("aria-selected", v === "teams");
+  document.getElementById("singleDayField").style.display = (v === "single") ? "flex" : "none";
+  if (v === "single" && !document.getElementById("singleDay").value && state.rows.length) {
+    var maxDate = state.rows.reduce(function (m, r) { return r.date > m ? r.date : m; }, state.rows[0].date);
+    document.getElementById("singleDay").value = maxDate;
+  }
   render();
 }
 
