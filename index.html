@@ -137,23 +137,38 @@
   .foot{margin-top:10px;font-size:12px;color:var(--muted);display:flex;
     justify-content:space-between;flex-wrap:wrap;gap:8px}
 
-  .teamcard{display:flex;flex-wrap:wrap;gap:14px;padding:18px}
-  .tcard{flex:1 1 260px;background:var(--surface);border:1px solid var(--line);border-top:5px solid var(--c,var(--accent));
-    border-radius:var(--radius);padding:18px;transition:box-shadow .15s ease,transform .15s ease}
-  .tcard:hover{box-shadow:0 0 0 2px var(--glow),0 12px 26px rgba(43,75,143,.18);transform:translateY(-3px)}
-  .tcard h3{margin:0 0 12px;font-size:16px;font-weight:800;color:var(--c,var(--accent-ink))}
-  .tcard .big{font-size:30px;font-weight:900;color:var(--ink)}
-  .tcard .row{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
-  .tcard .row b{color:var(--ink);font-weight:700}
+  .teamcard{display:flex;flex-wrap:wrap;gap:22px;padding:22px;justify-content:center}
+  .tcard{width:190px;height:190px;flex:0 0 auto;background:var(--surface);
+    border:7px solid var(--c,var(--accent));border-radius:50%;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:14px;transition:box-shadow .15s ease,transform .15s ease}
+  .tcard:hover{box-shadow:0 0 0 4px var(--glow),0 12px 26px rgba(43,75,143,.18);transform:translateY(-3px)}
+  .tcard h3{margin:0 0 6px;font-size:14px;font-weight:800;color:var(--c,var(--accent-ink));line-height:1.2}
+  .tcard .big{font-size:26px;font-weight:900;color:var(--ink);line-height:1.1}
+  .tcard .big small{display:block;font-size:10.5px;color:var(--muted);font-weight:500;margin-top:2px}
+  .tcard .row2{display:flex;gap:12px;margin-top:10px}
+  .tcard .row2 span{font-size:10.5px;color:var(--muted);font-weight:500;text-align:center}
+  .tcard .row2 b{display:block;color:var(--ink);font-weight:900;font-size:14px;margin-top:2px}
+  .tcard .row2 b.good{color:var(--good)}
+  .tcard .row2 b.bad{color:var(--bad)}
 
-  /* ===== يوم واحد: خانات أصغر + مربعات للاسم واليوزر + لون التيم ثابت عند الهوفر ===== */
+  .buffer-wrap{margin:0 18px 18px}
+  .buffer-row{display:flex;gap:0;align-items:stretch;background:var(--surface);
+    border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+  .buffer-list{flex:1 1 auto;display:flex;flex-wrap:wrap;gap:8px;padding:16px;align-content:flex-start}
+  .buffer-chip{display:flex;align-items:center;gap:8px;padding:7px 12px;background:#f4f6fb;
+    border:1px solid var(--line);border-radius:999px;font-size:12.5px}
+  .buffer-chip .n{font-weight:700;color:var(--ink)}
+  .buffer-chip .h{font-weight:900;color:var(--accent-ink);background:#e7ecfb;padding:2px 9px;border-radius:999px}
+  .buffer-label{flex:0 0 120px;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(160deg,#54607a 0%,#7c8aa8 100%);color:#fff;font-weight:900;font-size:16px}
+
   .single-day-wrap{overflow-x:auto}
   table.single-day-table{width:100%;border-collapse:collapse;font-size:13px}
   .single-day-table thead th{position:sticky;top:0;background:#1c2f66;color:#fff;
     font-size:11px;font-weight:800;padding:7px 10px;text-align:center;z-index:2}
   .single-day-table td{padding:6px 10px;border-bottom:1px solid #eef1f7;text-align:center;vertical-align:middle}
 
-  /* الهوفر بيأثر بس على باقي الخانات، خلية التيم لونها ثابت دايمًا (حتى لو حد وقف عليها بالماوس) */
   .single-day-table tbody tr:hover td:not(.sd-team-cell){background:#f4f7ff}
   .sd-team-cell,
   .sd-team-cell:hover,
@@ -265,7 +280,7 @@ var ROOM_PALETTE = ["#0b2f5c","#123a63","#0e4a78","#152d52","#0a3453","#1f6da3",
 var state = {
   rows: [], target: 5.5, view: "users",
   sortDaily: { key: "date", dir: -1 },
-  open: {}, teams: null
+  open: {}, teams: null, buffer: null
 };
 
 /* ===== JSONP ===== */
@@ -304,6 +319,7 @@ function load() {
     state.rows = res.rows || [];
     state.target = res.target || 5.5;
     state.teams = null;
+    state.buffer = null;
 
     if (res.minDate && document.getElementById("from").min !== res.minDate) {
       document.getElementById("from").min = res.minDate;
@@ -349,6 +365,7 @@ function loadTeams(cb) {
     if (!res || !res.ok) { document.getElementById("out").innerHTML =
       '<div class="note error">' + esc((res && res.error) || "تعذر تحميل بيانات الفرق.") + '</div>'; return; }
     state.teams = res.teams || [];
+    state.buffer = res.buffer || [];
     cb();
   }, function (msg) {
     document.getElementById("out").innerHTML = '<div class="note error">' + esc(msg) + '</div>';
@@ -630,7 +647,8 @@ function renderTeamsTab() {
     return;
   }
   var teams = state.teams;
-  document.getElementById("count").textContent = teams.length + " فريق";
+  var buffer = state.buffer || [];
+  document.getElementById("count").textContent = teams.length + " فريق" + (buffer.length ? " · " + buffer.length + " في الـ Buffer" : "");
   if (!teams.length) {
     document.getElementById("out").innerHTML = '<div class="note">مفيش سجلات لرومات الفرق المعروفة في النطاق الحالي.</div>';
     return;
@@ -638,18 +656,29 @@ function renderTeamsTab() {
 
   var html = '<div class="teamcard">';
   teams.forEach(function (t) {
-    var pct = Math.round(t.belowPct * 100);
+    var achievedPct = Math.round(t.achievedPct * 100);
     var col = TEAM_COLORS[t.tl] || NO_TEAM;
     html += '<div class="tcard" style="--c:' + col.c + '">' +
       '<h3>' + esc(t.tl) + '</h3>' +
-      '<div class="big">' + t.avgHours.toFixed(2) + '<span style="font-size:13px;color:var(--muted);font-weight:500"> ساعة/يوم</span></div>' +
-      '<div class="row"><span>عدد الأفراد</span><b>' + t.members + '</b></div>' +
-      '<div class="row"><span>إجمالي السجلات</span><b>' + t.records + '</b></div>' +
-      '<div class="row"><span>إجمالي الساعات</span><b>' + t.totalHours.toFixed(1) + '</b></div>' +
-      '<div class="row"><span>أيام تحت التارجت</span><b style="color:' + (t.below ? 'var(--bad)' : 'var(--good)') + '">' + t.below + ' (' + pct + '%)</b></div>' +
+      '<div class="big">' + t.avgHours.toFixed(2) + '<small>ساعة/يوم</small></div>' +
+      '<div class="row2">' +
+        '<span>عدد الأفراد<b>' + t.members + '</b></span>' +
+        '<span>محقق الساعات<b class="' + (achievedPct >= 70 ? "good" : "bad") + '">' + achievedPct + '%</b></span>' +
+      '</div>' +
       '</div>';
   });
   html += '</div>';
+
+  if (buffer.length) {
+    html += '<div class="buffer-wrap"><div class="buffer-row">' +
+      '<div class="buffer-list">' + buffer.map(function (u) {
+        return '<span class="buffer-chip"><span class="n">' + esc(u.name || u.user) + '</span>' +
+          '<span class="h">' + u.totalHours.toFixed(2) + '</span></span>';
+      }).join("") + '</div>' +
+      '<div class="buffer-label">Buffer</div>' +
+      '</div></div>';
+  }
+
   document.getElementById("out").innerHTML = html;
 }
 
