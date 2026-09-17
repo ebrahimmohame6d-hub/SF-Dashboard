@@ -1,546 +1,620 @@
-/*************************************************************
- * SF Dashboard — Backend + API  (v5)
- *
- * جديد في النسخة دي:
- *  - MIN_DATE: تاريخ أدنى ثابت (25/8/2026) — أي سجل قبله بيتشال
- *    من الأساس قبل أي فلتر تاني، حتى لو حد طلب تاريخ أقدم من الفرونت.
- *  - اسم مؤكد إضافي (Farida Ashraf)
- *
- * بعد اللصق:
- *  Deploy > Manage deployments > تعديل > Version: New version > Deploy
- *************************************************************/
-
-const CFG = {
-  SPREADSHEET_ID: '11LrgJSsffmESWvial0eXhY9zNmvckWoKkNQiqYr7LNc',
-  SOURCE_SHEET: '',
-  ROOM_PREFIX: 'SF',
-  TARGET_HOURS: 5.5,
-  MIN_DATE: '2026-08-25',
-  DASH_SHEET: 'SF Dashboard',
-  MISS_SHEET: 'SF Missed Days',
-  NAMES_SHEET: 'Names'
-};
-
-/** رقم الروم → اسم التيم ليدر، زي ما هو في الروستر اللي بعتهولي */
-const ROOM_TEAM = {
-  1: 'Shimaa Nasser',
-  2: 'Shimaa Nasser',
-  3: 'Eslam Ali',
-  4: 'Eslam Ali',
-  5: 'Mira Samir',
-  6: 'Mira Samir',
-  8: 'Ahmed Adel',
-  9: 'Ahmed Adel',
-  13: 'Eman Gamal'
-};
-
-/**
- * أسماء اتأكدت 100% من: صورة الروستر الواضحة (Room 5 + Room 13)،
- * شيت "Floor 4 Attendance (Morning)"، وشيت "Over Time F4 (Night)".
- * ضيف أي حد جديد هنا، أو الأفضل: ضيف تاب "Names" في الشيت الأساسي
- * بعمودين Email و Name (هيتقرا أوتوماتيك من غير ما تلمس الكود تاني).
- */
-const SEED_NAMES = {
-  // Room 5 "Mira Samir"
-  'me870524@meti.ai': 'Nardeen Saad Ghobriel Sorial',
-  'me912904@meti.ai': 'Sherouk Yasser Moussa Ahmed Balabel',
-  'me997373@meti.ai': 'Meran Mohamed Ahmed Ahmed Rahmo',
-  'me441815@meti.ai': 'Donia Ahmed Mokhtar Abd El Mabdy',
-  'me253175@meti.ai': 'Menattalah Hussien Abdullah Abd El Aziz Farag',
-  'me182253@meti.ai': 'Sohila Nael Mamdouh Ibrahiem',
-  'me856212@meti.ai': 'Omnia Ahmed Abdo Ali Arafa',
-  // Room 13 "Eman Gamal"
-  'me658887@meti.ai': 'Habiba Mohamed Abd El Ghany Ahmed',
-  'me707566@meti.ai': 'Sheren Mohamed Mohamed El Sayed',
-  'me185969@meti.ai': 'Marwa Ali Omar Ali',
-  'me696567@meti.ai': 'Eman Naser Mohamed Abd El Salam',
-  'me784770@meti.ai': 'Rahma Reda Abd El Maaboud Mohamed Abd Rabo',
-  'me488445@meti.ai': 'Mennatallah Mohamed Sherif El Senosy',
-  'me231292@meti.ai': 'Marwa Mohey El Den Mohamed Tolba',
-  'me746470@meti.ai': 'Rana Reda El Sayed Ibrahiem Ahmed El Khabery',
-  'me312034@meti.ai': 'Bassant Gamal Ali Ali',
-  'me612643@meti.ai': 'Mirna Tamer Mahmoud',
-  // من شيت Floor 4 Attendance (Morning)
-  'me195049@meti.ai': 'Gana Khaled Ibrahim',
-  'me580595@meti.ai': 'Shahd Mohammed Sami',
-  'me142400@meti.ai': 'Aya Ehab Yosef',
-  'me430226@meti.ai': 'Toka Mohamed Alhoseny',
-  'me689416@meti.ai': 'Gana Amr Elsayed',
-  'me419477@meti.ai': 'Nardeen Saad Ghorbal',
-  'me188944@meti.ai': 'Menallah Alaa Khalefa',
-  'me437136@meti.ai': 'Zainab Khaled Ibrahim',
-  'me847066@meti.ai': 'Salma Mohammed Reda',
-  'me201805@meti.ai': 'Nouran Nagy Abderabo',
-  'me256406@meti.ai': 'Malak Waled Bayomi',
-  'me300976@meti.ai': 'Yara Adel Galal',
-  'me783437@meti.ai': 'Doha Amr Mahmoud',
-  // من شيت Over Time F4 (Night)
-  'me244583@meti.ai': 'Farida Ashraf'
-};
-
-/* ==================== API ====================
- *  ?action=data              كل الداتا من MIN_DATE لحد آخر يوم
- *  ?action=data&from=&to=    فلترة إضافية (from بيتقفل عند MIN_DATE مهما كان أقدم)
- *  ?action=teams              متوسط الـ 9 تيمات المعروفة بس
- *  ?action=debug               تشخيص الأعمدة
- * ============================================ */
-function doGet(e) {
-  const p = (e && e.parameter) ? e.parameter : {};
-  let payload;
-
-  try {
-    if (p.action === 'debug') {
-      payload = { ok: true, debug: debugScan_() };
-    } else if (p.action === 'teams') {
-      let rows = applyDateFilter_(getSFRows_(), p);
-      payload = {
-        ok: true,
-        target: CFG.TARGET_HOURS,
-        generatedAt: new Date().toISOString(),
-        teams: buildTeams_(rows)
-      };
-    } else {
-      let rows = applyDateFilter_(getSFRows_(), p);
-      payload = {
-        ok: true,
-        target: CFG.TARGET_HOURS,
-        prefix: CFG.ROOM_PREFIX,
-        minDate: CFG.MIN_DATE,
-        generatedAt: new Date().toISOString(),
-        meta: buildMeta_(rows),
-        rows: rows
-      };
-    }
-  } catch (err) {
-    payload = { ok: false, error: String(err && err.message ? err.message : err) };
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SF Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --bg:#eef1f8;
+    --surface:#ffffff;
+    --line:#dde3ee;
+    --ink:#151b2e;
+    --muted:#68728b;
+    --accent:#3457d5;
+    --accent2:#7c3aed;
+    --accent-ink:#22348f;
+    --glow:rgba(52,87,213,.28);
+    --bad:#dc2626;
+    --bad-bg:#fde7e6;
+    --good:#0f9d58;
+    --good-bg:#e2f6ea;
+    --warn:#d97706;
+    --warn-bg:#fef3d9;
+    --radius:8px;
   }
-
-  const json = JSON.stringify(payload);
-  if (p.callback) {
-    return ContentService.createTextOutput(p.callback + '(' + json + ');')
-      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);color:var(--ink);
+    font-family:"Tajawal",system-ui,-apple-system,"Segoe UI",sans-serif;
+    font-size:14.5px;line-height:1.6;font-variant-numeric:tabular-nums;
   }
-  return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
-}
+  .wrap{max-width:1360px;margin:0 auto;padding:22px 18px 64px}
 
-/** بيشيل أي سجل قبل MIN_DATE بشكل نهائي، وبعدين يطبّق from/to لو مبعوتين */
-function applyDateFilter_(rows, p) {
-  rows = rows.filter(function (r) { return r.date >= CFG.MIN_DATE; });
-  if (p.from) rows = rows.filter(function (r) { return r.date >= p.from; });
-  if (p.to)   rows = rows.filter(function (r) { return r.date <= p.to; });
-  return rows;
-}
+  header{display:flex;flex-wrap:wrap;gap:14px;align-items:center;
+    justify-content:space-between;padding:18px 22px;margin-bottom:16px;
+    background:linear-gradient(120deg,#1e2a78 0%,var(--accent) 55%,var(--accent2) 130%);
+    border-radius:var(--radius);color:#fff;box-shadow:0 10px 26px rgba(34,52,143,.28)}
+  h1{font-size:23px;font-weight:900;margin:0;letter-spacing:-.3px}
+  h1 small{display:block;font-size:12.5px;font-weight:500;color:#d9e1fb;margin-top:4px}
+  .head-actions{display:flex;gap:8px;align-items:center}
 
-function buildMeta_(rows) {
-  const rooms = {}, dates = {}, users = {};
-  let named = 0;
-  rows.forEach(function (r) {
-    rooms[r.room] = 1; dates[r.date] = 1; users[r.user] = 1;
-    if (r.name) named++;
-  });
-  const d = Object.keys(dates).sort();
-  return {
-    rooms: Object.keys(rooms).sort(),
-    users: Object.keys(users).length,
-    records: rows.length,
-    namesCoverage: rows.length ? Math.round(named / rows.length * 100) : 0,
-    minDate: d[0] || '',
-    maxDate: d[d.length - 1] || ''
+  button{font-family:inherit;font-size:13.5px;font-weight:700;
+    border:1px solid var(--line);background:var(--surface);color:var(--ink);
+    padding:9px 18px;border-radius:var(--radius);cursor:pointer;
+    transition:box-shadow .15s ease,transform .15s ease,border-color .15s ease}
+  button:hover{border-color:var(--accent);box-shadow:0 0 0 3px var(--glow),0 6px 16px rgba(52,87,213,.2);transform:translateY(-1px)}
+  button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+  button.primary{background:#ffffff;border-color:#ffffff;color:var(--accent-ink)}
+  button.primary:hover{box-shadow:0 0 0 3px rgba(255,255,255,.45),0 6px 16px rgba(0,0,0,.15)}
+  button.ghost{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.4);color:#fff}
+  button.ghost:hover{box-shadow:0 0 0 3px rgba(255,255,255,.28)}
+  button[disabled]{opacity:.5;cursor:default;transform:none;box-shadow:none}
+
+  .stats{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:14px}
+  .stat{flex:1 1 150px;padding:16px 18px;background:var(--surface);
+    border:1px solid var(--line);border-top:4px solid var(--c,var(--accent));
+    border-radius:var(--radius);transition:box-shadow .15s ease,transform .15s ease}
+  .stat:hover{box-shadow:0 0 0 3px var(--glow),0 10px 22px rgba(52,87,213,.16);transform:translateY(-2px)}
+  .stat b{display:block;font-size:28px;font-weight:900;line-height:1.2;color:var(--c,var(--accent))}
+  .stat span{font-size:12px;color:var(--muted);font-weight:500}
+
+  .filters{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;
+    padding:14px 16px;background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);margin-bottom:12px}
+  .field{display:flex;flex-direction:column;gap:4px}
+  .field label{font-size:12px;color:var(--muted);font-weight:500}
+  input{font-family:inherit;font-size:13.5px;color:var(--ink);
+    border:1px solid var(--line);background:var(--surface);
+    padding:8px 10px;border-radius:var(--radius);min-width:165px;font-weight:500;
+    transition:box-shadow .15s ease,border-color .15s ease}
+  input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--glow)}
+  .check{display:flex;align-items:center;gap:6px;font-size:13.5px;padding-bottom:8px;cursor:pointer;font-weight:500}
+  .check input{min-width:auto;width:16px;height:16px;accent-color:var(--bad)}
+
+  .tabs{display:flex;gap:6px;margin-bottom:0}
+  .tab{border:1px solid var(--line);background:var(--surface);
+    padding:11px 22px;font-size:13.5px;font-weight:700;cursor:pointer;
+    border-radius:var(--radius) var(--radius) 0 0;color:var(--muted);
+    border-bottom:none;position:relative;top:1px;
+    transition:box-shadow .15s ease,color .15s ease}
+  .tab:hover{color:var(--accent-ink)}
+  .tab[aria-selected="true"]{background:var(--surface);color:var(--accent-ink);
+    border-color:var(--accent);box-shadow:0 -3px 0 0 var(--accent) inset}
+
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:0 var(--radius) var(--radius) var(--radius);overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{padding:10px 14px;text-align:right;border-bottom:1px solid #eef1f7;white-space:nowrap}
+  thead th{position:sticky;top:0;background:#f3f5fb;font-weight:800;font-size:12px;
+    color:var(--accent-ink);cursor:pointer;user-select:none;border-bottom:2px solid var(--line);z-index:2;
+    transition:color .15s ease,background .15s ease}
+  thead th:hover{color:var(--accent);background:#eaeefb}
+  thead th[data-dir]::after{content:attr(data-dir);margin-inline-start:5px;color:var(--accent2)}
+  tbody tr{transition:box-shadow .12s ease,background .12s ease}
+  tbody tr:hover td{background:#eef3ff !important;box-shadow:inset 0 1px 0 var(--accent),inset 0 -1px 0 var(--accent)}
+  td.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;direction:ltr;text-align:right;color:var(--muted)}
+  td.num{text-align:center}
+  td.hours{font-weight:800;text-align:center}
+  .pill{display:inline-block;padding:3px 11px;border-radius:999px;font-size:12px;font-weight:700}
+  .pill.bad{background:var(--bad-bg);color:var(--bad)}
+  .pill.ok{background:var(--good-bg);color:var(--good)}
+  .team-pill{display:inline-block;padding:3px 11px;border-radius:999px;font-size:12px;font-weight:700;color:#fff}
+  .room-pill{display:inline-block;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:700;
+    background:#eef1fb;color:var(--accent-ink)}
+  tr.bad td.hours{background:var(--bad-bg);color:var(--bad)}
+  tr.ok td.hours{color:var(--good)}
+  .miss{font-weight:800;text-align:center;background:var(--bad-bg);color:var(--bad)}
+  .miss.zero{background:var(--good-bg);color:var(--good)}
+  .bar{height:6px;background:#e8edf5;border-radius:3px;overflow:hidden;min-width:80px}
+  .bar b{display:block;height:100%;background:var(--bad)}
+  .bar.ok b{background:var(--good)}
+  .toggle{border:none;background:none;color:var(--accent);padding:3px 8px;font-size:12.5px;font-weight:700;
+    cursor:pointer;text-decoration:underline;border-radius:4px;transition:box-shadow .12s ease}
+  .toggle:hover{box-shadow:0 0 0 3px var(--glow)}
+  tr.detail td{background:#f9fafd;padding:12px 16px}
+  .missed-table{width:100%;border-collapse:collapse;max-width:360px}
+  .missed-table th{background:none;position:static;font-size:11px;color:var(--muted);
+    text-align:right;padding:4px 8px;border:none;cursor:default}
+  .missed-table td{padding:5px 8px;border-bottom:1px solid #eef1f7;font-size:12.5px;white-space:nowrap}
+  .missed-table td.d{direction:ltr;text-align:right;color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .missed-table td.h{font-weight:800;color:var(--bad);text-align:center}
+  .name{font-weight:800;color:var(--ink)}
+  .name.empty{color:var(--muted);font-weight:500}
+
+  .group-head{background:linear-gradient(90deg,var(--c,var(--accent)) 0%,var(--c2,var(--accent2)) 100%);color:#fff}
+  .group-head td{padding:12px 16px;font-size:14.5px;font-weight:800;border-bottom:none;white-space:normal}
+  .group-head .gsub{font-weight:500;font-size:12px;opacity:.9;margin-inline-start:10px}
+
+  .note{padding:44px 20px;text-align:center;color:var(--muted)}
+  .note.error{color:var(--bad)}
+  .note a{color:var(--accent)}
+  .note code{background:#eef2f5;padding:2px 6px;border-radius:3px;direction:ltr;display:inline-block}
+  .foot{margin-top:10px;font-size:12px;color:var(--muted);display:flex;
+    justify-content:space-between;flex-wrap:wrap;gap:8px}
+
+  .teamcard{display:flex;flex-wrap:wrap;gap:14px;padding:18px}
+  .tcard{flex:1 1 260px;background:var(--surface);border:1px solid var(--line);border-top:5px solid var(--c,var(--accent));
+    border-radius:var(--radius);padding:18px;transition:box-shadow .15s ease,transform .15s ease}
+  .tcard:hover{box-shadow:0 0 0 2px var(--glow),0 12px 26px rgba(52,87,213,.18);transform:translateY(-3px)}
+  .tcard h3{margin:0 0 12px;font-size:16px;font-weight:800;color:var(--c,var(--accent-ink))}
+  .tcard .big{font-size:30px;font-weight:900;color:var(--ink)}
+  .tcard .row{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+  .tcard .row b{color:var(--ink);font-weight:700}
+
+  @media (max-width:640px){
+    .stat{flex:1 1 45%}
+    h1{font-size:19px}
+    input{min-width:135px}
+    header{padding:16px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>SF Dashboard
+      <small id="sub">جاري التحميل…</small>
+    </h1>
+    <div class="head-actions">
+      <button id="img" class="ghost">تنزيل صورة</button>
+      <button id="reload" class="primary">تحديث الداتا</button>
+    </div>
+  </header>
+
+  <div id="capture">
+    <div class="stats" id="stats"></div>
+
+    <div class="filters">
+      <div class="field">
+        <label for="q">دور على يوزر أو اسم (اكتب الأرقام بس)</label>
+        <input type="search" id="q" list="userlist" placeholder="123456" autocomplete="off">
+        <datalist id="userlist"></datalist>
+      </div>
+      <div class="field">
+        <label for="from">من تاريخ</label>
+        <input type="date" id="from">
+      </div>
+      <div class="field">
+        <label for="to">لغاية تاريخ</label>
+        <input type="date" id="to">
+      </div>
+      <label class="check"><input type="checkbox" id="onlyBad"> تحت التارجت بس</label>
+      <button id="reset">مسح الفلاتر</button>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tab-users" aria-selected="true">كل اليوزرات</button>
+      <button class="tab" role="tab" id="tab-daily" aria-selected="false">يوم بيوم</button>
+      <button class="tab" role="tab" id="tab-teams" aria-selected="false">متوسط الفرق (QC)</button>
+    </div>
+
+    <div class="panel">
+      <div id="out"><div class="note">جاري تحميل الداتا من جوجل شيت…</div></div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span id="count"></span>
+    <span id="stamp"></span>
+  </div>
+
+</div>
+
+<script>
+/* ===== إعدادات ===== */
+var API = "https://script.google.com/macros/s/AKfycbzoZuqCeMHQd37WmloJU98nvzIE-6Rb8TIBdJRd5k8ND72rNeka-8Wu9DXn5NSgzqYaXA/exec";
+var DEFAULT_FROM = "2026-08-25";
+
+var TEAM_ORDER = ["Mira Samir","Eman Gamal","Shimaa Nasser","Eslam Ali","Ahmed Adel"];
+var TEAM_COLORS = {
+  "Mira Samir":    { c: "#3457d5", c2: "#5b7ae8" },
+  "Eman Gamal":    { c: "#7c3aed", c2: "#a166f5" },
+  "Shimaa Nasser": { c: "#0891b2", c2: "#22b8d8" },
+  "Eslam Ali":     { c: "#ea580c", c2: "#f5893f" },
+  "Ahmed Adel":    { c: "#db2777", c2: "#ee5a9d" }
+};
+var NO_TEAM = { c: "#64748b", c2: "#94a3b8" };
+var ROOM_PALETTE = ["#3457d5","#7c3aed","#0891b2","#ea580c","#db2777","#0f9d58","#d97706","#4338ca"];
+
+var state = {
+  rows: [], target: 5.5, view: "users",
+  sortDaily: { key: "date", dir: -1 },
+  open: {}, teams: null
+};
+
+/* ===== JSONP ===== */
+function jsonp(url, cb, onErr) {
+  var name = "cb_" + Date.now() + Math.floor(Math.random() * 1e6);
+  var s = document.createElement("script");
+  var done = false;
+  var timer = setTimeout(function () {
+    if (!done) { cleanup(); onErr("الطلب أخد وقت طويل. اتأكد إن الـ deployment شغال ومتاح لأي حد."); }
+  }, 40000);
+  window[name] = function (d) { done = true; clearTimeout(timer); cleanup(); cb(d); };
+  function cleanup() { try { delete window[name]; } catch (e) { window[name] = undefined; } s.remove(); }
+  s.src = url + (url.indexOf("?") === -1 ? "?" : "&") + "callback=" + name + "&_=" + Date.now();
+  s.onerror = function () {
+    if (!done) { clearTimeout(timer); cleanup(); onErr("مش قادر يوصل للويب آب. راجع اللينك وصلاحيات الـ deployment."); }
   };
+  document.body.appendChild(s);
 }
 
-/** رقم الروم من نص الـ Location، مثلاً "SF Floor 4 Room 13" → 13 */
-function roomNumber_(room) {
-  const m = String(room || '').match(/room\s*(\d+)/i);
-  return m ? parseInt(m[1], 10) : null;
+/* ===== تحميل ===== */
+function load() {
+  var btn = document.getElementById("reload");
+  btn.disabled = true; btn.textContent = "بيحمّل…";
+  document.getElementById("out").innerHTML = '<div class="note">جاري تحميل الداتا…</div>';
+
+  var qs = "?action=data";
+  var from = document.getElementById("from").value;
+  var to = document.getElementById("to").value;
+  if (from) qs += "&from=" + encodeURIComponent(from);
+  if (to) qs += "&to=" + encodeURIComponent(to);
+
+  jsonp(API + qs, function (res) {
+    btn.disabled = false; btn.textContent = "تحديث الداتا";
+    if (!res || !res.ok) return fail((res && res.error) || "الويب آب رجّع رد مش مفهوم.");
+
+    state.rows = res.rows || [];
+    state.target = res.target || 5.5;
+    state.teams = null;
+
+    if (res.minDate && document.getElementById("from").min !== res.minDate) {
+      document.getElementById("from").min = res.minDate;
+    }
+
+    var users = {};
+    state.rows.forEach(function (r) { users[r.user] = 1; });
+    document.getElementById("userlist").innerHTML =
+      Object.keys(users).sort().map(function (u) { return '<option value="' + esc(u) + '">'; }).join("");
+
+    var covTxt = (res.meta && res.meta.namesCoverage != null) ? " · الأسماء متاحة لـ " + res.meta.namesCoverage + "% من السجلات" : "";
+    document.getElementById("sub").textContent = state.rows.length
+      ? "التارجت " + state.target + " ساعة · بيانات من " + res.minDate + covTxt
+      : "مفيش داتا من " + (res.minDate || "التاريخ المحدد");
+    document.getElementById("stamp").textContent =
+      "آخر تحديث: " + new Date(res.generatedAt).toLocaleString("ar-EG");
+
+    if (!state.rows.length) return noData();
+    render();
+  }, fail);
+
+  function fail(msg) {
+    btn.disabled = false; btn.textContent = "تحديث الداتا";
+    document.getElementById("out").innerHTML = '<div class="note error">' + esc(msg) + '</div>';
+  }
 }
 
-function teamForRoom_(room) {
-  const n = roomNumber_(room);
-  return (n != null && ROOM_TEAM[n]) ? ROOM_TEAM[n] : '';
+function loadTeams(cb) {
+  var qs = "?action=teams";
+  var from = document.getElementById("from").value;
+  var to = document.getElementById("to").value;
+  if (from) qs += "&from=" + encodeURIComponent(from);
+  if (to) qs += "&to=" + encodeURIComponent(to);
+
+  jsonp(API + qs, function (res) {
+    if (!res || !res.ok) { document.getElementById("out").innerHTML =
+      '<div class="note error">' + esc((res && res.error) || "تعذر تحميل بيانات الفرق.") + '</div>'; return; }
+    state.teams = res.teams || [];
+    cb();
+  }, function (msg) {
+    document.getElementById("out").innerHTML = '<div class="note error">' + esc(msg) + '</div>';
+  });
 }
 
-function buildTeams_(rows) {
-  const m = {};
+function noData() {
+  document.getElementById("stats").innerHTML = "";
+  document.getElementById("out").innerHTML =
+    '<div class="note">مفيش سجلات في النطاق ده.<br><br>' +
+    'الداتا متاحة بس من <code>' + esc(DEFAULT_FROM) + '</code> فما بعد.<br>' +
+    '<a href="' + API + '?action=debug" target="_blank" rel="noopener">فتح صفحة التشخيص</a></div>';
+}
+
+/* ===== فلترة ===== */
+function digits(s) { return String(s).replace(/\D+/g, ""); }
+
+function matchUser(user, name, q) {
+  if (!q) return true;
+  var lower = q.toLowerCase();
+  if (user.toLowerCase().indexOf(lower) > -1) return true;
+  if (name && name.toLowerCase().indexOf(lower) > -1) return true;
+  var qd = digits(q);
+  if (qd && digits(user).indexOf(qd) > -1) return true;
+  return false;
+}
+
+function filtered() {
+  var q = document.getElementById("q").value.trim();
+  var bad = document.getElementById("onlyBad").checked;
+  return state.rows.filter(function (r) {
+    if (!matchUser(r.user, r.name, q)) return false;
+    if (bad && r.hours >= state.target) return false;
+    return true;
+  });
+}
+
+function groupUsers(rows) {
+  var m = {};
   rows.forEach(function (r) {
-    if (!r.team) return; // بس التيمات المعروفة
-    if (!m[r.team]) m[r.team] = { tl: r.team, users: {}, total: 0, sum: 0, below: 0 };
-    const t = m[r.team];
-    t.users[r.user] = 1; t.total++; t.sum += r.hours;
-    if (r.hours < CFG.TARGET_HOURS) t.below++;
+    var u = m[r.user] || (m[r.user] = { user: r.user, name: r.name, team: r.team, rooms: {}, total: 0, sum: 0, missed: [] });
+    u.rooms[r.room] = 1; u.total++; u.sum += r.hours;
+    if (r.hours < state.target) u.missed.push(r);
   });
   return Object.keys(m).map(function (k) {
-    const t = m[k];
-    return {
-      tl: t.tl,
-      members: Object.keys(t.users).length,
-      records: t.total,
-      avgHours: t.total ? t.sum / t.total : 0,
-      totalHours: t.sum,
-      below: t.below,
-      belowPct: t.total ? t.below / t.total : 0
-    };
-  }).sort(function (a, b) { return b.avgHours - a.avgHours; });
-}
-
-/* ==================== فتح الشيت ==================== */
-function book_() {
-  if (CFG.SPREADSHEET_ID) {
-    try { return SpreadsheetApp.openById(CFG.SPREADSHEET_ID); } catch (e) {}
-  }
-  const a = SpreadsheetApp.getActive();
-  if (!a) throw new Error('مش قادر يفتح الجوجل شيت. راجع SPREADSHEET_ID وصلاحيات الحساب.');
-  return a;
-}
-
-function sheetsList_() {
-  const ss = book_();
-  const all = CFG.SOURCE_SHEET ? [ss.getSheetByName(CFG.SOURCE_SHEET)] : ss.getSheets();
-  return all.filter(function (sh) {
-    if (!sh) return false;
-    const n = sh.getName();
-    return n !== CFG.DASH_SHEET && n !== CFG.MISS_SHEET && n !== CFG.NAMES_SHEET;
-  });
-}
-
-/* ==================== أسماء اليوزرات ==================== */
-function getNamesMap_() {
-  const map = {};
-  Object.keys(SEED_NAMES).forEach(function (k) { map[k.toLowerCase()] = SEED_NAMES[k]; });
-
-  const ss = book_();
-  const sh = ss.getSheetByName(CFG.NAMES_SHEET);
-  if (!sh) return map;
-
-  const values = sh.getDataRange().getValues();
-  if (!values.length) return map;
-
-  let emailCol = -1, nameCol = -1;
-  const hdr = values[0].map(function (c) { return norm_(c); });
-  hdr.forEach(function (h, i) {
-    if (emailCol === -1 && (h.indexOf('email') > -1 || h.indexOf('yubikey') > -1)) emailCol = i;
-    if (nameCol === -1 && h.indexOf('name') > -1) nameCol = i;
-  });
-  if (emailCol === -1) emailCol = 0;
-  if (nameCol === -1) nameCol = 1;
-
-  for (let r = 1; r < values.length; r++) {
-    const email = String(values[r][emailCol] || '').trim().toLowerCase();
-    const name = String(values[r][nameCol] || '').trim();
-    if (email && name) map[email] = name;
-  }
-  return map;
-}
-
-/* ==================== التعرف على الأعمدة ==================== */
-function norm_(s) {
-  return String(s == null ? '' : s).toLowerCase().replace(/[^a-z0-9%]+/g, '');
-}
-
-function classify_(h) {
-  if (!h) return null;
-  if (h.indexOf('yubikey') > -1 || h.indexOf('labeler') > -1 ||
-      h.indexOf('email') > -1 || h === 'user' || h === 'username') return 'user';
-  if (h.indexOf('productivehour') > -1 || h.indexOf('activetime') > -1 ||
-      h.indexOf('activehour') > -1 ||
-      (h.indexOf('hour') > -1 && h.indexOf('total') === -1)) return 'hours';
-  if (h.indexOf('location') > -1 || h.indexOf('room') > -1 || h.indexOf('floor') > -1) return 'room';
-  if (h.indexOf('date') > -1 || h.indexOf('day') > -1) return 'date';
-  if (h === 'shift') return 'shift';
-  if (h === 'pc' || h.indexOf('machine') > -1 || h.indexOf('device') > -1) return 'pc';
-  if (h.indexOf('attendance') > -1 || h === 'att') return 'att';
-  if (h.indexOf('teamlead') > -1 || h.indexOf('qtc') > -1 || h === 'tl' || h.indexOf('qc') > -1) return 'tl';
-  return null;
-}
-
-function findHeaderRow_(values) {
-  const limit = Math.min(values.length, 25);
-  for (let r = 0; r < limit; r++) {
-    const map = {};
-    values[r].forEach(function (c, i) {
-      const key = classify_(norm_(c));
-      if (key && map[key] == null) map[key] = i;
-    });
-    if (map.user != null && map.hours != null) return { row: r, map: map };
-  }
-  return { row: -1, map: null };
-}
-
-function guessRoomCol_(values, startRow) {
-  const pref = CFG.ROOM_PREFIX.toUpperCase();
-  const limit = Math.min(values.length, startRow + 300);
-  let width = 0;
-  for (let r = startRow; r < limit; r++) {
-    if (values[r] && values[r].length > width) width = values[r].length;
-  }
-  for (let c = 0; c < width; c++) {
-    for (let r = startRow; r < limit; r++) {
-      const v = String((values[r] || [])[c] || '').trim().toUpperCase();
-      if (v && v.indexOf(pref) === 0) return c;
-    }
-  }
-  return -1;
-}
-
-/* ==================== قراءة الداتا ==================== */
-function getSFRows_() {
-  const out = [];
-  const pref = CFG.ROOM_PREFIX.toUpperCase();
-  const names = getNamesMap_();
-
-  sheetsList_().forEach(function (sh) {
-    const values = sh.getDataRange().getValues();
-    if (!values.length) return;
-
-    const hdr = findHeaderRow_(values);
-    if (hdr.row === -1) return;
-    const idx = hdr.map;
-
-    if (idx.room == null) {
-      const g = guessRoomCol_(values, hdr.row + 1);
-      if (g === -1) return;
-      idx.room = g;
-    }
-
-    for (let r = hdr.row + 1; r < values.length; r++) {
-      const row = values[r];
-      const room = String(row[idx.room] || '').trim();
-      const user = String(row[idx.user] || '').trim();
-      if (!room || !user) continue;
-      if (room.toUpperCase().indexOf(pref) !== 0) continue;
-
-      const hours = toNumber_(row[idx.hours]);
-      if (hours === null) continue;
-
-      out.push({
-        date:  normDate_(row[idx.date]),
-        user:  user,
-        name:  names[user.toLowerCase()] || '',
-        team:  teamForRoom_(room),
-        tl:    idx.tl    != null ? String(row[idx.tl]    || '').trim() : '',
-        shift: idx.shift != null ? String(row[idx.shift] || '').trim() : '',
-        pc:    idx.pc    != null ? String(row[idx.pc]    || '').trim() : '',
-        room:  room,
-        hours: hours,
-        att:   idx.att   != null ? String(row[idx.att]   || '').trim() : ''
-      });
-    }
-  });
-
-  return out;
-}
-
-/* ==================== تشخيص ==================== */
-function debugScan_() {
-  const pref = CFG.ROOM_PREFIX.toUpperCase();
-  return sheetsList_().map(function (sh) {
-    const values = sh.getDataRange().getValues();
-    const hdr = findHeaderRow_(values);
-    const info = {
-      sheet: sh.getName(),
-      rows: values.length,
-      headerRow: hdr.row === -1 ? 'مش لاقي' : (hdr.row + 1),
-      headers: hdr.row === -1 ? (values[0] || []).slice(0, 12).map(String)
-                              : values[hdr.row].map(String),
-      detected: hdr.map || {},
-      sfRows: 0,
-      sampleRooms: []
-    };
-    if (hdr.row !== -1) {
-      const idx = hdr.map;
-      if (idx.room == null) {
-        const g = guessRoomCol_(values, hdr.row + 1);
-        info.roomGuessedCol = g;
-        if (g !== -1) idx.room = g;
-      }
-      if (idx.room != null) {
-        const seen = {};
-        for (let r = hdr.row + 1; r < values.length; r++) {
-          const v = String(values[r][idx.room] || '').trim();
-          if (!v) continue;
-          if (Object.keys(seen).length < 8) seen[v] = 1;
-          if (v.toUpperCase().indexOf(pref) === 0) info.sfRows++;
-        }
-        info.sampleRooms = Object.keys(seen);
-      }
-    }
-    return info;
-  });
-}
-
-/* ==================== أدوات ==================== */
-function toNumber_(v) {
-  if (v === '' || v === null || v === undefined) return null;
-  if (typeof v === 'number') return isNaN(v) ? null : v;
-  const n = parseFloat(String(v).replace(/[^\d.\-]/g, ''));
-  return isNaN(n) ? null : n;
-}
-
-function normDate_(v) {
-  if (v instanceof Date && !isNaN(v)) {
-    return Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
-  }
-  const s = String(v || '').trim();
-  const m = s.match(/(\d{4})\s*[,\-\/]?\s*(\d{1,2})\s*[-\/]\s*(\d{1,2})/);
-  if (m) return m[1] + '-' + pad2_(m[2]) + '-' + pad2_(m[3]);
-  const m2 = s.match(/(\d{1,2})\s*[-\/]\s*(\d{1,2})\s*[-\/]\s*(\d{4})/);
-  if (m2) return m2[3] + '-' + pad2_(m2[2]) + '-' + pad2_(m2[1]);
-  return s;
-}
-function pad2_(x) { return ('0' + x).slice(-2); }
-
-function getOrCreate_(name) {
-  const ss = book_();
-  let sh = ss.getSheetByName(name);
-  if (!sh) sh = ss.insertSheet(name); else sh.clear();
-  return sh;
-}
-
-/* ==================== المنيو ==================== */
-function onOpen() {
-  SpreadsheetApp.getUi()
-    .createMenu('SF Dashboard')
-    .addItem('🔄 تحديث الداشبورد', 'buildAll')
-    .addSeparator()
-    .addItem('📊 الداشبورد بس', 'buildDashboard')
-    .addItem('⚠️ الأيام الناقصة بس', 'buildMissedDays')
-    .addItem('🔍 فحص الأعمدة', 'logDebug')
-    .addToUi();
-}
-
-function logDebug() {
-  const d = debugScan_();
-  Logger.log(JSON.stringify(d, null, 2));
-  SpreadsheetApp.getUi().alert(
-    d.map(function (x) {
-      return x.sheet + ' → هيدر: ' + x.headerRow + ' | صفوف SF: ' + x.sfRows +
-             '\nرومات: ' + (x.sampleRooms.join(', ') || '—');
-    }).join('\n\n')
-  );
-}
-
-function buildAll() {
-  const rows = applyDateFilter_(getSFRows_(), {});
-  if (!rows.length) {
-    SpreadsheetApp.getUi().alert('مفيش داتا لرومات بتبدأ بـ ' + CFG.ROOM_PREFIX +
-      ' من ' + CFG.MIN_DATE + '. جرب "فحص الأعمدة" من المنيو.');
-    return;
-  }
-  writeDashboard_(rows);
-  writeMissed_(rows);
-  book_().toast('تم التحديث ✅ عدد الصفوف: ' + rows.length, 'SF Dashboard', 5);
-}
-
-function buildDashboard() { writeDashboard_(applyDateFilter_(getSFRows_(), {})); }
-function buildMissedDays() { writeMissed_(applyDateFilter_(getSFRows_(), {})); }
-
-/* ==================== شيت 1: الداشبورد ==================== */
-function writeDashboard_(rows) {
-  const sh = getOrCreate_(CFG.DASH_SHEET);
-
-  rows = rows.slice().sort(function (a, b) {
-    if (a.user !== b.user) return a.user < b.user ? -1 : 1;
-    return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0);
-  });
-
-  const below = rows.filter(function (r) { return r.hours < CFG.TARGET_HOURS; }).length;
-  const users = {};
-  rows.forEach(function (r) { users[r.user] = 1; });
-
-  sh.getRange('A1').setValue('SF Dashboard').setFontSize(14).setFontWeight('bold');
-  sh.getRange('A2').setValue(
-    'التارجت: ' + CFG.TARGET_HOURS + ' ساعة  |  من: ' + CFG.MIN_DATE +
-    '  |  عدد اليوزرات: ' + Object.keys(users).length +
-    '  |  إجمالي الصفوف: ' + rows.length + '  |  تحت التارجت: ' + below +
-    '  |  آخر تحديث: ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm')
-  ).setFontColor('#666666');
-
-  const header = ['User', 'Name', 'Team', 'Date', 'Room', 'Shift', 'PC', 'Attendance', 'Active Hours', 'Status'];
-  sh.getRange(4, 1, 1, header.length).setValues([header])
-    .setFontWeight('bold').setBackground('#1f3864').setFontColor('#ffffff')
-    .setHorizontalAlignment('center');
-
-  if (!rows.length) { sh.setFrozenRows(4); return; }
-
-  const data = rows.map(function (r) {
-    return [r.user, r.name || '—', r.team || '—', r.date, r.room, r.shift, r.pc, r.att, r.hours,
-            r.hours < CFG.TARGET_HOURS ? 'Below' : 'OK'];
-  });
-
-  sh.getRange(5, 1, data.length, header.length).setValues(data);
-  sh.getRange(5, 9, data.length, 1).setNumberFormat('0.00');
-
-  const bg = [], fc = [];
-  data.forEach(function (d) {
-    const bad = d[9] === 'Below';
-    bg.push([bad ? '#f4cccc' : '#d9ead3', bad ? '#f4cccc' : '#d9ead3']);
-    fc.push([bad ? '#990000' : '#274e13', bad ? '#990000' : '#274e13']);
-  });
-  sh.getRange(5, 9, data.length, 2).setBackgrounds(bg).setFontColors(fc)
-    .setFontWeight('bold').setHorizontalAlignment('center');
-
-  sh.getRange(5, 1, data.length, header.length)
-    .setBorder(true, true, true, true, true, true, '#cccccc', SpreadsheetApp.BorderStyle.SOLID);
-
-  sh.setFrozenRows(4);
-  sh.getRange(4, 1, data.length + 1, header.length).createFilter();
-  for (let c = 1; c <= header.length; c++) sh.autoResizeColumn(c);
-}
-
-/* ==================== شيت 2: الأيام الناقصة ==================== */
-function writeMissed_(rows) {
-  const sh = getOrCreate_(CFG.MISS_SHEET);
-
-  const byUser = {};
-  rows.forEach(function (r) {
-    if (!byUser[r.user]) byUser[r.user] = { user: r.user, name: r.name, rooms: {}, total: 0, sum: 0, missed: [] };
-    const u = byUser[r.user];
-    u.rooms[r.room] = 1; u.total++; u.sum += r.hours;
-    if (r.hours < CFG.TARGET_HOURS) u.missed.push({ date: r.date, hours: r.hours });
-  });
-
-  const list = Object.keys(byUser).map(function (k) { return byUser[k]; })
-    .filter(function (u) { return u.missed.length > 0; })
-    .sort(function (a, b) { return b.missed.length - a.missed.length; });
-
-  sh.getRange('A1').setValue('اليوزرات اللي محققتش ' + CFG.TARGET_HOURS + ' ساعة')
-    .setFontSize(14).setFontWeight('bold');
-  sh.getRange('A2').setValue('رومات ' + CFG.ROOM_PREFIX + ' من ' + CFG.MIN_DATE + '  |  آخر تحديث: ' +
-    Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm'))
-    .setFontColor('#666666');
-
-  const header = ['User', 'Name', 'Room(s)', 'Missed Days', 'Total Days', 'Miss %', 'Avg Hours', 'Missed Dates (hours)'];
-  sh.getRange(4, 1, 1, header.length).setValues([header])
-    .setFontWeight('bold').setBackground('#7f1d1d').setFontColor('#ffffff')
-    .setHorizontalAlignment('center');
-
-  if (!list.length) {
-    sh.getRange(5, 1).setValue('كل اليوزرات محققة التارجت 👌');
-    sh.setFrozenRows(4);
-    return;
-  }
-
-  const data = list.map(function (u) {
+    var u = m[k];
+    u.avg = u.total ? u.sum / u.total : 0;
+    u.pct = u.total ? u.missed.length / u.total : 0;
+    u.roomText = Object.keys(u.rooms).join("، ");
+    u.missedCount = u.missed.length;
     u.missed.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
-    return [
-      u.user, u.name || '—', Object.keys(u.rooms).join(', '), u.missed.length, u.total,
-      u.total ? (u.missed.length / u.total) : 0,
-      u.total ? (u.sum / u.total) : 0,
-      u.missed.map(function (m) { return m.date + ' (' + m.hours.toFixed(2) + ')'; }).join('  |  ')
-    ];
+    return u;
+  });
+}
+
+/* ===== رسم ===== */
+function render() {
+  if (!state.rows.length) return noData();
+  if (state.view === "teams") { renderTeamsTab(); return; }
+  var rows = filtered();
+  renderStats(rows);
+  if (state.view === "users") renderUsers(rows); else renderDaily(rows);
+}
+
+function renderStats(rows) {
+  var users = {}, badUsers = {}, bad = 0, sum = 0;
+  rows.forEach(function (r) {
+    users[r.user] = 1; sum += r.hours;
+    if (r.hours < state.target) { bad++; badUsers[r.user] = 1; }
+  });
+  document.getElementById("stats").innerHTML =
+    stat(Object.keys(users).length, "يوزر", "#0f9d58") +
+    stat(rows.length, "سجل", "#7c3aed") +
+    stat(bad, "يوم تحت التارجت", "#dc2626") +
+    stat(Object.keys(badUsers).length, "يوزر عنده يوم ناقص", "#d97706") +
+    stat(rows.length ? (sum / rows.length).toFixed(2) : "0.00", "متوسط الساعات", "#3457d5");
+}
+function stat(v, label, color) {
+  return '<div class="stat" style="--c:' + color + '"><b>' + v + '</b><span>' + label + '</span></div>';
+}
+
+function nameCell(name) {
+  return name ? '<span class="name">' + esc(name) + '</span>' : '<span class="name empty">—</span>';
+}
+function roomColor(room) {
+  var h = 0;
+  for (var i = 0; i < room.length; i++) h = (h * 31 + room.charCodeAt(i)) >>> 0;
+  return ROOM_PALETTE[h % ROOM_PALETTE.length];
+}
+function roomCell(room) {
+  return '<span class="room-pill">' + esc(room) + '</span>';
+}
+
+/* --- كل اليوزرات: مجمّعة بالفريق زي شكل الروستر --- */
+function renderUsers(rows) {
+  var list = groupUsers(rows);
+  document.getElementById("count").textContent = list.length + " يوزر معروض";
+  if (!list.length) return empty();
+
+  var groups = {};
+  list.forEach(function (u) {
+    var key = u.team || "بدون فريق معروف";
+    (groups[key] || (groups[key] = [])).push(u);
   });
 
-  sh.getRange(5, 1, data.length, header.length).setValues(data);
-  sh.getRange(5, 6, data.length, 1).setNumberFormat('0.0%');
-  sh.getRange(5, 7, data.length, 1).setNumberFormat('0.00');
-  sh.getRange(5, 4, data.length, 1)
-    .setBackground('#f4cccc').setFontColor('#990000')
-    .setFontWeight('bold').setHorizontalAlignment('center');
-  sh.getRange(5, 8, data.length, 1).setWrap(true);
-  sh.getRange(5, 1, data.length, header.length)
-    .setBorder(true, true, true, true, true, true, '#cccccc', SpreadsheetApp.BorderStyle.SOLID);
+  var orderedKeys = TEAM_ORDER.filter(function (k) { return groups[k]; })
+    .concat(Object.keys(groups).filter(function (k) { return TEAM_ORDER.indexOf(k) === -1; }));
 
-  sh.setFrozenRows(4);
-  for (let c = 1; c <= 7; c++) sh.autoResizeColumn(c);
-  sh.setColumnWidth(8, 520);
+  var html = '<table><tbody>';
+  orderedKeys.forEach(function (key) {
+    var members = groups[key].sort(function (a, b) { return b.missedCount - a.missedCount; });
+    var col = TEAM_COLORS[key] || NO_TEAM;
+    var groupAvg = members.reduce(function (s, u) { return s + u.avg; }, 0) / members.length;
+
+    html += '<tr class="group-head" style="--c:' + col.c + ';--c2:' + col.c2 + '">' +
+      '<td colspan="9">' + esc(key) +
+      '<span class="gsub">' + members.length + ' يوزر · متوسط الفريق ' + groupAvg.toFixed(2) + ' ساعة</span>' +
+      '</td></tr>';
+
+    html += '<tr style="background:#f7f8fc">' +
+      '<th style="position:static">الاسم</th><th style="position:static">اليوزر</th><th style="position:static">الروم</th>' +
+      '<th style="position:static">أيام مسجلة</th><th style="position:static">أيام ناقصة</th>' +
+      '<th style="position:static">نسبة النقص</th><th style="position:static">متوسط الساعات</th>' +
+      '<th style="position:static">إجمالي الساعات</th><th style="position:static">التفاصيل</th></tr>';
+
+    members.forEach(function (u) {
+      var pct = Math.round(u.pct * 100);
+      var open = !!state.open[u.user];
+      html += '<tr>' +
+        '<td>' + nameCell(u.name) + '</td>' +
+        '<td class="mono">' + esc(u.user) + '</td>' +
+        '<td>' + esc(u.roomText) + '</td>' +
+        '<td class="num">' + u.total + '</td>' +
+        '<td class="miss' + (u.missedCount ? '' : ' zero') + '">' + u.missedCount + '</td>' +
+        '<td><div class="bar' + (u.missedCount ? '' : ' ok') + '"><b style="width:' + pct + '%"></b></div>' +
+          '<span style="font-size:12px;color:var(--muted)">' + pct + '%</span></td>' +
+        '<td class="num">' + u.avg.toFixed(2) + '</td>' +
+        '<td class="num">' + u.sum.toFixed(2) + '</td>' +
+        '<td>' + (u.missedCount
+          ? '<button class="toggle" data-u="' + esc(u.user) + '">' + (open ? "إخفاء" : "الأيام الناقصة") + '</button>'
+          : '<span style="color:var(--muted)">—</span>') + '</td>' +
+        '</tr>';
+
+      if (open && u.missedCount) {
+        html += '<tr class="detail"><td colspan="9">' + missedTable(u.missed) + '</td></tr>';
+      }
+    });
+  });
+
+  document.getElementById("out").innerHTML = html + '</tbody></table>';
+  Array.prototype.forEach.call(document.querySelectorAll(".toggle"), function (b) {
+    b.onclick = function () {
+      var u = b.getAttribute("data-u");
+      state.open[u] = !state.open[u];
+      render();
+    };
+  });
 }
+
+function missedTable(missed) {
+  var h = '<table class="missed-table"><tr><th>التاريخ</th><th>الساعات</th></tr>';
+  missed.forEach(function (m) {
+    h += '<tr><td class="d">' + m.date + '</td><td class="h">' + m.hours.toFixed(2) + '</td></tr>';
+  });
+  return h + '</table>';
+}
+
+/* --- يوم بيوم --- */
+function renderDaily(rows) {
+  document.getElementById("count").textContent = rows.length + " سجل معروض";
+  if (!rows.length) return empty();
+
+  var cols = [
+    { k: "name", t: "الاسم" }, { k: "user", t: "اليوزر" }, { k: "date", t: "التاريخ" }, { k: "room", t: "الروم" },
+    { k: "shift", t: "الشيفت" }, { k: "pc", t: "الجهاز" }, { k: "att", t: "الحضور" },
+    { k: "hours", t: "الساعات" }, { k: "hours", t: "الحالة" }
+  ];
+  var s = state.sortDaily;
+  var html = '<table><thead><tr>' + cols.map(function (c) {
+    var dir = s.key === c.k ? (s.dir === 1 ? ' data-dir="↑"' : ' data-dir="↓"') : "";
+    return '<th data-k="' + c.k + '"' + dir + '>' + c.t + '</th>';
+  }).join("") + '</tr></thead><tbody>';
+
+  rows.slice().sort(function (a, b) {
+    var x = a[s.key], y = b[s.key];
+    if (typeof x === "number" && typeof y === "number") return (x - y) * s.dir;
+    x = String(x || ""); y = String(y || "");
+    return x < y ? -s.dir : (x > y ? s.dir : 0);
+  }).forEach(function (r) {
+    var bad = r.hours < state.target;
+    html += '<tr class="' + (bad ? "bad" : "ok") + '">' +
+      '<td>' + nameCell(r.name) + '</td>' +
+      '<td class="mono">' + esc(r.user) + '</td>' +
+      '<td class="mono">' + esc(r.date) + '</td>' +
+      '<td>' + roomCell(r.room) + '</td>' +
+      '<td>' + esc(r.shift) + '</td>' +
+      '<td class="mono">' + esc(r.pc) + '</td>' +
+      '<td>' + esc(r.att || "—") + '</td>' +
+      '<td class="hours">' + r.hours.toFixed(2) + '</td>' +
+      '<td><span class="pill ' + (bad ? "bad" : "ok") + '">' + (bad ? "تحت التارجت" : "محقق") + '</span></td>' +
+      '</tr>';
+  });
+
+  document.getElementById("out").innerHTML = html + '</tbody></table>';
+  Array.prototype.forEach.call(document.querySelectorAll("th[data-k]"), function (el) {
+    el.onclick = function () {
+      var k = el.getAttribute("data-k");
+      if (s.key === k) s.dir = -s.dir; else { s.key = k; s.dir = 1; }
+      render();
+    };
+  });
+}
+
+/* --- متوسط الفرق (QC) --- */
+function renderTeamsTab() {
+  document.getElementById("stats").innerHTML = "";
+  if (state.teams === null) {
+    document.getElementById("out").innerHTML = '<div class="note">جاري تحميل بيانات الفرق…</div>';
+    loadTeams(renderTeamsTab);
+    return;
+  }
+  var teams = state.teams;
+  document.getElementById("count").textContent = teams.length + " فريق";
+  if (!teams.length) {
+    document.getElementById("out").innerHTML = '<div class="note">مفيش سجلات لرومات الفرق المعروفة في النطاق الحالي.</div>';
+    return;
+  }
+
+  var html = '<div class="teamcard">';
+  teams.forEach(function (t) {
+    var pct = Math.round(t.belowPct * 100);
+    var col = TEAM_COLORS[t.tl] || NO_TEAM;
+    html += '<div class="tcard" style="--c:' + col.c + '">' +
+      '<h3>' + esc(t.tl) + '</h3>' +
+      '<div class="big">' + t.avgHours.toFixed(2) + '<span style="font-size:13px;color:var(--muted);font-weight:500"> ساعة/يوم</span></div>' +
+      '<div class="row"><span>عدد الأفراد</span><b>' + t.members + '</b></div>' +
+      '<div class="row"><span>إجمالي السجلات</span><b>' + t.records + '</b></div>' +
+      '<div class="row"><span>إجمالي الساعات</span><b>' + t.totalHours.toFixed(1) + '</b></div>' +
+      '<div class="row"><span>أيام تحت التارجت</span><b style="color:' + (t.below ? 'var(--bad)' : 'var(--good)') + '">' + t.below + ' (' + pct + '%)</b></div>' +
+      '</div>';
+  });
+  html += '</div>';
+  document.getElementById("out").innerHTML = html;
+}
+
+function empty() {
+  document.getElementById("out").innerHTML =
+    '<div class="note">مفيش نتايج بالفلاتر دي. امسح الفلاتر أو وسّع نطاق التاريخ.</div>';
+}
+
+/* ===== تنزيل صورة ===== */
+function downloadImage() {
+  var btn = document.getElementById("img");
+  btn.disabled = true; btn.textContent = "بيجهّز الصورة…";
+
+  html2canvas(document.getElementById("capture"), {
+    backgroundColor: "#eef1f8",
+    scale: 2,
+    useCORS: true
+  }).then(function (canvas) {
+    canvas.toBlob(function (blob) {
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "sf-dashboard-" + new Date().toISOString().slice(0, 10) + ".png";
+      a.click();
+      URL.revokeObjectURL(a.href);
+      btn.disabled = false; btn.textContent = "تنزيل صورة";
+    });
+  }).catch(function () {
+    btn.disabled = false; btn.textContent = "تنزيل صورة";
+    alert("تعذر إنشاء الصورة. جرب تاني.");
+  });
+}
+
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+  });
+}
+
+/* ===== الأحداث ===== */
+["from", "to"].forEach(function (id) {
+  document.getElementById(id).addEventListener("change", load);
+});
+document.getElementById("onlyBad").addEventListener("change", render);
+document.getElementById("q").addEventListener("input", render);
+
+document.getElementById("reset").onclick = function () {
+  document.getElementById("from").value = DEFAULT_FROM;
+  document.getElementById("to").value = "";
+  document.getElementById("q").value = "";
+  document.getElementById("onlyBad").checked = false;
+  state.open = {};
+  load();
+};
+
+document.getElementById("tab-users").onclick = function () { setView("users"); };
+document.getElementById("tab-daily").onclick = function () { setView("daily"); };
+document.getElementById("tab-teams").onclick = function () { setView("teams"); };
+function setView(v) {
+  state.view = v;
+  document.getElementById("tab-users").setAttribute("aria-selected", v === "users");
+  document.getElementById("tab-daily").setAttribute("aria-selected", v === "daily");
+  document.getElementById("tab-teams").setAttribute("aria-selected", v === "teams");
+  render();
+}
+
+document.getElementById("reload").onclick = load;
+document.getElementById("img").onclick = downloadImage;
+
+document.getElementById("from").value = DEFAULT_FROM;
+document.getElementById("from").min = DEFAULT_FROM;
+load();
+</script>
+</body>
+</html>
