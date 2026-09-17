@@ -152,6 +152,40 @@
   .tcard .row2 b.good{color:var(--good)}
   .tcard .row2 b.bad{color:var(--bad)}
 
+  /* ===== سابمت ===== */
+  .submit-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;
+    padding:14px 16px;border-bottom:1px solid var(--line);background:#f9fafd}
+  .submit-toolbar .field label{font-size:12px;color:var(--muted);font-weight:500}
+  .submit-hint{font-size:12px;color:var(--muted);align-self:center;max-width:320px}
+  .submit-body{padding:22px 16px}
+  .submit-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;
+    gap:10px;padding:14px 6px;border-bottom:1px solid #eef1f7}
+  .submit-row:last-child{border-bottom:none}
+  .submit-sign{font-size:20px;font-weight:900;color:var(--muted)}
+  .submit-box{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;
+    min-width:148px;padding:14px 10px;border-radius:12px;color:#fff;
+    background-image:var(--boxgrad,linear-gradient(160deg,var(--accent) 0%,var(--accent2) 100%));
+    box-shadow:0 6px 16px rgba(0,0,0,.12);transition:box-shadow .15s ease,transform .15s ease}
+  .submit-box:hover{box-shadow:0 0 0 3px var(--glow),0 10px 22px rgba(0,0,0,.18);transform:translateY(-2px)}
+  .submit-box .lbl{font-size:11.5px;font-weight:700;opacity:.92;margin-bottom:6px;white-space:nowrap}
+  .submit-box .val{font-size:22px;font-weight:900;line-height:1.1}
+  .submit-box input.submit-input{
+    width:76px;text-align:center;border:none;border-radius:8px;
+    background:rgba(255,255,255,.2);color:#fff;font-family:inherit;
+    font-weight:900;font-size:19px;padding:7px 4px;outline:none}
+  .submit-box input.submit-input::placeholder{color:rgba(255,255,255,.65)}
+  .submit-box input.submit-input:focus{background:rgba(255,255,255,.34);box-shadow:0 0 0 3px rgba(255,255,255,.35)}
+  input[type=number].submit-input::-webkit-outer-spin-button,
+  input[type=number].submit-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  input[type=number].submit-input{-moz-appearance:textfield}
+  .submit-grand{margin:18px auto 4px;max-width:280px}
+  .submit-grand .submit-box{min-width:230px;padding:20px 14px;
+    background-image:linear-gradient(135deg,#5b3aa8 0%,#2b4b8f 100%)}
+  .submit-grand .val{font-size:30px}
+  .submit-savebar{display:flex;justify-content:center;align-items:center;gap:12px;
+    padding:16px;border-top:1px solid var(--line)}
+  .submit-saved-note{font-size:12px;color:var(--good);font-weight:700}
+
   .single-day-wrap{overflow-x:auto}
   table.single-day-table{width:100%;border-collapse:collapse;font-size:13px}
   .single-day-table thead th{position:sticky;top:0;background:#1c2f66;color:#fff;
@@ -268,10 +302,14 @@ var TEAM_COLORS = {
 var NO_TEAM = { c: "#54607a", c2: "#7c8aa8" };
 var ROOM_PALETTE = ["#0b2f5c","#123a63","#0e4a78","#152d52","#0a3453","#1f6da3","#2c5990","#1c5b82"];
 
+/* الكيوسيهات الحقيقية بس (من غير Buffer) — دي اللي بتظهر في تاب سابمت */
+var SUBMIT_TEAMS = TEAM_ORDER.filter(function (t) { return t !== "Buffer"; });
+
 var state = {
   rows: [], target: 5.5, view: "users",
   sortDaily: { key: "date", dir: -1 },
-  open: {}, teams: null
+  open: {}, teams: null,
+  submitRows: null, submitFrom: null, submitTo: null, submitSavedNote: ""
 };
 
 /* ===== JSONP ===== */
@@ -289,6 +327,13 @@ function jsonp(url, cb, onErr) {
     if (!done) { clearTimeout(timer); cleanup(); onErr("مش قادر يوصل للويب آب. راجع اللينك وصلاحيات الـ deployment."); }
   };
   document.body.appendChild(s);
+}
+
+/* ===== تاريخ اليوم بالتوقيت المحلي (yyyy-mm-dd) ===== */
+function todayStr() {
+  var d = new Date();
+  var local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
 }
 
 /* ===== تحميل ===== */
@@ -328,10 +373,10 @@ function load() {
     document.getElementById("stamp").textContent =
       "آخر تحديث: " + new Date(res.generatedAt).toLocaleString("ar-EG");
 
-    if (!state.rows.length) return noData();
+    if (!state.rows.length && state.view !== "submit") return noData();
 
     if (state.view === "single" && !document.getElementById("singleDay").value) {
-      var maxDate = state.rows.reduce(function (m, r) { return r.date > m ? r.date : m; }, state.rows[0].date);
+      var maxDate = state.rows.reduce(function (m, r) { return r.date > m ? r.date : m; }, state.rows[0] ? state.rows[0].date : DEFAULT_FROM);
       document.getElementById("singleDay").value = maxDate;
     }
 
@@ -355,6 +400,21 @@ function loadTeams(cb) {
     if (!res || !res.ok) { document.getElementById("out").innerHTML =
       '<div class="note error">' + esc((res && res.error) || "تعذر تحميل بيانات الفرق.") + '</div>'; return; }
     state.teams = res.teams || [];
+    cb();
+  }, function (msg) {
+    document.getElementById("out").innerHTML = '<div class="note error">' + esc(msg) + '</div>';
+  });
+}
+
+/* ===== سابمت: تحميل الداتا المحفوظة من الشيت ===== */
+function loadSubmitData(cb) {
+  jsonp(API + "?action=submitData", function (res) {
+    if (!res || !res.ok) {
+      document.getElementById("out").innerHTML =
+        '<div class="note error">' + esc((res && res.error) || "تعذر تحميل بيانات السابمت.") + '</div>';
+      return;
+    }
+    state.submitRows = res.rows || [];
     cb();
   }, function (msg) {
     document.getElementById("out").innerHTML = '<div class="note error">' + esc(msg) + '</div>';
@@ -412,10 +472,10 @@ function groupUsers(rows) {
 
 /* ===== رسم ===== */
 function render() {
+  if (state.view === "submit") { renderSubmitTab(); return; }
   if (!state.rows.length) return noData();
   if (state.view === "teams") { renderTeamsTab(); return; }
   if (state.view === "single") { renderSingleDay(); return; }
-  if (state.view === "submit") { renderSubmitTab(); return; }
   var rows = filtered();
   renderStats(rows);
   if (state.view === "users") renderUsers(rows); else renderDaily(rows);
@@ -666,16 +726,138 @@ function empty() {
     '<div class="note">مفيش نتايج بالفلاتر دي. امسح الفلاتر أو وسّع نطاق التاريخ.</div>';
 }
 
-/* --- سابمت (لسه محتاجة مصدر الداتا) ---
- * التاب موجود هنا في مكانه في شريط التابات، لكن لسه مبني placeholder بس:
- * المفروض هيتغذى من نفس شيت الـ Submit (أو أي شيت تاني تحدده)، بعمودين
- * زي ما طلبت، وعدّاد لكل كيوسي + مجموع، وفلترة بيوم واحد أو رينج تواريخ.
- * أول ما تبعتلي اسم الشيت وأسماء الأعمدة هظبطها فعليًا هنا. */
+/* --- سابمت: مربع لكل كيوسي + عمودين FP/QA، حفظ يومي، وإجمالي لأي مدى تواريخ --- */
+function sumSubmit_(team, from, to) {
+  var fp = 0, qa = 0;
+  state.submitRows.forEach(function (r) {
+    if (r.team !== team) return;
+    if (r.date < from || r.date > to) return;
+    fp += r.fp; qa += r.qa;
+  });
+  return { fp: fp, qa: qa, total: fp + qa };
+}
+
 function renderSubmitTab() {
   document.getElementById("stats").innerHTML = "";
   document.getElementById("count").textContent = "";
-  document.getElementById("out").innerHTML =
-    '<div class="note">تاب السابمت لسه محتاج مصدر الداتا (اسم الشيت وأسماء العمودين) عشان يتظبط بالأرقام الحقيقية.</div>';
+
+  if (state.submitRows === null) {
+    document.getElementById("out").innerHTML = '<div class="note">جاري تحميل بيانات السابمت…</div>';
+    loadSubmitData(renderSubmitTab);
+    return;
+  }
+
+  if (!state.submitFrom) state.submitFrom = todayStr();
+  if (!state.submitTo) state.submitTo = state.submitFrom;
+
+  var from = state.submitFrom, to = state.submitTo;
+  var isSingleDay = (from === to);
+
+  var html = '<div class="submit-toolbar">' +
+    '<div class="field"><label for="subFrom">من تاريخ</label><input type="date" id="subFrom" value="' + esc(from) + '"></div>' +
+    '<div class="field"><label for="subTo">لغاية تاريخ</label><input type="date" id="subTo" value="' + esc(to) + '"></div>' +
+    '<button id="subToday">النهاردة</button>' +
+    '<button id="subRefresh">تحديث</button>' +
+    '<span class="submit-hint">' + (isSingleDay
+      ? "اليوم ده تقدر تدخل أو تعدّل أرقام السابمت وتحفظها."
+      : "عرض إجمالي للمدى المحدد (مش قابل للتعديل). اختار نفس اليوم في الحقلين عشان تدخل أرقام.") +
+    '</span></div>';
+
+  html += '<div class="submit-body">';
+
+  var grandFp = 0, grandQa = 0;
+
+  SUBMIT_TEAMS.forEach(function (team) {
+    var col = TEAM_COLORS[team] || NO_TEAM;
+    var grad = "linear-gradient(160deg," + col.c + " 0%," + col.c2 + " 100%)";
+    var s = sumSubmit_(team, from, to);
+    grandFp += s.fp; grandQa += s.qa;
+
+    html += '<div class="submit-row">';
+    html += '<div class="submit-box" style="--boxgrad:' + grad + '"><span class="lbl">' + esc(team) + '</span>' +
+      '<span class="val">' + s.total + '</span></div>';
+    html += '<span class="submit-sign">=</span>';
+
+    if (isSingleDay) {
+      html += '<div class="submit-box" style="--boxgrad:' + grad + '"><span class="lbl">FP</span>' +
+        '<input type="number" min="0" step="1" class="submit-input" data-team="' + esc(team) + '" data-field="fp" value="' + (s.fp || "") + '" placeholder="0"></div>';
+      html += '<span class="submit-sign">+</span>';
+      html += '<div class="submit-box" style="--boxgrad:' + grad + '"><span class="lbl">QA</span>' +
+        '<input type="number" min="0" step="1" class="submit-input" data-team="' + esc(team) + '" data-field="qa" value="' + (s.qa || "") + '" placeholder="0"></div>';
+    } else {
+      html += '<div class="submit-box" style="--boxgrad:' + grad + '"><span class="lbl">FP</span><span class="val">' + s.fp + '</span></div>';
+      html += '<span class="submit-sign">+</span>';
+      html += '<div class="submit-box" style="--boxgrad:' + grad + '"><span class="lbl">QA</span><span class="val">' + s.qa + '</span></div>';
+    }
+    html += '</div>';
+  });
+
+  html += '<div class="submit-grand"><div class="submit-box">' +
+    '<span class="lbl">إجمالي كل الكيوسيهات (' + (isSingleDay ? "اليوم ده" : "المدى المحدد") + ')</span>' +
+    '<span class="val">' + (grandFp + grandQa) + '</span></div></div>';
+
+  html += '</div>';
+
+  if (isSingleDay) {
+    html += '<div class="submit-savebar"><button id="subSave" class="primary">حفظ أرقام السابمت</button>' +
+      '<span class="submit-saved-note">' + esc(state.submitSavedNote || "") + '</span></div>';
+  }
+
+  document.getElementById("out").innerHTML = html;
+
+  document.getElementById("subFrom").onchange = function () {
+    state.submitFrom = this.value || todayStr();
+    state.submitSavedNote = "";
+    render();
+  };
+  document.getElementById("subTo").onchange = function () {
+    state.submitTo = this.value || state.submitFrom;
+    state.submitSavedNote = "";
+    render();
+  };
+  document.getElementById("subToday").onclick = function () {
+    state.submitFrom = todayStr(); state.submitTo = state.submitFrom;
+    state.submitSavedNote = "";
+    render();
+  };
+  document.getElementById("subRefresh").onclick = function () {
+    state.submitRows = null; state.submitSavedNote = "";
+    render();
+  };
+
+  var saveBtn = document.getElementById("subSave");
+  if (saveBtn) saveBtn.onclick = function () { saveSubmitData(from); };
+}
+
+function saveSubmitData(date) {
+  var btn = document.getElementById("subSave");
+  btn.disabled = true; btn.textContent = "بيحفظ…";
+
+  var items = SUBMIT_TEAMS.map(function (team) {
+    var fpEl = document.querySelector('input[data-team="' + team + '"][data-field="fp"]');
+    var qaEl = document.querySelector('input[data-team="' + team + '"][data-field="qa"]');
+    return {
+      team: team,
+      fp: fpEl && fpEl.value !== "" ? Number(fpEl.value) : 0,
+      qa: qaEl && qaEl.value !== "" ? Number(qaEl.value) : 0
+    };
+  });
+
+  var qs = "?action=submitSave&date=" + encodeURIComponent(date) + "&data=" + encodeURIComponent(JSON.stringify(items));
+
+  jsonp(API + qs, function (res) {
+    if (!res || !res.ok) {
+      alert((res && res.error) || "تعذر حفظ البيانات.");
+      btn.disabled = false; btn.textContent = "حفظ أرقام السابمت";
+      return;
+    }
+    state.submitRows = null;
+    state.submitSavedNote = "اتحفظ ✓ " + new Date().toLocaleTimeString("ar-EG");
+    loadSubmitData(function () { render(); });
+  }, function (msg) {
+    alert(msg);
+    btn.disabled = false; btn.textContent = "حفظ أرقام السابمت";
+  });
 }
 
 /* ===== تنزيل صورة ===== */
