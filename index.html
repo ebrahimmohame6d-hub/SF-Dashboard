@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SF Dashboard v3</title>
+<title>SF Dashboard v4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
@@ -96,7 +96,7 @@
   thead th:hover{color:var(--accent);background:#eaeefb}
   thead th[data-dir]::after{content:attr(data-dir);margin-inline-start:5px;color:var(--accent2)}
   tbody tr{transition:box-shadow .12s ease,background .12s ease}
-  tbody tr:hover td{background:#eef3ff !important;box-shadow:inset 0 1px 0 var(--accent),inset 0 -1px 0 var(--accent)}
+  tbody tr:hover td:not(.sd-team-cell){background:#eef3ff !important;box-shadow:inset 0 1px 0 var(--accent),inset 0 -1px 0 var(--accent)}
   td.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;direction:ltr;text-align:right;color:var(--muted)}
   td.num{text-align:center}
   td.hours{font-weight:800;text-align:center}
@@ -153,15 +153,20 @@
     font-size:11px;font-weight:800;padding:7px 10px;text-align:center;z-index:2}
   .single-day-table td{padding:6px 10px;border-bottom:1px solid #eef1f7;text-align:center;vertical-align:middle}
 
-  /* الهوفر بيأثر بس على باقي الخانات، خلية التيم لونها ثابت دايمًا */
+  /* الهوفر بيأثر بس على باقي الخانات، خلية التيم لونها ثابت دايمًا (حتى لو حد وقف عليها بالماوس) */
   .single-day-table tbody tr:hover td:not(.sd-team-cell){background:#f4f7ff}
   .sd-team-cell,
-  .sd-team-cell:hover{
-    color:#fff;font-weight:900;font-size:14px;text-align:center;vertical-align:middle;
-    border-bottom:3px solid rgba(255,255,255,.35);line-height:1.4;min-width:120px;
-    background-image:var(--team-grad);background-color:var(--team-c1)
+  .sd-team-cell:hover,
+  .sd-team-cell:focus,
+  tr:hover .sd-team-cell{
+    text-align:center;vertical-align:middle;
+    border-bottom:3px solid rgba(255,255,255,.35);min-width:130px;padding:10px 8px;
+    background-image:var(--team-grad) !important;background-color:var(--team-c1) !important
   }
-  .sd-team-cell .tsub{display:block;font-size:10.5px;font-weight:600;opacity:.9;margin-top:3px}
+  .sd-team-box{display:inline-block;padding:9px 16px;border-radius:9px;
+    background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);
+    color:#fff;font-weight:900;font-size:14px;line-height:1.4}
+  .sd-team-cell .tsub{display:block;font-size:10.5px;font-weight:600;opacity:.92;margin-top:3px}
 
   .sd-box{display:inline-block;padding:5px 11px;border-radius:7px;background:#eef1fb}
   .sd-name{font-weight:800;font-size:12.5px;color:var(--ink)}
@@ -244,16 +249,18 @@
 var API = "https://script.google.com/macros/s/AKfycbzoZuqCeMHQd37WmloJU98nvzIE-6Rb8TIBdJRd5k8ND72rNeka-8Wu9DXn5NSgzqYaXA/exec";
 var DEFAULT_FROM = "2026-08-25";
 
-var TEAM_ORDER = ["Mira Samir","Eman Gamal","Shimaa Nasser","Eslam Ali","Ahmed Adel"];
+var TEAM_ORDER = ["Mira Samir","Eman Gamal","Shimaa Nasser","Eslam Ali","Ahmed Adel","Buffer"];
+/* كل الكيوسيهات بلون أزرق غامق مختلف، من غير برتقالي أو موف */
 var TEAM_COLORS = {
-  "Mira Samir":    { c: "#2b4b8f", c2: "#4a6bb5" },
-  "Eman Gamal":    { c: "#5b3aa8", c2: "#7c5cc4" },
-  "Shimaa Nasser": { c: "#0b6e80", c2: "#1998ae" },
-  "Eslam Ali":     { c: "#b3480f", c2: "#d06a2f" },
-  "Ahmed Adel":    { c: "#a81f63", c2: "#c94b87" }
+  "Mira Samir":    { c: "#0b2f5c", c2: "#1f4e88" },
+  "Eman Gamal":    { c: "#123a63", c2: "#2c5990" },
+  "Shimaa Nasser": { c: "#0e4a78", c2: "#1f6da3" },
+  "Ahmed Adel":    { c: "#152d52", c2: "#2b4a7a" },
+  "Eslam Ali":     { c: "#0a3453", c2: "#1c5b82" },
+  "Buffer":        { c: "#54607a", c2: "#7c8aa8" }
 };
 var NO_TEAM = { c: "#54607a", c2: "#7c8aa8" };
-var ROOM_PALETTE = ["#2b4b8f","#5b3aa8","#0b6e80","#b3480f","#a81f63","#0f9d58","#b5820a","#39348f"];
+var ROOM_PALETTE = ["#0b2f5c","#123a63","#0e4a78","#152d52","#0a3453","#1f6da3","#2c5990","#1c5b82"];
 
 var state = {
   rows: [], target: 5.5, view: "users",
@@ -556,7 +563,8 @@ function renderSingleDay() {
       if (i === 0) {
         html += '<td class="sd-team-cell" rowspan="' + members.length + '" ' +
           'style="--team-grad:' + teamGrad + ';--team-c1:' + col.c + '">' +
-          esc(key) + '<span class="tsub">' + members.length + ' يوزر · ' + below + ' تحت التارجت</span></td>';
+          '<span class="sd-team-box">' + esc(key) +
+          '<span class="tsub">' + members.length + ' يوزر · ' + below + ' تحت التارجت</span></span></td>';
       }
       html += '</tr>';
     });
