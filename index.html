@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SF Dashboard v2</title>
+<title>SF Dashboard v3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
@@ -15,10 +15,10 @@
     --line:#dde3ee;
     --ink:#151b2e;
     --muted:#68728b;
-    --accent:#3457d5;
+    --accent:#2b4b8f;
     --accent2:#7c3aed;
-    --accent-ink:#22348f;
-    --glow:rgba(52,87,213,.28);
+    --accent-ink:#1c2f66;
+    --glow:rgba(43,75,143,.24);
     --bad:#dc2626;
     --bad-bg:#fde7e6;
     --good:#0f9d58;
@@ -38,8 +38,8 @@
 
   header{display:flex;flex-wrap:wrap;gap:14px;align-items:center;
     justify-content:space-between;padding:18px 22px;margin-bottom:16px;
-    background:linear-gradient(120deg,#1e2a78 0%,var(--accent) 55%,var(--accent2) 130%);
-    border-radius:var(--radius);color:#fff;box-shadow:0 10px 26px rgba(34,52,143,.28)}
+    background:linear-gradient(120deg,#111a44 0%,var(--accent) 55%,var(--accent2) 130%);
+    border-radius:var(--radius);color:#fff;box-shadow:0 10px 26px rgba(17,26,68,.32)}
   h1{font-size:23px;font-weight:900;margin:0;letter-spacing:-.3px}
   h1 small{display:block;font-size:12.5px;font-weight:500;color:#d9e1fb;margin-top:4px}
   .head-actions{display:flex;gap:8px;align-items:center}
@@ -48,7 +48,7 @@
     border:1px solid var(--line);background:var(--surface);color:var(--ink);
     padding:9px 18px;border-radius:var(--radius);cursor:pointer;
     transition:box-shadow .15s ease,transform .15s ease,border-color .15s ease}
-  button:hover{border-color:var(--accent);box-shadow:0 0 0 3px var(--glow),0 6px 16px rgba(52,87,213,.2);transform:translateY(-1px)}
+  button:hover{border-color:var(--accent);box-shadow:0 0 0 3px var(--glow),0 6px 16px rgba(43,75,143,.2);transform:translateY(-1px)}
   button:focus-visible{outline:2px solid #fff;outline-offset:2px}
   button.primary{background:#ffffff;border-color:#ffffff;color:var(--accent-ink)}
   button.primary:hover{box-shadow:0 0 0 3px rgba(255,255,255,.45),0 6px 16px rgba(0,0,0,.15)}
@@ -60,7 +60,7 @@
   .stat{flex:1 1 150px;padding:16px 18px;background:var(--surface);
     border:1px solid var(--line);border-top:4px solid var(--c,var(--accent));
     border-radius:var(--radius);transition:box-shadow .15s ease,transform .15s ease}
-  .stat:hover{box-shadow:0 0 0 3px var(--glow),0 10px 22px rgba(52,87,213,.16);transform:translateY(-2px)}
+  .stat:hover{box-shadow:0 0 0 3px var(--glow),0 10px 22px rgba(43,75,143,.16);transform:translateY(-2px)}
   .stat b{display:block;font-size:28px;font-weight:900;line-height:1.2;color:var(--c,var(--accent))}
   .stat span{font-size:12px;color:var(--muted);font-weight:500}
 
@@ -140,26 +140,36 @@
   .teamcard{display:flex;flex-wrap:wrap;gap:14px;padding:18px}
   .tcard{flex:1 1 260px;background:var(--surface);border:1px solid var(--line);border-top:5px solid var(--c,var(--accent));
     border-radius:var(--radius);padding:18px;transition:box-shadow .15s ease,transform .15s ease}
-  .tcard:hover{box-shadow:0 0 0 2px var(--glow),0 12px 26px rgba(52,87,213,.18);transform:translateY(-3px)}
+  .tcard:hover{box-shadow:0 0 0 2px var(--glow),0 12px 26px rgba(43,75,143,.18);transform:translateY(-3px)}
   .tcard h3{margin:0 0 12px;font-size:16px;font-weight:800;color:var(--c,var(--accent-ink))}
   .tcard .big{font-size:30px;font-weight:900;color:var(--ink)}
   .tcard .row{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
   .tcard .row b{color:var(--ink);font-weight:700}
 
+  /* ===== يوم واحد: خانات أصغر + مربعات للاسم واليوزر + لون التيم ثابت عند الهوفر ===== */
   .single-day-wrap{overflow-x:auto}
-  table.single-day-table{width:100%;border-collapse:collapse;font-size:14.5px}
-  .single-day-table thead th{position:sticky;top:0;background:#1f3864;color:#fff;
-    font-size:12.5px;font-weight:800;padding:11px 14px;text-align:center;z-index:2}
-  .single-day-table td{padding:12px 14px;border-bottom:1px solid #eef1f7;text-align:center;vertical-align:middle}
+  table.single-day-table{width:100%;border-collapse:collapse;font-size:13px}
+  .single-day-table thead th{position:sticky;top:0;background:#1c2f66;color:#fff;
+    font-size:11px;font-weight:800;padding:7px 10px;text-align:center;z-index:2}
+  .single-day-table td{padding:6px 10px;border-bottom:1px solid #eef1f7;text-align:center;vertical-align:middle}
+
+  /* الهوفر بيأثر بس على باقي الخانات، خلية التيم لونها ثابت دايمًا */
   .single-day-table tbody tr:hover td:not(.sd-team-cell){background:#f4f7ff}
-  .sd-team-cell{color:#fff;font-weight:900;font-size:18px;text-align:center;vertical-align:middle;
-    border-bottom:3px solid rgba(255,255,255,.35);line-height:1.5;min-width:150px}
-  .sd-team-cell .tsub{display:block;font-size:12px;font-weight:600;opacity:.9;margin-top:4px}
-  .sd-name{font-weight:800;font-size:15px;color:var(--ink)}
+  .sd-team-cell,
+  .sd-team-cell:hover{
+    color:#fff;font-weight:900;font-size:14px;text-align:center;vertical-align:middle;
+    border-bottom:3px solid rgba(255,255,255,.35);line-height:1.4;min-width:120px;
+    background-image:var(--team-grad);background-color:var(--team-c1)
+  }
+  .sd-team-cell .tsub{display:block;font-size:10.5px;font-weight:600;opacity:.9;margin-top:3px}
+
+  .sd-box{display:inline-block;padding:5px 11px;border-radius:7px;background:#eef1fb}
+  .sd-name{font-weight:800;font-size:12.5px;color:var(--ink)}
   .sd-name.empty{color:var(--muted);font-weight:600}
-  .sd-uid{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;direction:ltr;color:var(--muted);font-size:13px}
-  .sd-hours{display:inline-block;min-width:74px;padding:9px 14px;border-radius:9px;
-    font-weight:900;font-size:19px;transition:transform .12s ease,box-shadow .12s ease}
+  .sd-uid{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;direction:ltr;color:var(--muted);font-size:11px}
+
+  .sd-hours{display:inline-block;min-width:56px;padding:5px 10px;border-radius:7px;
+    font-weight:900;font-size:14px;transition:transform .12s ease,box-shadow .12s ease}
   .sd-hours.bad{background:var(--bad-bg);color:var(--bad)}
   .sd-hours.ok{background:var(--good-bg);color:var(--good)}
   .sd-hours:hover{transform:scale(1.08);box-shadow:0 0 0 3px var(--glow),0 8px 18px rgba(0,0,0,.18);cursor:default}
@@ -236,14 +246,14 @@ var DEFAULT_FROM = "2026-08-25";
 
 var TEAM_ORDER = ["Mira Samir","Eman Gamal","Shimaa Nasser","Eslam Ali","Ahmed Adel"];
 var TEAM_COLORS = {
-  "Mira Samir":    { c: "#3457d5", c2: "#5b7ae8" },
-  "Eman Gamal":    { c: "#7c3aed", c2: "#a166f5" },
-  "Shimaa Nasser": { c: "#0891b2", c2: "#22b8d8" },
-  "Eslam Ali":     { c: "#ea580c", c2: "#f5893f" },
-  "Ahmed Adel":    { c: "#db2777", c2: "#ee5a9d" }
+  "Mira Samir":    { c: "#2b4b8f", c2: "#4a6bb5" },
+  "Eman Gamal":    { c: "#5b3aa8", c2: "#7c5cc4" },
+  "Shimaa Nasser": { c: "#0b6e80", c2: "#1998ae" },
+  "Eslam Ali":     { c: "#b3480f", c2: "#d06a2f" },
+  "Ahmed Adel":    { c: "#a81f63", c2: "#c94b87" }
 };
-var NO_TEAM = { c: "#64748b", c2: "#94a3b8" };
-var ROOM_PALETTE = ["#3457d5","#7c3aed","#0891b2","#ea580c","#db2777","#0f9d58","#d97706","#4338ca"];
+var NO_TEAM = { c: "#54607a", c2: "#7c8aa8" };
+var ROOM_PALETTE = ["#2b4b8f","#5b3aa8","#0b6e80","#b3480f","#a81f63","#0f9d58","#b5820a","#39348f"];
 
 var state = {
   rows: [], target: 5.5, view: "users",
@@ -405,10 +415,10 @@ function renderStats(rows) {
   });
   document.getElementById("stats").innerHTML =
     stat(Object.keys(users).length, "يوزر", "#0f9d58") +
-    stat(rows.length, "سجل", "#7c3aed") +
+    stat(rows.length, "سجل", "#5b3aa8") +
     stat(bad, "يوم تحت التارجت", "#dc2626") +
-    stat(Object.keys(badUsers).length, "يوزر عنده يوم ناقص", "#d97706") +
-    stat(rows.length ? (sum / rows.length).toFixed(2) : "0.00", "متوسط الساعات", "#3457d5");
+    stat(Object.keys(badUsers).length, "يوزر عنده يوم ناقص", "#b5820a") +
+    stat(rows.length ? (sum / rows.length).toFixed(2) : "0.00", "متوسط الساعات", "#2b4b8f");
 }
 function stat(v, label, color) {
   return '<div class="stat" style="--c:' + color + '"><b>' + v + '</b><span>' + label + '</span></div>';
@@ -535,16 +545,17 @@ function renderSingleDay() {
     var members = groups[key].slice().sort(function (a, b) { return a.hours - b.hours; });
     var col = TEAM_COLORS[key] || NO_TEAM;
     var below = members.filter(function (m) { return m.hours < state.target; }).length;
+    var teamGrad = 'linear-gradient(160deg,' + col.c + ' 0%,' + col.c2 + ' 100%)';
 
     members.forEach(function (m, i) {
       var bad = m.hours < state.target;
       html += '<tr>' +
         '<td><span class="sd-hours ' + (bad ? "bad" : "ok") + '">' + m.hours.toFixed(2) + '</span></td>' +
-        '<td class="sd-name' + (m.name ? "" : " empty") + '">' + (m.name ? esc(m.name) : "بدون اسم") + '</td>' +
-        '<td class="sd-uid">' + esc(m.user) + '</td>';
+        '<td><span class="sd-box sd-name' + (m.name ? "" : " empty") + '">' + (m.name ? esc(m.name) : "بدون اسم") + '</span></td>' +
+        '<td><span class="sd-box sd-uid">' + esc(m.user) + '</span></td>';
       if (i === 0) {
         html += '<td class="sd-team-cell" rowspan="' + members.length + '" ' +
-          'style="background:linear-gradient(160deg,' + col.c + ' 0%,' + col.c2 + ' 100%)">' +
+          'style="--team-grad:' + teamGrad + ';--team-c1:' + col.c + '">' +
           esc(key) + '<span class="tsub">' + members.length + ' يوزر · ' + below + ' تحت التارجت</span></td>';
       }
       html += '</tr>';
