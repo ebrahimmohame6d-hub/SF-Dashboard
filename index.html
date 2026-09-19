@@ -157,34 +157,41 @@
     padding:14px 16px;border-bottom:1px solid var(--line);background:#f9fafd}
   .submit-toolbar .field label{font-size:12px;color:var(--muted);font-weight:500}
   .submit-hint{font-size:12px;color:var(--muted);align-self:center;max-width:320px}
-  .submit-body{padding:22px 16px}
+  .submit-body{padding:26px 16px}
   .submit-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;
-    gap:10px;padding:14px 6px;border-bottom:1px solid #eef1f7}
+    gap:12px;padding:16px 6px;border-bottom:1px solid #eef1f7}
   .submit-row:last-child{border-bottom:none}
   .submit-sign{font-size:20px;font-weight:900;color:var(--muted)}
-  .submit-box{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;
-    min-width:148px;padding:14px 10px;border-radius:12px;color:#fff;
+  /* اسم الكيوسي: مربع (زي شكل الفريق في التابات التانية) */
+  .submit-kiosk-label{display:inline-flex;align-items:center;justify-content:center;
+    min-width:150px;padding:13px 16px;border-radius:10px;color:#fff;font-weight:800;font-size:13.5px;
     background-image:var(--boxgrad,linear-gradient(160deg,var(--accent) 0%,var(--accent2) 100%));
-    box-shadow:0 6px 16px rgba(0,0,0,.12);transition:box-shadow .15s ease,transform .15s ease}
-  .submit-box:hover{box-shadow:0 0 0 3px var(--glow),0 10px 22px rgba(0,0,0,.18);transform:translateY(-2px)}
-  .submit-box .lbl{font-size:11.5px;font-weight:700;opacity:.92;margin-bottom:6px;white-space:nowrap}
-  .submit-box .val{font-size:22px;font-weight:900;line-height:1.1}
-  .submit-box input.submit-input{
-    width:76px;text-align:center;border:none;border-radius:8px;
-    background:rgba(255,255,255,.2);color:#fff;font-family:inherit;
-    font-weight:900;font-size:19px;padding:7px 4px;outline:none}
-  .submit-box input.submit-input::placeholder{color:rgba(255,255,255,.65)}
-  .submit-box input.submit-input:focus{background:rgba(255,255,255,.34);box-shadow:0 0 0 3px rgba(255,255,255,.35)}
+    box-shadow:0 4px 10px rgba(0,0,0,.12)}
+  /* الأرقام (FP / QA / توتال / الإجمالي): دايرة عادية زي أرقام الساعات في تاب يوم واحد */
+  .submit-circle{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;
+    width:74px;height:74px;border-radius:50%;color:#fff;
+    background-image:var(--boxgrad,linear-gradient(160deg,var(--accent) 0%,var(--accent2) 100%));
+    box-shadow:0 4px 10px rgba(0,0,0,.15);transition:transform .12s ease,box-shadow .12s ease}
+  .submit-circle:hover{transform:scale(1.06);box-shadow:0 0 0 3px var(--glow),0 8px 18px rgba(0,0,0,.2)}
+  .submit-circle .clabel{font-size:9.5px;font-weight:700;opacity:.88;margin-bottom:2px;white-space:nowrap}
+  .submit-circle .val{font-size:19px;font-weight:900;line-height:1}
+  .submit-circle input.submit-input{
+    width:65%;text-align:center;border:none;background:rgba(255,255,255,.2);
+    border-radius:8px;color:#fff;font-family:inherit;font-weight:900;font-size:15px;padding:3px 2px;outline:none}
+  .submit-circle input.submit-input::placeholder{color:rgba(255,255,255,.65)}
+  .submit-circle input.submit-input:focus{background:rgba(255,255,255,.36);box-shadow:0 0 0 2px rgba(255,255,255,.4)}
   input[type=number].submit-input::-webkit-outer-spin-button,
   input[type=number].submit-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   input[type=number].submit-input{-moz-appearance:textfield}
-  .submit-grand{margin:18px auto 4px;max-width:280px}
-  .submit-grand .submit-box{min-width:230px;padding:20px 14px;
-    background-image:linear-gradient(135deg,#5b3aa8 0%,#2b4b8f 100%)}
-  .submit-grand .val{font-size:30px}
+  .submit-circle.total{width:86px;height:86px;background-image:linear-gradient(160deg,#1c2f66 0%,#2b4b8f 100%)}
+  .submit-grand{margin:20px auto 4px;display:flex;justify-content:center}
+  .submit-circle.grand{width:132px;height:132px;background-image:linear-gradient(135deg,#5b3aa8 0%,#2b4b8f 100%)}
+  .submit-circle.grand .clabel{font-size:11px}
+  .submit-circle.grand .val{font-size:26px}
   .submit-savebar{display:flex;justify-content:center;align-items:center;gap:12px;
     padding:16px;border-top:1px solid var(--line)}
   .submit-saved-note{font-size:12px;color:var(--good);font-weight:700}
+  .buffer-card{border-style:dashed}
 
   .single-day-wrap{overflow-x:auto}
   table.single-day-table{width:100%;border-collapse:collapse;font-size:13px}
@@ -290,16 +297,18 @@ var API = "https://script.google.com/macros/s/AKfycbzoZuqCeMHQd37WmloJU98nvzIE-6
 var DEFAULT_FROM = "2026-08-25";
 
 var TEAM_ORDER = ["Mira Samir","Eman Gamal","Shimaa Nasser","Eslam Ali","Ahmed Adel","Buffer"];
-/* كل الكيوسيهات بلون أزرق غامق مختلف، من غير برتقالي أو موف */
+/* لون واحد ثابت لكل الكيوسيهات (مش لون مختلف لكل كيوسي)، والبافر بلون رمادي مختلف يميّزه عنهم */
+var KIOSK_COLOR = { c: "#12315c", c2: "#1f4e88" };
+var BUFFER_COLOR = { c: "#54607a", c2: "#7c8aa8" };
 var TEAM_COLORS = {
-  "Mira Samir":    { c: "#0b2f5c", c2: "#1f4e88" },
-  "Eman Gamal":    { c: "#123a63", c2: "#2c5990" },
-  "Shimaa Nasser": { c: "#0e4a78", c2: "#1f6da3" },
-  "Ahmed Adel":    { c: "#152d52", c2: "#2b4a7a" },
-  "Eslam Ali":     { c: "#0a3453", c2: "#1c5b82" },
-  "Buffer":        { c: "#54607a", c2: "#7c8aa8" }
+  "Mira Samir":    KIOSK_COLOR,
+  "Eman Gamal":    KIOSK_COLOR,
+  "Shimaa Nasser": KIOSK_COLOR,
+  "Ahmed Adel":    KIOSK_COLOR,
+  "Eslam Ali":     KIOSK_COLOR,
+  "Buffer":        BUFFER_COLOR
 };
-var NO_TEAM = { c: "#54607a", c2: "#7c8aa8" };
+var NO_TEAM = BUFFER_COLOR;
 var ROOM_PALETTE = ["#0b2f5c","#123a63","#0e4a78","#152d52","#0a3453","#1f6da3","#2c5990","#1c5b82"];
 
 /* الكيوسيهات الحقيقية بس (من غير Buffer) — دي اللي بتظهر في تاب سابمت */
@@ -308,7 +317,7 @@ var SUBMIT_TEAMS = TEAM_ORDER.filter(function (t) { return t !== "Buffer"; });
 var state = {
   rows: [], target: 5.5, view: "users",
   sortDaily: { key: "date", dir: -1 },
-  open: {}, teams: null,
+  open: {}, teams: null, bufferTeam: null, bufferUsers: [],
   submitRows: null, submitFrom: null, submitTo: null, submitSavedNote: ""
 };
 
@@ -400,6 +409,8 @@ function loadTeams(cb) {
     if (!res || !res.ok) { document.getElementById("out").innerHTML =
       '<div class="note error">' + esc((res && res.error) || "تعذر تحميل بيانات الفرق.") + '</div>'; return; }
     state.teams = res.teams || [];
+    state.bufferTeam = res.bufferTeam || null;
+    state.bufferUsers = res.buffer || [];
     cb();
   }, function (msg) {
     document.getElementById("out").innerHTML = '<div class="note error">' + esc(msg) + '</div>';
@@ -673,7 +684,7 @@ function renderDaily(rows) {
       '<td>' + esc(r.shift) + '</td>' +
       '<td class="mono">' + esc(r.pc) + '</td>' +
       '<td>' + esc(r.att || "—") + '</td>' +
-      '<td class="hours">' + r.hours.toFixed(2) + '</td>' +
+      '<td><span class="sd-hours ' + (bad ? "bad" : "ok") + '">' + r.hours.toFixed(2) + '</span></td>' +
       '<td><span class="pill ' + (bad ? "bad" : "ok") + '">' + (bad ? "تحت التارجت" : "محقق") + '</span></td>' +
       '</tr>';
   });
@@ -697,8 +708,9 @@ function renderTeamsTab() {
     return;
   }
   var teams = state.teams;
-  document.getElementById("count").textContent = teams.length + " فريق";
-  if (!teams.length) {
+  var teamCount = teams.length + (state.bufferTeam ? 1 : 0);
+  document.getElementById("count").textContent = teamCount + " فريق";
+  if (!teamCount) {
     document.getElementById("out").innerHTML = '<div class="note">مفيش سجلات لرومات الفرق المعروفة في النطاق الحالي.</div>';
     return;
   }
@@ -716,9 +728,53 @@ function renderTeamsTab() {
       '</div>' +
       '</div>';
   });
+
+  if (state.bufferTeam) {
+    var bt = state.bufferTeam;
+    var bAchieved = Math.round(bt.achievedPct * 100);
+    var open = !!state.open.__buffer__;
+    html += '<div class="tcard buffer-card" style="--c:' + BUFFER_COLOR.c + '">' +
+      '<h3>Buffer</h3>' +
+      '<div class="big">' + bt.avgHours.toFixed(2) + '<small>ساعة/يوم</small></div>' +
+      '<div class="row2">' +
+        '<span>عدد الأفراد<b>' + bt.members + '</b></span>' +
+        '<span>محقق الساعات<b class="' + (bAchieved >= 70 ? "good" : "bad") + '">' + bAchieved + '%</b></span>' +
+      '</div>' +
+      '<button class="toggle" id="bufferToggle" style="margin-top:8px">' + (open ? "إخفاء اليوزرات" : "عرض يوزرات البافر") + '</button>' +
+      '</div>';
+  }
   html += '</div>';
 
+  if (state.bufferTeam && state.open.__buffer__) {
+    html += renderBufferUsersGrid_();
+  }
+
   document.getElementById("out").innerHTML = html;
+
+  var bufBtn = document.getElementById("bufferToggle");
+  if (bufBtn) bufBtn.onclick = function () {
+    state.open.__buffer__ = !state.open.__buffer__;
+    renderTeamsTab();
+  };
+}
+
+/* شبكة يوزرات البافر: الاسم + اليوزر + متوسط الساعات كدايرة (زي تاب يوم واحد) */
+function renderBufferUsersGrid_() {
+  var users = state.bufferUsers || [];
+  if (!users.length) return '<div class="note">مفيش يوزرات في البافر في النطاق الحالي.</div>';
+  var html = '<div class="single-day-wrap"><table class="single-day-table"><thead><tr>' +
+    '<th>متوسط الساعات</th><th>الاسم</th><th>اليوزر</th><th>عدد الأيام</th>' +
+    '</tr></thead><tbody>';
+  users.slice().sort(function (a, b) { return a.avgHours - b.avgHours; }).forEach(function (u) {
+    var bad = u.avgHours < state.target;
+    html += '<tr>' +
+      '<td><span class="sd-hours ' + (bad ? "bad" : "ok") + '">' + u.avgHours.toFixed(2) + '</span></td>' +
+      '<td><span class="sd-box sd-name' + (u.name ? "" : " empty") + '">' + (u.name ? esc(u.name) : "بدون اسم") + '</span></td>' +
+      '<td><span class="sd-box sd-uid">' + esc(u.user) + '</span></td>' +
+      '<td class="num">' + u.days + '</td>' +
+      '</tr>';
+  });
+  return html + '</tbody></table></div>';
 }
 
 function empty() {
@@ -767,33 +823,34 @@ function renderSubmitTab() {
 
   var grandFp = 0, grandQa = 0;
 
+  var grad = "linear-gradient(160deg," + KIOSK_COLOR.c + " 0%," + KIOSK_COLOR.c2 + " 100%)";
+
   SUBMIT_TEAMS.forEach(function (team) {
-    var col = TEAM_COLORS[team] || NO_TEAM;
-    var grad = "linear-gradient(160deg," + col.c + " 0%," + col.c2 + " 100%)";
     var s = sumSubmit_(team, from, to);
     grandFp += s.fp; grandQa += s.qa;
 
     html += '<div class="submit-row">';
-    html += '<div class="submit-box" style="--boxgrad:' + grad + '"><span class="lbl">' + esc(team) + '</span>' +
-      '<span class="val">' + s.total + '</span></div>';
-    html += '<span class="submit-sign">=</span>';
+    html += '<span class="submit-kiosk-label" style="--boxgrad:' + grad + '">' + esc(team) + '</span>';
+    html += '<span class="submit-sign">→</span>';
 
     if (isSingleDay) {
-      html += '<div class="submit-box" style="--boxgrad:' + grad + '"><span class="lbl">FP</span>' +
+      html += '<div class="submit-circle" style="--boxgrad:' + grad + '"><span class="clabel">FP</span>' +
         '<input type="number" min="0" step="1" class="submit-input" data-team="' + esc(team) + '" data-field="fp" value="' + (s.fp || "") + '" placeholder="0"></div>';
       html += '<span class="submit-sign">+</span>';
-      html += '<div class="submit-box" style="--boxgrad:' + grad + '"><span class="lbl">QA</span>' +
+      html += '<div class="submit-circle" style="--boxgrad:' + grad + '"><span class="clabel">QA</span>' +
         '<input type="number" min="0" step="1" class="submit-input" data-team="' + esc(team) + '" data-field="qa" value="' + (s.qa || "") + '" placeholder="0"></div>';
     } else {
-      html += '<div class="submit-box" style="--boxgrad:' + grad + '"><span class="lbl">FP</span><span class="val">' + s.fp + '</span></div>';
+      html += '<div class="submit-circle" style="--boxgrad:' + grad + '"><span class="clabel">FP</span><span class="val">' + s.fp + '</span></div>';
       html += '<span class="submit-sign">+</span>';
-      html += '<div class="submit-box" style="--boxgrad:' + grad + '"><span class="lbl">QA</span><span class="val">' + s.qa + '</span></div>';
+      html += '<div class="submit-circle" style="--boxgrad:' + grad + '"><span class="clabel">QA</span><span class="val">' + s.qa + '</span></div>';
     }
+    html += '<span class="submit-sign">=</span>';
+    html += '<div class="submit-circle total"><span class="clabel">توتال</span><span class="val">' + s.total + '</span></div>';
     html += '</div>';
   });
 
-  html += '<div class="submit-grand"><div class="submit-box">' +
-    '<span class="lbl">إجمالي كل الكيوسيهات (' + (isSingleDay ? "اليوم ده" : "المدى المحدد") + ')</span>' +
+  html += '<div class="submit-grand"><div class="submit-circle grand">' +
+    '<span class="clabel">إجمالي كل الكيوسيهات (' + (isSingleDay ? "اليوم ده" : "المدى المحدد") + ')</span>' +
     '<span class="val">' + (grandFp + grandQa) + '</span></div></div>';
 
   html += '</div>';
