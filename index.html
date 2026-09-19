@@ -138,12 +138,13 @@
   .foot{margin-top:10px;font-size:12px;color:var(--muted);display:flex;
     justify-content:space-between;flex-wrap:wrap;gap:8px}
 
-  .teamcard{display:flex;flex-wrap:wrap;gap:22px;padding:22px;justify-content:center}
-  .tcard{width:190px;height:190px;flex:0 0 auto;background:var(--surface);
-    border:7px solid var(--c,var(--accent));border-radius:50%;
+  .teamcard{display:flex;flex-wrap:wrap;gap:18px;padding:22px;justify-content:center}
+  /* بطاقة الفريق: مربع عادي (مش دايرة) بلون ثابت واحد لكل الكروت */
+  .tcard{width:190px;min-height:170px;flex:0 0 auto;background:var(--surface);
+    border:1px solid var(--line);border-top:6px solid var(--c,var(--accent));border-radius:var(--radius);
     display:flex;flex-direction:column;align-items:center;justify-content:center;
-    text-align:center;padding:14px;transition:box-shadow .15s ease,transform .15s ease}
-  .tcard:hover{box-shadow:0 0 0 4px var(--glow),0 12px 26px rgba(43,75,143,.18);transform:translateY(-3px)}
+    text-align:center;padding:16px 14px;transition:box-shadow .15s ease,transform .15s ease}
+  .tcard:hover{box-shadow:0 0 0 3px var(--glow),0 10px 22px rgba(43,75,143,.16);transform:translateY(-2px)}
   .tcard h3{margin:0 0 6px;font-size:14px;font-weight:800;color:var(--c,var(--accent-ink));line-height:1.2}
   .tcard .big{font-size:26px;font-weight:900;color:var(--ink);line-height:1.1}
   .tcard .big small{display:block;font-size:10.5px;color:var(--muted);font-weight:500;margin-top:2px}
@@ -294,20 +295,14 @@ var AUTO_REFRESH_MS = 5 * 60 * 1000;   /* تحديث تلقائي هادي كل 
 
 var TEAM_ORDER = ["Mira Samir","Eman Gamal","Shimaa Nasser","Eslam Ali","Ahmed Adel","Buffer"];
 
-/* لون الكيوسي: لون واحد ثابت (solid) في كل مكان — تغييره من هنا بس */
+/* لون الكيوسي: لون واحد ثابت (solid) في كل مكان — تغييره من هنا بس.
+   نفس الـ string بيتحط مباشرة (من غير object مشترك) عشان يبقى فعلاً نفس
+   اللون بالظبط في كل تاب (كل اليوزرات / يوم واحد / متوسط الفرق / سابمت). */
 var QC_COLOR = "#183a6b";
-var KIOSK_COLOR = { c: QC_COLOR, c2: QC_COLOR };
-/* Buffer تيم زيه زي باقي الكيوسيهات. لو عايز له لون مختلف غيّر السطر ده */
-var BUFFER_COLOR = { c: QC_COLOR, c2: QC_COLOR };
-var TEAM_COLORS = {
-  "Mira Samir":    KIOSK_COLOR,
-  "Eman Gamal":    KIOSK_COLOR,
-  "Shimaa Nasser": KIOSK_COLOR,
-  "Ahmed Adel":    KIOSK_COLOR,
-  "Eslam Ali":     KIOSK_COLOR,
-  "Buffer":        BUFFER_COLOR
-};
-var NO_TEAM = BUFFER_COLOR;
+function teamColor_(team) {
+  return { c: QC_COLOR, c2: QC_COLOR };
+}
+var NO_TEAM = teamColor_("Buffer");
 
 /* تاب سابمت: الترتيب زي شيت الـ Team Lead / QC (N/A = Buffer) */
 var SUBMIT_TEAMS = ["Shimaa Nasser","Ahmed Adel","Mira Samir","Eslam Ali","Eman Gamal","Buffer"];
@@ -525,7 +520,7 @@ function roomCell(room) {
   return '<span class="room-pill">' + esc(room) + '</span>';
 }
 
-/* --- كل اليوزرات: مجمّعة بالفريق زي شكل الروستر --- */
+/* --- كل اليوزرات: مجمّعة بالفريق زي شكل الروستر (Buffer ظاهر هنا كفريق زي باقي الكيوسيهات) --- */
 function renderUsers(rows) {
   var list = groupUsers(rows);
   document.getElementById("count").textContent = list.length + " يوزر معروض";
@@ -543,7 +538,7 @@ function renderUsers(rows) {
   var html = '<table><tbody>';
   orderedKeys.forEach(function (key) {
     var members = groups[key].sort(function (a, b) { return b.missedCount - a.missedCount; });
-    var col = TEAM_COLORS[key] || NO_TEAM;
+    var col = teamColor_(key);
     var groupAvg = members.reduce(function (s, u) { return s + u.avg; }, 0) / members.length;
 
     html += '<tr class="group-head" style="--c:' + col.c + '">' +
@@ -635,7 +630,7 @@ function renderSingleDay() {
 
   orderedKeys.forEach(function (key) {
     var members = groups[key].slice().sort(function (a, b) { return a.hours - b.hours; });
-    var col = TEAM_COLORS[key] || NO_TEAM;
+    var col = teamColor_(key);
     var below = members.filter(function (m) { return m.hours < state.target; }).length;
     var uniq = {};
     members.forEach(function (m) { uniq[m.user] = 1; });
@@ -660,7 +655,7 @@ function renderSingleDay() {
 
   /* Buffer تيم برضو: لو مفيش له سجلات في اليوم ده يفضل ظاهر بصفر */
   if (!groups["Buffer"] && !q) {
-    var bcol = TEAM_COLORS["Buffer"] || NO_TEAM;
+    var bcol = teamColor_("Buffer");
     html += '<tr><td class="sd-empty" colspan="3">مفيش سجلات للـ Buffer في اليوم ده</td>' +
       '<td class="sd-team-cell" style="--team-c1:' + bcol.c + '"><span class="sd-team-box">Buffer' +
       '<span class="tsub">0 يوزر</span></span></td></tr>';
@@ -717,7 +712,7 @@ function renderDaily(rows) {
   });
 }
 
-/* --- متوسط الفرق (QC) — الكيوسيهات + Buffer --- */
+/* --- متوسط الفرق (QC) — الكيوسيهات الخمسة بس (من غير Buffer، ده بقى بيظهر في تاب "كل اليوزرات") --- */
 function renderTeamsTab() {
   document.getElementById("stats").innerHTML = "";
   if (state.teams === null) {
@@ -725,7 +720,7 @@ function renderTeamsTab() {
     loadTeams(renderTeamsTab);
     return;
   }
-  var teams = state.teams;
+  var teams = state.teams.filter(function (t) { return t.tl !== "Buffer"; });
   document.getElementById("count").textContent = teams.length + " فريق";
   if (!teams.length) {
     document.getElementById("out").innerHTML = '<div class="note">مفيش سجلات لرومات الفرق المعروفة في النطاق الحالي.</div>';
@@ -735,7 +730,7 @@ function renderTeamsTab() {
   var html = '<div class="teamcard">';
   teams.forEach(function (t) {
     var achievedPct = Math.round(t.achievedPct * 100);
-    var col = TEAM_COLORS[t.tl] || NO_TEAM;
+    var col = teamColor_(t.tl);
     html += '<div class="tcard" style="--c:' + col.c + '">' +
       '<h3>' + esc(t.tl) + '</h3>' +
       '<div class="big">' + t.avgHours.toFixed(2) + '<small>ساعة/يوم</small></div>' +
@@ -820,7 +815,7 @@ function renderSubmitTab() {
   SUBMIT_TEAMS.forEach(function (team, i) {
     var s = sumSubmit_(team, from, to);
     gFp += s.fp; gQa += s.qa;
-    var col = TEAM_COLORS[team] || NO_TEAM;
+    var col = teamColor_(team);
 
     html += '<tr><td class="s-name-cell" style="background:' + col.c + '">' + esc(SUBMIT_LABELS[team] || team) + '</td>';
     if (isSingleDay) {
