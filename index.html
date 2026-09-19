@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SF Dashboard v4</title>
+<title>SF Dashboard v5</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
@@ -96,7 +96,7 @@
   thead th:hover{color:var(--accent);background:#eaeefb}
   thead th[data-dir]::after{content:attr(data-dir);margin-inline-start:5px;color:var(--accent2)}
   tbody tr{transition:box-shadow .12s ease,background .12s ease}
-  tbody tr:hover td:not(.sd-team-cell){background:#eef3ff !important;box-shadow:inset 0 1px 0 var(--accent),inset 0 -1px 0 var(--accent)}
+  tbody tr:hover td:not(.sd-team-cell):not(.s-name-cell){background:#eef3ff !important;box-shadow:inset 0 1px 0 var(--accent),inset 0 -1px 0 var(--accent)}
   td.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;direction:ltr;text-align:right;color:var(--muted)}
   td.num{text-align:center}
   td.hours{font-weight:800;text-align:center}
@@ -126,7 +126,8 @@
   .name{font-weight:800;color:var(--ink)}
   .name.empty{color:var(--muted);font-weight:500}
 
-  .group-head{background:linear-gradient(90deg,var(--c,var(--accent)) 0%,var(--c2,var(--accent2)) 100%);color:#fff}
+  /* لون الكيوسي ثابت (solid) — من غير تدرّج */
+  .group-head{background:var(--c,var(--accent));color:#fff}
   .group-head td{padding:12px 16px;font-size:14.5px;font-weight:800;border-bottom:none;white-space:normal}
   .group-head .gsub{font-weight:500;font-size:12px;opacity:.9;margin-inline-start:10px}
 
@@ -156,40 +157,33 @@
   .submit-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;
     padding:14px 16px;border-bottom:1px solid var(--line);background:#f9fafd}
   .submit-toolbar .field label{font-size:12px;color:var(--muted);font-weight:500}
-  .submit-hint{font-size:12px;color:var(--muted);align-self:center;max-width:320px}
-  .submit-body{padding:26px 16px}
-  .submit-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;
-    gap:12px;padding:16px 6px;border-bottom:1px solid #eef1f7}
-  .submit-row:last-child{border-bottom:none}
-  .submit-sign{font-size:20px;font-weight:900;color:var(--muted)}
-  /* اسم الكيوسي: مربع (زي شكل الفريق في التابات التانية) */
-  .submit-kiosk-label{display:inline-flex;align-items:center;justify-content:center;
-    min-width:150px;padding:13px 16px;border-radius:10px;color:#fff;font-weight:800;font-size:13.5px;
-    background-image:var(--boxgrad,linear-gradient(160deg,var(--accent) 0%,var(--accent2) 100%));
-    box-shadow:0 4px 10px rgba(0,0,0,.12)}
-  /* الأرقام (FP / QA / توتال / الإجمالي): دايرة عادية زي أرقام الساعات في تاب يوم واحد */
-  .submit-circle{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;
-    width:74px;height:74px;border-radius:50%;color:#fff;
-    background-image:var(--boxgrad,linear-gradient(160deg,var(--accent) 0%,var(--accent2) 100%));
-    box-shadow:0 4px 10px rgba(0,0,0,.15);transition:transform .12s ease,box-shadow .12s ease}
-  .submit-circle:hover{transform:scale(1.06);box-shadow:0 0 0 3px var(--glow),0 8px 18px rgba(0,0,0,.2)}
-  .submit-circle .clabel{font-size:9.5px;font-weight:700;opacity:.88;margin-bottom:2px;white-space:nowrap}
-  .submit-circle .val{font-size:19px;font-weight:900;line-height:1}
-  .submit-circle input.submit-input{
-    width:65%;text-align:center;border:none;background:rgba(255,255,255,.2);
-    border-radius:8px;color:#fff;font-family:inherit;font-weight:900;font-size:15px;padding:3px 2px;outline:none}
-  .submit-circle input.submit-input::placeholder{color:rgba(255,255,255,.65)}
-  .submit-circle input.submit-input:focus{background:rgba(255,255,255,.36);box-shadow:0 0 0 2px rgba(255,255,255,.4)}
+  .submit-hint{font-size:12px;color:var(--muted);align-self:center;max-width:340px}
+  .submit-hint a{color:var(--accent);font-weight:700}
+  .submit-body{padding:24px 16px;display:flex;justify-content:center}
+
+  /* جدول السابمت: أسماء الكيوسيهات على الشمال، وعلى اليمين FP و QA و Total */
+  .submit-table{width:100%;max-width:640px;direction:ltr;
+    border-collapse:separate;border-spacing:0;
+    border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+  .submit-table th,.submit-table td{text-align:center;padding:10px 12px;
+    border-bottom:1px solid var(--line);white-space:nowrap}
+  .submit-table th+th,.submit-table td+td{border-inline-start:1px solid var(--line)}
+  .submit-table thead th,
+  .submit-table thead th:hover{position:static;cursor:default;background:#343b4a;color:#fff;
+    font-size:14px;font-weight:800;padding:12px;border-bottom:none}
+  .submit-table .s-name-cell{color:#fff;font-weight:800;font-size:14px;min-width:170px}
+  .submit-table td.s-val{font-weight:800;font-size:15px}
+  .submit-table td.s-total{font-weight:900;font-size:15px;background:#f3f5fb;color:var(--accent-ink)}
+  .submit-table input.submit-input{width:100%;max-width:120px;min-width:0;text-align:center;
+    font-weight:800;font-size:15px;padding:7px 6px}
+  .submit-table tbody tr:last-child td{border-bottom:none}
+  .submit-table tfoot td{background:#1c2f66;color:#fff;font-weight:900;font-size:15px;border-bottom:none}
   input[type=number].submit-input::-webkit-outer-spin-button,
   input[type=number].submit-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   input[type=number].submit-input{-moz-appearance:textfield}
-  .submit-circle.total{width:86px;height:86px;background-image:linear-gradient(160deg,#1c2f66 0%,#2b4b8f 100%)}
-  .submit-grand{margin:20px auto 4px;display:flex;justify-content:center}
-  .submit-circle.grand{width:132px;height:132px;background-image:linear-gradient(135deg,#5b3aa8 0%,#2b4b8f 100%)}
-  .submit-circle.grand .clabel{font-size:11px}
-  .submit-circle.grand .val{font-size:26px}
   .submit-savebar{display:flex;justify-content:center;align-items:center;gap:12px;
     padding:16px;border-top:1px solid var(--line)}
+  .submit-savebar button.primary{background:var(--accent-ink);border-color:var(--accent-ink);color:#fff}
   .submit-saved-note{font-size:12px;color:var(--good);font-weight:700}
 
   .single-day-wrap{overflow-x:auto}
@@ -197,15 +191,17 @@
   .single-day-table thead th{position:sticky;top:0;background:#1c2f66;color:#fff;
     font-size:11px;font-weight:800;padding:7px 10px;text-align:center;z-index:2}
   .single-day-table td{padding:6px 10px;border-bottom:1px solid #eef1f7;text-align:center;vertical-align:middle}
+  .single-day-table td.sd-empty{color:var(--muted);font-weight:600;padding:16px}
 
   .single-day-table tbody tr:hover td:not(.sd-team-cell){background:#f4f7ff}
+  /* خانة الكيوسي: لون واحد ثابت (solid) */
   .sd-team-cell,
   .sd-team-cell:hover,
   .sd-team-cell:focus,
   tr:hover .sd-team-cell{
     text-align:center;vertical-align:middle;
     border-bottom:3px solid rgba(255,255,255,.35);min-width:130px;padding:10px 8px;
-    background-image:var(--team-grad) !important;background-color:var(--team-c1) !important
+    background-image:none !important;background-color:var(--team-c1) !important
   }
   .sd-team-box{display:inline-block;padding:9px 16px;border-radius:9px;
     background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);
@@ -294,11 +290,15 @@
 /* ===== إعدادات ===== */
 var API = "https://script.google.com/macros/s/AKfycbzoZuqCeMHQd37WmloJU98nvzIE-6Rb8TIBdJRd5k8ND72rNeka-8Wu9DXn5NSgzqYaXA/exec";
 var DEFAULT_FROM = "2026-08-25";
+var AUTO_REFRESH_MS = 5 * 60 * 1000;   /* تحديث تلقائي هادي كل 5 دقايق (الأسماء بتتحدّث معاه) */
 
 var TEAM_ORDER = ["Mira Samir","Eman Gamal","Shimaa Nasser","Eslam Ali","Ahmed Adel","Buffer"];
-/* لون واحد ثابت لكل الكيوسيهات (مش لون مختلف لكل كيوسي)، والبافر بلون رمادي مختلف يميّزه عنهم */
-var KIOSK_COLOR = { c: "#12315c", c2: "#1f4e88" };
-var BUFFER_COLOR = { c: "#54607a", c2: "#7c8aa8" };
+
+/* لون الكيوسي: لون واحد ثابت (solid) في كل مكان — تغييره من هنا بس */
+var QC_COLOR = "#183a6b";
+var KIOSK_COLOR = { c: QC_COLOR, c2: QC_COLOR };
+/* Buffer تيم زيه زي باقي الكيوسيهات. لو عايز له لون مختلف غيّر السطر ده */
+var BUFFER_COLOR = { c: QC_COLOR, c2: QC_COLOR };
 var TEAM_COLORS = {
   "Mira Samir":    KIOSK_COLOR,
   "Eman Gamal":    KIOSK_COLOR,
@@ -308,16 +308,16 @@ var TEAM_COLORS = {
   "Buffer":        BUFFER_COLOR
 };
 var NO_TEAM = BUFFER_COLOR;
-var ROOM_PALETTE = ["#0b2f5c","#123a63","#0e4a78","#152d52","#0a3453","#1f6da3","#2c5990","#1c5b82"];
 
-/* الكيوسيهات الحقيقية بس (من غير Buffer) — دي اللي بتظهر في تاب سابمت */
-var SUBMIT_TEAMS = TEAM_ORDER.filter(function (t) { return t !== "Buffer"; });
+/* تاب سابمت: الترتيب زي شيت الـ Team Lead / QC (N/A = Buffer) */
+var SUBMIT_TEAMS = ["Shimaa Nasser","Ahmed Adel","Mira Samir","Eslam Ali","Eman Gamal","Buffer"];
+var SUBMIT_LABELS = { "Buffer": "Buffer (N/A)" };
 
 var state = {
   rows: [], target: 5.5, view: "users",
   sortDaily: { key: "date", dir: -1 },
   open: {}, teams: null,
-  submitRows: null, submitFrom: null, submitTo: null, submitSavedNote: ""
+  submitRows: null, submitFrom: null, submitTo: null, submitSavedNote: "", submitSheetUrl: ""
 };
 
 /* ===== JSONP ===== */
@@ -345,10 +345,14 @@ function todayStr() {
 }
 
 /* ===== تحميل ===== */
-function load() {
+/* silent === true: تحديث تلقائي من غير رسايل تحميل ولا مسح للشاشة لو فشل */
+function load(silent) {
+  silent = (silent === true);
   var btn = document.getElementById("reload");
-  btn.disabled = true; btn.textContent = "بيحمّل…";
-  document.getElementById("out").innerHTML = '<div class="note">جاري تحميل الداتا…</div>';
+  if (!silent) {
+    btn.disabled = true; btn.textContent = "بيحمّل…";
+    document.getElementById("out").innerHTML = '<div class="note">جاري تحميل الداتا…</div>';
+  }
 
   var qs = "?action=data";
   var from = document.getElementById("from").value;
@@ -357,12 +361,13 @@ function load() {
   if (to) qs += "&to=" + encodeURIComponent(to);
 
   jsonp(API + qs, function (res) {
-    btn.disabled = false; btn.textContent = "تحديث الداتا";
+    if (!silent) { btn.disabled = false; btn.textContent = "تحديث الداتا"; }
     if (!res || !res.ok) return fail((res && res.error) || "الويب آب رجّع رد مش مفهوم.");
 
     state.rows = res.rows || [];
     state.target = res.target || 5.5;
-    state.teams = null;
+    var keepTeams = silent && state.view === "teams";
+    if (!keepTeams) state.teams = null;
 
     if (res.minDate && document.getElementById("from").min !== res.minDate) {
       document.getElementById("from").min = res.minDate;
@@ -375,8 +380,12 @@ function load() {
       Object.keys(users).sort().map(function (u) { return '<option value="' + esc(u) + '">'; }).join("");
 
     var covTxt = (res.meta && res.meta.namesCoverage != null) ? " · الأسماء متاحة لـ " + res.meta.namesCoverage + "% من السجلات" : "";
+    var st = res.meta && res.meta.namesStatus;
+    var warnTxt = "";
+    if (st && st.external && st.external !== "ok") warnTxt = " · ⚠ شيت الأسماء الخارجي مش متاح (بيستخدم الأسماء الاحتياطية)";
+    else if (st && st.gidFallback) warnTxt = " · ⚠ تاب الأسماء (gid) مش لاقيه، بيقرا أول تاب";
     document.getElementById("sub").textContent = state.rows.length
-      ? "التارجت " + state.target + " ساعة · بيانات من " + res.minDate + covTxt
+      ? "التارجت " + state.target + " ساعة · بيانات من " + res.minDate + covTxt + warnTxt
       : "مفيش داتا من " + (res.minDate || "التاريخ المحدد");
     document.getElementById("stamp").textContent =
       "آخر تحديث: " + new Date(res.generatedAt).toLocaleString("ar-EG");
@@ -389,9 +398,11 @@ function load() {
     }
 
     render();
+    if (keepTeams) loadTeams(renderTeamsTab);   /* نجدد كروت الفرق من غير ما الشاشة تفضى */
   }, fail);
 
   function fail(msg) {
+    if (silent) return;
     btn.disabled = false; btn.textContent = "تحديث الداتا";
     document.getElementById("out").innerHTML = '<div class="note error">' + esc(msg) + '</div>';
   }
@@ -423,6 +434,7 @@ function loadSubmitData(cb) {
       return;
     }
     state.submitRows = res.rows || [];
+    state.submitSheetUrl = res.sheetUrl || "";
     cb();
   }, function (msg) {
     document.getElementById("out").innerHTML = '<div class="note error">' + esc(msg) + '</div>';
@@ -509,11 +521,6 @@ function stat(v, label, color) {
 function nameCell(name) {
   return name ? '<span class="name">' + esc(name) + '</span>' : '<span class="name empty">—</span>';
 }
-function roomColor(room) {
-  var h = 0;
-  for (var i = 0; i < room.length; i++) h = (h * 31 + room.charCodeAt(i)) >>> 0;
-  return ROOM_PALETTE[h % ROOM_PALETTE.length];
-}
 function roomCell(room) {
   return '<span class="room-pill">' + esc(room) + '</span>';
 }
@@ -539,7 +546,7 @@ function renderUsers(rows) {
     var col = TEAM_COLORS[key] || NO_TEAM;
     var groupAvg = members.reduce(function (s, u) { return s + u.avg; }, 0) / members.length;
 
-    html += '<tr class="group-head" style="--c:' + col.c + ';--c2:' + col.c2 + '">' +
+    html += '<tr class="group-head" style="--c:' + col.c + '">' +
       '<td colspan="9">' + esc(key) +
       '<span class="gsub">' + members.length + ' يوزر · متوسط الفريق ' + groupAvg.toFixed(2) + ' ساعة</span>' +
       '</td></tr>';
@@ -605,7 +612,10 @@ function renderSingleDay() {
   var q = document.getElementById("q").value.trim();
   var rows = state.rows.filter(function (r) { return r.date === day && matchUser(r.user, r.name, q); });
 
-  document.getElementById("count").textContent = rows.length + " يوزر ليوم " + day;
+  var allUsers = {};
+  rows.forEach(function (r) { allUsers[r.user] = 1; });
+  document.getElementById("count").textContent =
+    Object.keys(allUsers).length + " يوزر · " + rows.length + " سجل ليوم " + day;
   if (!rows.length) {
     document.getElementById("out").innerHTML = '<div class="note">مفيش سجلات في اليوم ده.</div>';
     return;
@@ -627,7 +637,10 @@ function renderSingleDay() {
     var members = groups[key].slice().sort(function (a, b) { return a.hours - b.hours; });
     var col = TEAM_COLORS[key] || NO_TEAM;
     var below = members.filter(function (m) { return m.hours < state.target; }).length;
-    var teamGrad = 'linear-gradient(160deg,' + col.c + ' 0%,' + col.c2 + ' 100%)';
+    var uniq = {};
+    members.forEach(function (m) { uniq[m.user] = 1; });
+    var usersN = Object.keys(uniq).length;
+    var avg = members.reduce(function (s, m) { return s + m.hours; }, 0) / members.length;
 
     members.forEach(function (m, i) {
       var bad = m.hours < state.target;
@@ -636,14 +649,22 @@ function renderSingleDay() {
         '<td><span class="sd-box sd-name' + (m.name ? "" : " empty") + '">' + (m.name ? esc(m.name) : "بدون اسم") + '</span></td>' +
         '<td><span class="sd-box sd-uid">' + esc(m.user) + '</span></td>';
       if (i === 0) {
-        html += '<td class="sd-team-cell" rowspan="' + members.length + '" ' +
-          'style="--team-grad:' + teamGrad + ';--team-c1:' + col.c + '">' +
+        html += '<td class="sd-team-cell" rowspan="' + members.length + '" style="--team-c1:' + col.c + '">' +
           '<span class="sd-team-box">' + esc(key) +
-          '<span class="tsub">' + members.length + ' يوزر · ' + below + ' تحت التارجت</span></span></td>';
+          '<span class="tsub">' + usersN + ' يوزر · ' + below + ' تحت التارجت</span>' +
+          '<span class="tsub">متوسط ' + avg.toFixed(2) + ' ساعة</span></span></td>';
       }
       html += '</tr>';
     });
   });
+
+  /* Buffer تيم برضو: لو مفيش له سجلات في اليوم ده يفضل ظاهر بصفر */
+  if (!groups["Buffer"] && !q) {
+    var bcol = TEAM_COLORS["Buffer"] || NO_TEAM;
+    html += '<tr><td class="sd-empty" colspan="3">مفيش سجلات للـ Buffer في اليوم ده</td>' +
+      '<td class="sd-team-cell" style="--team-c1:' + bcol.c + '"><span class="sd-team-box">Buffer' +
+      '<span class="tsub">0 يوزر</span></span></td></tr>';
+  }
 
   html += '</tbody></table></div>';
 
@@ -696,7 +717,7 @@ function renderDaily(rows) {
   });
 }
 
-/* --- متوسط الفرق (QC) --- */
+/* --- متوسط الفرق (QC) — الكيوسيهات + Buffer --- */
 function renderTeamsTab() {
   document.getElementById("stats").innerHTML = "";
   if (state.teams === null) {
@@ -734,7 +755,7 @@ function empty() {
     '<div class="note">مفيش نتايج بالفلاتر دي. امسح الفلاتر أو وسّع نطاق التاريخ.</div>';
 }
 
-/* --- سابمت: مربع لكل كيوسي + عمودين FP/QA، حفظ يومي، وإجمالي لأي مدى تواريخ --- */
+/* --- سابمت: جدول (كيوسي | FP | QA | Total) — إدخال يومي + إجمالي لأي مدى --- */
 function sumSubmit_(team, from, to) {
   var fp = 0, qa = 0;
   state.submitRows.forEach(function (r) {
@@ -743,6 +764,26 @@ function sumSubmit_(team, from, to) {
     fp += r.fp; qa += r.qa;
   });
   return { fp: fp, qa: qa, total: fp + qa };
+}
+
+function submitInput_(team, field) {
+  var el = document.querySelector('input[data-team="' + team + '"][data-field="' + field + '"]');
+  var n = (el && el.value !== "") ? Number(el.value) : 0;
+  return (isFinite(n) && n > 0) ? Math.round(n) : 0;
+}
+
+/* بيحسب التوتال لكل كيوسي وإجمالي العمودين لحظيًا وإنت بتكتب */
+function recalcSubmit_() {
+  var sumFp = 0, sumQa = 0;
+  SUBMIT_TEAMS.forEach(function (team, i) {
+    var fp = submitInput_(team, "fp"), qa = submitInput_(team, "qa");
+    sumFp += fp; sumQa += qa;
+    var cell = document.getElementById("sTot" + i);
+    if (cell) cell.textContent = fp + qa;
+  });
+  document.getElementById("sSumFp").textContent = sumFp;
+  document.getElementById("sSumQa").textContent = sumQa;
+  document.getElementById("sSumAll").textContent = sumFp + sumQa;
 }
 
 function renderSubmitTab() {
@@ -767,45 +808,35 @@ function renderSubmitTab() {
     '<button id="subToday">النهاردة</button>' +
     '<button id="subRefresh">تحديث</button>' +
     '<span class="submit-hint">' + (isSingleDay
-      ? "اليوم ده تقدر تدخل أو تعدّل أرقام السابمت وتحفظها."
+      ? "اكتب عدد الـ FP والـ QA لكل كيوسي وهيتجمعوا لوحدهم، وبعدين اضغط حفظ."
       : "عرض إجمالي للمدى المحدد (مش قابل للتعديل). اختار نفس اليوم في الحقلين عشان تدخل أرقام.") +
+    (state.submitSheetUrl ? ' <a href="' + esc(state.submitSheetUrl) + '" target="_blank" rel="noopener">فتح شيت السابمت</a>' : '') +
     '</span></div>';
 
-  html += '<div class="submit-body">';
+  html += '<div class="submit-body"><table class="submit-table" dir="ltr"><thead><tr>' +
+    '<th>Team Lead / QC</th><th>FP</th><th>QA</th><th>Total</th></tr></thead><tbody>';
 
-  var grandFp = 0, grandQa = 0;
-
-  var grad = "linear-gradient(160deg," + KIOSK_COLOR.c + " 0%," + KIOSK_COLOR.c2 + " 100%)";
-
-  SUBMIT_TEAMS.forEach(function (team) {
+  var gFp = 0, gQa = 0;
+  SUBMIT_TEAMS.forEach(function (team, i) {
     var s = sumSubmit_(team, from, to);
-    grandFp += s.fp; grandQa += s.qa;
+    gFp += s.fp; gQa += s.qa;
+    var col = TEAM_COLORS[team] || NO_TEAM;
 
-    html += '<div class="submit-row">';
-    html += '<span class="submit-kiosk-label" style="--boxgrad:' + grad + '">' + esc(team) + '</span>';
-    html += '<span class="submit-sign">→</span>';
-
+    html += '<tr><td class="s-name-cell" style="background:' + col.c + '">' + esc(SUBMIT_LABELS[team] || team) + '</td>';
     if (isSingleDay) {
-      html += '<div class="submit-circle" style="--boxgrad:' + grad + '"><span class="clabel">FP</span>' +
-        '<input type="number" min="0" step="1" class="submit-input" data-team="' + esc(team) + '" data-field="fp" value="' + (s.fp || "") + '" placeholder="0"></div>';
-      html += '<span class="submit-sign">+</span>';
-      html += '<div class="submit-circle" style="--boxgrad:' + grad + '"><span class="clabel">QA</span>' +
-        '<input type="number" min="0" step="1" class="submit-input" data-team="' + esc(team) + '" data-field="qa" value="' + (s.qa || "") + '" placeholder="0"></div>';
+      html += '<td><input type="number" min="0" step="1" class="submit-input" data-team="' + esc(team) +
+        '" data-field="fp" value="' + (s.fp || "") + '" placeholder="0"></td>' +
+        '<td><input type="number" min="0" step="1" class="submit-input" data-team="' + esc(team) +
+        '" data-field="qa" value="' + (s.qa || "") + '" placeholder="0"></td>';
     } else {
-      html += '<div class="submit-circle" style="--boxgrad:' + grad + '"><span class="clabel">FP</span><span class="val">' + s.fp + '</span></div>';
-      html += '<span class="submit-sign">+</span>';
-      html += '<div class="submit-circle" style="--boxgrad:' + grad + '"><span class="clabel">QA</span><span class="val">' + s.qa + '</span></div>';
+      html += '<td class="s-val">' + s.fp + '</td><td class="s-val">' + s.qa + '</td>';
     }
-    html += '<span class="submit-sign">=</span>';
-    html += '<div class="submit-circle total"><span class="clabel">توتال</span><span class="val">' + s.total + '</span></div>';
-    html += '</div>';
+    html += '<td class="s-total" id="sTot' + i + '">' + s.total + '</td></tr>';
   });
 
-  html += '<div class="submit-grand"><div class="submit-circle grand">' +
-    '<span class="clabel">إجمالي كل الكيوسيهات (' + (isSingleDay ? "اليوم ده" : "المدى المحدد") + ')</span>' +
-    '<span class="val">' + (grandFp + grandQa) + '</span></div></div>';
-
-  html += '</div>';
+  html += '</tbody><tfoot><tr><td>الإجمالي</td>' +
+    '<td id="sSumFp">' + gFp + '</td><td id="sSumQa">' + gQa + '</td><td id="sSumAll">' + (gFp + gQa) + '</td>' +
+    '</tr></tfoot></table></div>';
 
   if (isSingleDay) {
     html += '<div class="submit-savebar"><button id="subSave" class="primary">حفظ أرقام السابمت</button>' +
@@ -834,6 +865,10 @@ function renderSubmitTab() {
     render();
   };
 
+  Array.prototype.forEach.call(document.querySelectorAll(".submit-input"), function (el) {
+    el.addEventListener("input", recalcSubmit_);
+  });
+
   var saveBtn = document.getElementById("subSave");
   if (saveBtn) saveBtn.onclick = function () { saveSubmitData(from); };
 }
@@ -843,13 +878,7 @@ function saveSubmitData(date) {
   btn.disabled = true; btn.textContent = "بيحفظ…";
 
   var items = SUBMIT_TEAMS.map(function (team) {
-    var fpEl = document.querySelector('input[data-team="' + team + '"][data-field="fp"]');
-    var qaEl = document.querySelector('input[data-team="' + team + '"][data-field="qa"]');
-    return {
-      team: team,
-      fp: fpEl && fpEl.value !== "" ? Number(fpEl.value) : 0,
-      qa: qaEl && qaEl.value !== "" ? Number(qaEl.value) : 0
-    };
+    return { team: team, fp: submitInput_(team, "fp"), qa: submitInput_(team, "qa") };
   });
 
   var qs = "?action=submitSave&date=" + encodeURIComponent(date) + "&data=" + encodeURIComponent(JSON.stringify(items));
@@ -901,7 +930,7 @@ function esc(s) {
 
 /* ===== الأحداث ===== */
 ["from", "to"].forEach(function (id) {
-  document.getElementById(id).addEventListener("change", load);
+  document.getElementById(id).addEventListener("change", function () { load(); });
 });
 document.getElementById("singleDay").addEventListener("change", render);
 document.getElementById("onlyBad").addEventListener("change", render);
@@ -936,8 +965,14 @@ function setView(v) {
   render();
 }
 
-document.getElementById("reload").onclick = load;
+document.getElementById("reload").onclick = function () { load(); };
 document.getElementById("img").onclick = downloadImage;
+
+/* تحديث تلقائي هادي (بيتخطى تاب السابمت عشان مانمسحش أرقام لسه متكتبتش) */
+setInterval(function () {
+  if (document.hidden || state.view === "submit") return;
+  load(true);
+}, AUTO_REFRESH_MS);
 
 document.getElementById("from").value = DEFAULT_FROM;
 document.getElementById("from").min = DEFAULT_FROM;
