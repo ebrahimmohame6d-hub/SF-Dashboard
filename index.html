@@ -191,7 +191,6 @@
   .submit-savebar{display:flex;justify-content:center;align-items:center;gap:12px;
     padding:16px;border-top:1px solid var(--line)}
   .submit-saved-note{font-size:12px;color:var(--good);font-weight:700}
-  .buffer-card{border-style:dashed}
 
   .single-day-wrap{overflow-x:auto}
   table.single-day-table{width:100%;border-collapse:collapse;font-size:13px}
@@ -317,7 +316,7 @@ var SUBMIT_TEAMS = TEAM_ORDER.filter(function (t) { return t !== "Buffer"; });
 var state = {
   rows: [], target: 5.5, view: "users",
   sortDaily: { key: "date", dir: -1 },
-  open: {}, teams: null, bufferTeam: null, bufferUsers: [],
+  open: {}, teams: null,
   submitRows: null, submitFrom: null, submitTo: null, submitSavedNote: ""
 };
 
@@ -409,8 +408,6 @@ function loadTeams(cb) {
     if (!res || !res.ok) { document.getElementById("out").innerHTML =
       '<div class="note error">' + esc((res && res.error) || "تعذر تحميل بيانات الفرق.") + '</div>'; return; }
     state.teams = res.teams || [];
-    state.bufferTeam = res.bufferTeam || null;
-    state.bufferUsers = res.buffer || [];
     cb();
   }, function (msg) {
     document.getElementById("out").innerHTML = '<div class="note error">' + esc(msg) + '</div>';
@@ -708,9 +705,8 @@ function renderTeamsTab() {
     return;
   }
   var teams = state.teams;
-  var teamCount = teams.length + (state.bufferTeam ? 1 : 0);
-  document.getElementById("count").textContent = teamCount + " فريق";
-  if (!teamCount) {
+  document.getElementById("count").textContent = teams.length + " فريق";
+  if (!teams.length) {
     document.getElementById("out").innerHTML = '<div class="note">مفيش سجلات لرومات الفرق المعروفة في النطاق الحالي.</div>';
     return;
   }
@@ -728,53 +724,9 @@ function renderTeamsTab() {
       '</div>' +
       '</div>';
   });
-
-  if (state.bufferTeam) {
-    var bt = state.bufferTeam;
-    var bAchieved = Math.round(bt.achievedPct * 100);
-    var open = !!state.open.__buffer__;
-    html += '<div class="tcard buffer-card" style="--c:' + BUFFER_COLOR.c + '">' +
-      '<h3>Buffer</h3>' +
-      '<div class="big">' + bt.avgHours.toFixed(2) + '<small>ساعة/يوم</small></div>' +
-      '<div class="row2">' +
-        '<span>عدد الأفراد<b>' + bt.members + '</b></span>' +
-        '<span>محقق الساعات<b class="' + (bAchieved >= 70 ? "good" : "bad") + '">' + bAchieved + '%</b></span>' +
-      '</div>' +
-      '<button class="toggle" id="bufferToggle" style="margin-top:8px">' + (open ? "إخفاء اليوزرات" : "عرض يوزرات البافر") + '</button>' +
-      '</div>';
-  }
   html += '</div>';
 
-  if (state.bufferTeam && state.open.__buffer__) {
-    html += renderBufferUsersGrid_();
-  }
-
   document.getElementById("out").innerHTML = html;
-
-  var bufBtn = document.getElementById("bufferToggle");
-  if (bufBtn) bufBtn.onclick = function () {
-    state.open.__buffer__ = !state.open.__buffer__;
-    renderTeamsTab();
-  };
-}
-
-/* شبكة يوزرات البافر: الاسم + اليوزر + متوسط الساعات كدايرة (زي تاب يوم واحد) */
-function renderBufferUsersGrid_() {
-  var users = state.bufferUsers || [];
-  if (!users.length) return '<div class="note">مفيش يوزرات في البافر في النطاق الحالي.</div>';
-  var html = '<div class="single-day-wrap"><table class="single-day-table"><thead><tr>' +
-    '<th>متوسط الساعات</th><th>الاسم</th><th>اليوزر</th><th>عدد الأيام</th>' +
-    '</tr></thead><tbody>';
-  users.slice().sort(function (a, b) { return a.avgHours - b.avgHours; }).forEach(function (u) {
-    var bad = u.avgHours < state.target;
-    html += '<tr>' +
-      '<td><span class="sd-hours ' + (bad ? "bad" : "ok") + '">' + u.avgHours.toFixed(2) + '</span></td>' +
-      '<td><span class="sd-box sd-name' + (u.name ? "" : " empty") + '">' + (u.name ? esc(u.name) : "بدون اسم") + '</span></td>' +
-      '<td><span class="sd-box sd-uid">' + esc(u.user) + '</span></td>' +
-      '<td class="num">' + u.days + '</td>' +
-      '</tr>';
-  });
-  return html + '</tbody></table></div>';
 }
 
 function empty() {
