@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SF Dashboard v5</title>
+<title>SF Dashboard v6</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root{
@@ -26,6 +26,9 @@
     --warn:#d97706;
     --warn-bg:#fef3d9;
     --radius:8px;
+    /* خطوط الأسماء واليوزرات: واضحة وكبيرة شوية */
+    --font-latin:"Inter","Tajawal",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --font-mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
@@ -94,21 +97,13 @@
     color:var(--accent-ink);cursor:pointer;user-select:none;border-bottom:2px solid var(--line);z-index:2;
     transition:color .15s ease,background .15s ease}
   thead th:hover{color:var(--accent);background:#eaeefb}
-  thead th[data-dir]::after{content:attr(data-dir);margin-inline-start:5px;color:var(--accent2)}
   tbody tr{transition:box-shadow .12s ease,background .12s ease}
-  /* الـ hover على صفوف الداتا بس — شريط الكيوسي (group-head) مستثنى عشان لونه يفضل ثابت */
-  tbody tr:not(.group-head):hover td:not(.sd-team-cell):not(.s-name-cell){background:#eef3ff !important;box-shadow:inset 0 1px 0 var(--accent),inset 0 -1px 0 var(--accent)}
-  td.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;direction:ltr;text-align:right;color:var(--muted)}
+  /* الـ hover على صفوف الداتا بس — شريط الكيوسي (group-head) وصف تفاصيل الأيام (detail) مستثنيين عشان لونهم يفضل ثابت */
+  tbody tr:not(.group-head):not(.detail):hover td:not(.sd-team-cell):not(.s-name-cell){background:#eef3ff !important;box-shadow:inset 0 1px 0 var(--accent),inset 0 -1px 0 var(--accent)}
+  td.mono{font-family:var(--font-mono);font-size:13px;font-weight:500;direction:ltr;text-align:right;color:#1e293b}
   td.num{text-align:center}
   td.hours{font-weight:800;text-align:center}
-  .pill{display:inline-block;padding:3px 11px;border-radius:999px;font-size:12px;font-weight:700}
-  .pill.bad{background:var(--bad-bg);color:var(--bad)}
-  .pill.ok{background:var(--good-bg);color:var(--good)}
   .team-pill{display:inline-block;padding:3px 11px;border-radius:999px;font-size:12px;font-weight:700;color:#fff}
-  .room-pill{display:inline-block;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:700;
-    background:#eef1fb;color:var(--accent-ink)}
-  tr.bad td.hours{background:var(--bad-bg);color:var(--bad)}
-  tr.ok td.hours{color:var(--good)}
   .miss{font-weight:800;text-align:center;background:var(--bad-bg);color:var(--bad)}
   .miss.zero{background:var(--good-bg);color:var(--good)}
   .bar{height:6px;background:#e8edf5;border-radius:3px;overflow:hidden;min-width:80px}
@@ -117,15 +112,28 @@
   .toggle{border:none;background:none;color:var(--accent);padding:3px 8px;font-size:12.5px;font-weight:700;
     cursor:pointer;text-decoration:underline;border-radius:4px;transition:box-shadow .12s ease}
   .toggle:hover{box-shadow:0 0 0 3px var(--glow)}
-  tr.detail td{background:#f9fafd;padding:12px 16px}
-  .missed-table{width:100%;border-collapse:collapse;max-width:360px}
-  .missed-table th{background:none;position:static;font-size:11px;color:var(--muted);
-    text-align:right;padding:4px 8px;border:none;cursor:default}
-  .missed-table td{padding:5px 8px;border-bottom:1px solid #eef1f7;font-size:12.5px;white-space:nowrap}
-  .missed-table td.d{direction:ltr;text-align:right;color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
-  .missed-table td.h{font-weight:800;color:var(--bad);text-align:center}
-  .name{font-weight:800;color:var(--ink)}
-  .name.empty{color:var(--muted);font-weight:500}
+  tr.detail td{background:#f9fafd;padding:14px 16px;white-space:normal}
+
+  /* ===== الأيام الناقصة (تفاصيل اليوزر): تاريخ في مربع + ساعات في دايرة، والكارت يبرز عند الوقوف ===== */
+  .days-wrap{width:100%}
+  .days-title{font-weight:800;font-size:13.5px;color:var(--accent-ink);margin-bottom:12px}
+  .days-title span{color:var(--muted);font-weight:600;margin-inline-start:4px}
+  .days-grid{display:flex;flex-wrap:wrap;gap:12px}
+  .day-card{flex:0 0 226px;display:flex;align-items:center;justify-content:space-between;gap:14px;
+    padding:10px 14px;background:#ffffff;border:1px solid var(--line);border-radius:14px;
+    cursor:default;transition:transform .15s ease,box-shadow .15s ease}
+  .day-card:hover{transform:translateY(-4px) scale(1.04);
+    box-shadow:0 0 0 3px var(--glow),0 14px 26px rgba(21,27,46,.2)}
+  .day-date{display:flex;flex-direction:column;align-items:center;justify-content:center;
+    min-width:112px;padding:7px 12px;background:#eef1fb;border:1px solid #cfd8ee;border-radius:10px;direction:ltr}
+  .day-date b{font-family:var(--font-latin);font-weight:700;font-size:15px;color:#0f172a;letter-spacing:.2px;line-height:1.3}
+  .day-date small{font-family:"Tajawal",sans-serif;font-size:12px;color:var(--muted);font-weight:700;line-height:1.3;direction:rtl}
+  .day-hours{display:inline-flex;align-items:center;justify-content:center;flex:0 0 54px;
+    width:54px;height:54px;border-radius:50%;background:var(--bad-bg);color:var(--bad);
+    border:2px solid #f5b8b3;font-weight:900;font-size:14.5px}
+
+  .name{font-family:var(--font-latin);font-weight:600;font-size:14px;color:#0f172a}
+  .name.empty{font-family:"Tajawal",sans-serif;color:var(--muted);font-weight:500}
 
   /* لون الكيوسي ثابت (solid) — من غير تدرّج، وما بيتغيرش عند الوقوف بالماوس */
   .group-head,
@@ -139,6 +147,7 @@
   .note.error{color:var(--bad)}
   .note a{color:var(--accent)}
   .note code{background:#eef2f5;padding:2px 6px;border-radius:3px;direction:ltr;display:inline-block}
+  .note button{margin-top:4px}
   .foot{margin-top:10px;font-size:12px;color:var(--muted);display:flex;
     justify-content:space-between;flex-wrap:wrap;gap:8px}
 
@@ -191,11 +200,13 @@
   .submit-savebar button.primary{background:var(--accent-ink);border-color:var(--accent-ink);color:#fff}
   .submit-saved-note{font-size:12px;color:var(--good);font-weight:700}
 
+  /* ===== يوم واحد ===== */
   .single-day-wrap{overflow-x:auto}
-  table.single-day-table{width:100%;border-collapse:collapse;font-size:13px}
+  table.single-day-table{width:100%;border-collapse:collapse;font-size:14px}
   .single-day-table thead th{position:sticky;top:0;background:#1c2f66;color:#fff;
-    font-size:11px;font-weight:800;padding:7px 10px;text-align:center;z-index:2}
-  .single-day-table td{padding:6px 10px;border-bottom:1px solid #eef1f7;text-align:center;vertical-align:middle}
+    font-size:12px;font-weight:800;padding:9px 12px;text-align:center;z-index:2;cursor:default}
+  .single-day-table thead th:hover{background:#1c2f66;color:#fff}
+  .single-day-table td{padding:8px 12px;border-bottom:1px solid #eef1f7;text-align:center;vertical-align:middle}
   .single-day-table td.sd-empty{color:var(--muted);font-weight:600;padding:16px}
 
   .single-day-table tbody tr:hover td:not(.sd-team-cell){background:#f4f7ff}
@@ -213,10 +224,11 @@
     color:#fff;font-weight:900;font-size:14px;line-height:1.4}
   .sd-team-cell .tsub{display:block;font-size:10.5px;font-weight:600;opacity:.92;margin-top:3px}
 
-  .sd-box{display:inline-block;padding:5px 11px;border-radius:7px;background:#eef1fb}
-  .sd-name{font-weight:800;font-size:12.5px;color:var(--ink)}
-  .sd-name.empty{color:var(--muted);font-weight:600}
-  .sd-uid{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;direction:ltr;color:var(--muted);font-size:11px}
+  /* الاسم واليوزر: بوكس واضح + خط أوضح وأكبر */
+  .sd-box{display:inline-block;padding:6px 13px;border-radius:8px;background:#f1f4fb;border:1px solid #e0e6f3;direction:ltr}
+  .sd-name{font-family:var(--font-latin);font-weight:600;font-size:14.5px;color:#0f172a;letter-spacing:.1px}
+  .sd-name.empty{font-family:"Tajawal",sans-serif;color:var(--muted);font-weight:600;direction:rtl}
+  .sd-uid{font-family:var(--font-mono);direction:ltr;color:#1e293b;font-size:13px;font-weight:500;letter-spacing:.1px}
 
   .sd-hours{display:inline-flex;align-items:center;justify-content:center;
     width:46px;height:46px;border-radius:50%;
@@ -225,11 +237,31 @@
   .sd-hours.ok{background:var(--good-bg);color:var(--good)}
   .sd-hours:hover{transform:scale(1.08);box-shadow:0 0 0 3px var(--glow),0 8px 18px rgba(0,0,0,.18);cursor:default}
 
+  /* الحضور: P / PT */
+  .att{display:inline-block;min-width:42px;padding:4px 11px;border-radius:8px;
+    font-family:var(--font-latin);font-weight:700;font-size:13.5px;letter-spacing:.3px;border:1px solid transparent}
+  .att-p{background:var(--good-bg);color:var(--good);border-color:#bfe6cf}
+  .att-pt{background:var(--warn-bg);color:var(--warn);border-color:#f4dba0}
+  .att-other{background:#eef1fb;color:var(--accent-ink);border-color:#d5dcf0}
+  .att-none{color:var(--muted);font-weight:600}
+
+  .sd-count{display:inline-block;min-width:34px;padding:3px 10px;border-radius:8px;font-weight:800;font-size:13.5px}
+  .sd-count.bad{background:var(--bad-bg);color:var(--bad)}
+  .sd-count.ok{background:var(--good-bg);color:var(--good)}
+  .sd-count.plain{background:#eef1fb;color:var(--accent-ink)}
+
+  /* شريط عنوان الصورة (بيظهر بس وإحنا بنجهّز صورة اللي مش محقق) */
+  .capture-banner{padding:12px 16px;background:var(--bad-bg);color:#991b1b;font-weight:800;font-size:14px;
+    border-bottom:1px solid #f5b8b3}
+
   @media (max-width:640px){
     .stat{flex:1 1 45%}
     h1{font-size:19px}
     input{min-width:135px}
     header{padding:16px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important}
   }
 </style>
 </head>
@@ -255,18 +287,28 @@
         <input type="search" id="q" list="userlist" placeholder="123456" autocomplete="off">
         <datalist id="userlist"></datalist>
       </div>
-      <div class="field">
+
+      <!-- فلتر التاريخ العام (كل اليوزرات / متوسط الفرق) -->
+      <div class="field" id="fFrom">
         <label for="from">من تاريخ</label>
         <input type="date" id="from">
       </div>
-      <div class="field">
+      <div class="field" id="fTo">
         <label for="to">لغاية تاريخ</label>
         <input type="date" id="to">
       </div>
-      <div class="field" id="singleDayField" style="display:none">
-        <label for="singleDay">اختار يوم</label>
-        <input type="date" id="singleDay">
+
+      <!-- فلتر تاب "يوم واحد": بيفتح على النهاردة، ولو عايز فترة اختار من يوم لغاية يوم -->
+      <div class="field" id="fSdFrom" style="display:none">
+        <label for="sdFrom">من يوم</label>
+        <input type="date" id="sdFrom">
       </div>
+      <div class="field" id="fSdTo" style="display:none">
+        <label for="sdTo">لغاية يوم</label>
+        <input type="date" id="sdTo">
+      </div>
+      <button id="sdToday" style="display:none">النهاردة</button>
+
       <label class="check"><input type="checkbox" id="onlyBad"> تحت التارجت بس</label>
       <button id="reset">مسح الفلاتر</button>
     </div>
@@ -274,7 +316,6 @@
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" id="tab-users" aria-selected="true">كل اليوزرات</button>
       <button class="tab" role="tab" id="tab-single" aria-selected="false">يوم واحد</button>
-      <button class="tab" role="tab" id="tab-daily" aria-selected="false">يوم بيوم</button>
       <button class="tab" role="tab" id="tab-teams" aria-selected="false">متوسط الفرق (QC)</button>
       <button class="tab" role="tab" id="tab-submit" aria-selected="false">سابمت</button>
     </div>
@@ -314,12 +355,17 @@ var NO_TEAM = teamColor_("Buffer");
 var SUBMIT_TEAMS = ["Shimaa Nasser","Ahmed Adel","Mira Samir","Eslam Ali","Eman Gamal","Buffer"];
 var SUBMIT_LABELS = { "Buffer": "Ibrahim Mohamed" };
 
+var DAY_NAMES = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+
 var state = {
   rows: [], target: 5.5, view: "users",
-  sortDaily: { key: "date", dir: -1 },
   open: {}, teams: null,
-  submitRows: null, submitFrom: null, submitTo: null, submitSavedNote: "", submitSheetUrl: ""
+  submitRows: null, submitFrom: null, submitTo: null, submitSavedNote: "", submitSheetUrl: "",
+  sdAuto: true,          /* true = تاب يوم واحد واقف تلقائي على النهاردة */
+  captureBad: false,     /* true = بنجهّز صورة لليوزرات اللي مش محققة بس */
+  capturing: false
 };
+var sdLast = { from: "", to: "" };
 
 /* ===== JSONP ===== */
 function jsonp(url, cb, onErr) {
@@ -345,8 +391,17 @@ function todayStr() {
   return local.toISOString().slice(0, 10);
 }
 
+/* اسم اليوم بالعربي من تاريخ yyyy-mm-dd */
+function dayName_(iso) {
+  var p = String(iso || "").split("-");
+  if (p.length !== 3) return "";
+  var d = new Date(+p[0], +p[1] - 1, +p[2]);
+  return isNaN(d) ? "" : DAY_NAMES[d.getDay()];
+}
+
 /* ===== تحميل ===== */
-/* silent === true: تحديث تلقائي من غير رسايل تحميل ولا مسح للشاشة لو فشل */
+/* بنحمّل كل الداتا من MIN_DATE، وفلترة التاريخ بتتم في المتصفح.
+   silent === true: تحديث تلقائي من غير رسايل تحميل ولا مسح للشاشة لو فشل */
 function load(silent) {
   silent = (silent === true);
   var btn = document.getElementById("reload");
@@ -355,13 +410,7 @@ function load(silent) {
     document.getElementById("out").innerHTML = '<div class="note">جاري تحميل الداتا…</div>';
   }
 
-  var qs = "?action=data";
-  var from = document.getElementById("from").value;
-  var to = document.getElementById("to").value;
-  if (from) qs += "&from=" + encodeURIComponent(from);
-  if (to) qs += "&to=" + encodeURIComponent(to);
-
-  jsonp(API + qs, function (res) {
+  jsonp(API + "?action=data", function (res) {
     if (!silent) { btn.disabled = false; btn.textContent = "تحديث الداتا"; }
     if (!res || !res.ok) return fail((res && res.error) || "الويب آب رجّع رد مش مفهوم.");
 
@@ -370,9 +419,10 @@ function load(silent) {
     var keepTeams = silent && state.view === "teams";
     if (!keepTeams) state.teams = null;
 
-    if (res.minDate && document.getElementById("from").min !== res.minDate) {
-      document.getElementById("from").min = res.minDate;
-      document.getElementById("singleDay").min = res.minDate;
+    if (res.minDate) {
+      ["from", "to", "sdFrom", "sdTo"].forEach(function (id) {
+        document.getElementById(id).min = res.minDate;
+      });
     }
 
     var users = {};
@@ -392,11 +442,6 @@ function load(silent) {
       "آخر تحديث: " + new Date(res.generatedAt).toLocaleString("ar-EG");
 
     if (!state.rows.length && state.view !== "submit") return noData();
-
-    if (state.view === "single" && !document.getElementById("singleDay").value) {
-      var maxDate = state.rows.reduce(function (m, r) { return r.date > m ? r.date : m; }, state.rows[0] ? state.rows[0].date : DEFAULT_FROM);
-      document.getElementById("singleDay").value = maxDate;
-    }
 
     render();
     if (keepTeams) loadTeams(renderTeamsTab);   /* نجدد كروت الفرق من غير ما الشاشة تفضى */
@@ -463,10 +508,15 @@ function matchUser(user, name, q) {
   return false;
 }
 
+/* فلتر تاب "كل اليوزرات": بحث + تحت التارجت + من/لغاية تاريخ */
 function filtered() {
   var q = document.getElementById("q").value.trim();
   var bad = document.getElementById("onlyBad").checked;
+  var from = document.getElementById("from").value;
+  var to = document.getElementById("to").value;
   return state.rows.filter(function (r) {
+    if (from && r.date < from) return false;
+    if (to && r.date > to) return false;
     if (!matchUser(r.user, r.name, q)) return false;
     if (bad && r.hours >= state.target) return false;
     return true;
@@ -499,7 +549,7 @@ function render() {
   if (state.view === "single") { renderSingleDay(); return; }
   var rows = filtered();
   renderStats(rows);
-  if (state.view === "users") renderUsers(rows); else renderDaily(rows);
+  renderUsers(rows);
 }
 
 function renderStats(rows) {
@@ -522,8 +572,14 @@ function stat(v, label, color) {
 function nameCell(name) {
   return name ? '<span class="name">' + esc(name) + '</span>' : '<span class="name empty">—</span>';
 }
-function roomCell(room) {
-  return '<span class="room-pill">' + esc(room) + '</span>';
+
+/* الحضور: P / PT (أي قيمة تانية بتظهر زي ما هي) */
+function attBadge(att) {
+  var v = String(att == null ? "" : att).trim();
+  if (!v) return '<span class="att att-none">—</span>';
+  var u = v.toUpperCase();
+  var cls = (u === "P") ? "att-p" : (u === "PT" ? "att-pt" : "att-other");
+  return '<span class="att ' + cls + '">' + esc(v) + '</span>';
 }
 
 /* --- كل اليوزرات: مجمّعة بالفريق زي شكل الروستر (Buffer ظاهر هنا كفريق زي باقي الكيوسيهات) --- */
@@ -577,7 +633,7 @@ function renderUsers(rows) {
         '</tr>';
 
       if (open && u.missedCount) {
-        html += '<tr class="detail"><td colspan="9">' + missedTable(u.missed) + '</td></tr>';
+        html += '<tr class="detail"><td colspan="9">' + missedDays(u.missed) + '</td></tr>';
       }
     });
   });
@@ -592,67 +648,138 @@ function renderUsers(rows) {
   });
 }
 
-function missedTable(missed) {
-  var h = '<table class="missed-table"><tr><th>التاريخ</th><th>الساعات</th></tr>';
+/* الأيام الناقصة: كل يوم كارت — التاريخ في مربع والساعات في دايرة، والكارت بيبرز لما توقف عليه */
+function missedDays(missed) {
+  var h = '<div class="days-wrap"><div class="days-title">الأيام الناقصة<span>(' + missed.length + ')</span></div>' +
+    '<div class="days-grid">';
   missed.forEach(function (m) {
-    h += '<tr><td class="d">' + m.date + '</td><td class="h">' + m.hours.toFixed(2) + '</td></tr>';
+    h += '<div class="day-card">' +
+      '<div class="day-date"><b>' + esc(m.date) + '</b><small>' + esc(dayName_(m.date)) + '</small></div>' +
+      '<span class="day-hours">' + m.hours.toFixed(2) + '</span>' +
+      '</div>';
   });
-  return h + '</table>';
+  return h + '</div></div>';
 }
 
-/* --- يوم واحد: عرض شبكي زي شكل الروستر (من غير تيم Buffer) --- */
+/* --- يوم واحد: بيفتح على النهاردة تلقائي، ولو عايز فترة اختار من يوم لغاية يوم (من غير تيم Buffer) --- */
+function latestDate_() {
+  var m = "";
+  state.rows.forEach(function (r) { if (r.team !== "Buffer" && r.date > m) m = r.date; });
+  return m;
+}
+
+function singleRange_() {
+  var f = document.getElementById("sdFrom").value;
+  var t = document.getElementById("sdTo").value;
+  if (!f && !t) { f = t = todayStr(); }
+  if (!f) f = t;
+  if (!t) t = f;
+  if (f > t) { var x = f; f = t; t = x; }
+  return { from: f, to: t };
+}
+
 function renderSingleDay() {
   document.getElementById("stats").innerHTML = "";
-  var day = document.getElementById("singleDay").value;
-  if (!day) {
+  var elFrom = document.getElementById("sdFrom");
+  var elTo = document.getElementById("sdTo");
+  if (state.sdAuto) { var t0 = todayStr(); elFrom.value = t0; elTo.value = t0; }
+
+  var rg = singleRange_();
+  sdLast = { from: rg.from, to: rg.to };
+  var isRange = rg.from !== rg.to;
+  var label = isRange ? ("من " + rg.from + " إلى " + rg.to) : rg.from;
+  var T = state.target;
+  var q = document.getElementById("q").value.trim();
+  var onlyBad = document.getElementById("onlyBad").checked || state.captureBad;
+
+  var base = state.rows.filter(function (r) {
+    return r.date >= rg.from && r.date <= rg.to && r.team !== "Buffer" && matchUser(r.user, r.name, q);
+  });
+
+  if (!base.length) {
     document.getElementById("count").textContent = "";
-    document.getElementById("out").innerHTML = '<div class="note">اختار يوم من فوق عشان تشوف الفريق.</div>';
+    var last = latestDate_();
+    var msg = '<div class="note">مفيش سجلات ' + (isRange ? "في الفترة دي" : "ليوم " + esc(rg.from)) + '.';
+    if (last && last < rg.from) {
+      msg += '<br><br><button id="sdGoLast">روح لآخر يوم فيه داتا (' + esc(last) + ')</button>';
+    }
+    msg += '</div>';
+    document.getElementById("out").innerHTML = msg;
+    var goLast = document.getElementById("sdGoLast");
+    if (goLast) goLast.onclick = function () {
+      state.sdAuto = false;
+      elFrom.value = last; elTo.value = last;
+      render();
+    };
     return;
   }
 
-  var q = document.getElementById("q").value.trim();
-  var rows = state.rows.filter(function (r) {
-    return r.date === day && r.team !== "Buffer" && matchUser(r.user, r.name, q);
-  });
-
-  var allUsers = {};
-  rows.forEach(function (r) { allUsers[r.user] = 1; });
-  document.getElementById("count").textContent =
-    Object.keys(allUsers).length + " يوزر · " + rows.length + " سجل ليوم " + day;
-  if (!rows.length) {
-    document.getElementById("out").innerHTML = '<div class="note">مفيش سجلات في اليوم ده.</div>';
-    return;
+  /* entries: صف لكل سجل (يوم واحد) — أو صف لكل يوزر بمتوسط ساعاته (فترة) */
+  var entries = [];
+  if (!isRange) {
+    base.forEach(function (r) {
+      entries.push({ user: r.user, name: r.name, team: r.team || "", hours: r.hours, att: r.att, days: 1, missed: r.hours < T ? 1 : 0 });
+    });
+  } else {
+    var by = {};
+    base.forEach(function (r) {
+      var u = by[r.user] || (by[r.user] = { user: r.user, name: r.name, team: r.team || "", sum: 0, days: 0, missed: 0 });
+      u.sum += r.hours; u.days++;
+      if (r.hours < T) u.missed++;
+      if (!u.name && r.name) u.name = r.name;
+    });
+    Object.keys(by).forEach(function (k) {
+      var u = by[k];
+      entries.push({ user: u.user, name: u.name, team: u.team, hours: u.sum / u.days, att: "", days: u.days, missed: u.missed });
+    });
   }
 
   var groups = {};
-  rows.forEach(function (r) {
-    var key = r.team || "بدون فريق معروف";
-    (groups[key] || (groups[key] = [])).push(r);
+  entries.forEach(function (e) {
+    var key = e.team || "بدون فريق معروف";
+    (groups[key] || (groups[key] = [])).push(e);
   });
   var orderedKeys = TEAM_ORDER.filter(function (k) { return groups[k]; })
     .concat(Object.keys(groups).filter(function (k) { return TEAM_ORDER.indexOf(k) === -1; }));
 
+  var head = isRange
+    ? '<th>متوسط الساعات</th><th>أيام مسجلة</th><th>أيام ناقصة</th>'
+    : '<th>الساعات</th><th>الحضور</th>';
+
   var html = '<div class="single-day-wrap"><table class="single-day-table"><thead><tr>' +
-    '<th>الساعات</th><th>الاسم</th><th>اليوزر</th><th>الفريق (QC)</th>' +
+    head + '<th>الاسم</th><th>اليوزر</th><th>الفريق (QC)</th>' +
     '</tr></thead><tbody>';
 
-  orderedKeys.forEach(function (key) {
-    var members = groups[key].slice().sort(function (a, b) { return a.hours - b.hours; });
-    var col = teamColor_(key);
-    var below = members.filter(function (m) { return m.hours < state.target; }).length;
-    var uniq = {};
-    members.forEach(function (m) { uniq[m.user] = 1; });
-    var usersN = Object.keys(uniq).length;
-    var avg = members.reduce(function (s, m) { return s + m.hours; }, 0) / members.length;
+  var shownCount = 0, shownUsers = {};
 
-    members.forEach(function (m, i) {
-      var bad = m.hours < state.target;
+  orderedKeys.forEach(function (key) {
+    var all = groups[key];
+    var shown = onlyBad ? all.filter(function (e) { return e.hours < T; }) : all;
+    if (!shown.length) return;
+    shown = shown.slice().sort(function (a, b) { return a.hours - b.hours; });
+
+    var col = teamColor_(key);
+    var below = all.filter(function (e) { return e.hours < T; }).length;
+    var uniq = {};
+    all.forEach(function (e) { uniq[e.user] = 1; });
+    var usersN = Object.keys(uniq).length;
+    var avg = all.reduce(function (s, e) { return s + e.hours; }, 0) / all.length;
+
+    shown.forEach(function (e, i) {
+      var bad = e.hours < T;
+      shownCount++; shownUsers[e.user] = 1;
       html += '<tr>' +
-        '<td><span class="sd-hours ' + (bad ? "bad" : "ok") + '">' + m.hours.toFixed(2) + '</span></td>' +
-        '<td><span class="sd-box sd-name' + (m.name ? "" : " empty") + '">' + (m.name ? esc(m.name) : "بدون اسم") + '</span></td>' +
-        '<td><span class="sd-box sd-uid">' + esc(m.user) + '</span></td>';
+        '<td><span class="sd-hours ' + (bad ? "bad" : "ok") + '">' + e.hours.toFixed(2) + '</span></td>';
+      if (isRange) {
+        html += '<td><span class="sd-count plain">' + e.days + '</span></td>' +
+          '<td><span class="sd-count ' + (e.missed ? "bad" : "ok") + '">' + e.missed + '</span></td>';
+      } else {
+        html += '<td>' + attBadge(e.att) + '</td>';
+      }
+      html += '<td><span class="sd-box sd-name' + (e.name ? "" : " empty") + '">' + (e.name ? esc(e.name) : "بدون اسم") + '</span></td>' +
+        '<td><span class="sd-box sd-uid">' + esc(e.user) + '</span></td>';
       if (i === 0) {
-        html += '<td class="sd-team-cell" rowspan="' + members.length + '" style="--team-c1:' + col.c + '">' +
+        html += '<td class="sd-team-cell" rowspan="' + shown.length + '" style="--team-c1:' + col.c + '">' +
           '<span class="sd-team-box">' + esc(key) +
           '<span class="tsub">' + usersN + ' يوزر · ' + below + ' تحت التارجت</span>' +
           '<span class="tsub">متوسط ' + avg.toFixed(2) + ' ساعة</span></span></td>';
@@ -663,53 +790,21 @@ function renderSingleDay() {
 
   html += '</tbody></table></div>';
 
-  document.getElementById("out").innerHTML = html;
-}
+  if (!shownCount) {
+    document.getElementById("count").textContent = "";
+    document.getElementById("out").innerHTML =
+      '<div class="note">كل اليوزرات محققة التارجت ' + (isRange ? "في الفترة دي" : "في اليوم ده") + ' ✅</div>';
+    return;
+  }
 
-/* --- يوم بيوم --- */
-function renderDaily(rows) {
-  document.getElementById("count").textContent = rows.length + " سجل معروض";
-  if (!rows.length) return empty();
+  document.getElementById("count").textContent =
+    Object.keys(shownUsers).length + " يوزر · " + label + (isRange ? " (متوسط الساعات لكل يوزر)" : "");
 
-  var cols = [
-    { k: "name", t: "الاسم" }, { k: "user", t: "اليوزر" }, { k: "date", t: "التاريخ" }, { k: "room", t: "الروم" },
-    { k: "shift", t: "الشيفت" }, { k: "pc", t: "الجهاز" }, { k: "att", t: "الحضور" },
-    { k: "hours", t: "الساعات" }, { k: "hours", t: "الحالة" }
-  ];
-  var s = state.sortDaily;
-  var html = '<table><thead><tr>' + cols.map(function (c) {
-    var dir = s.key === c.k ? (s.dir === 1 ? ' data-dir="↑"' : ' data-dir="↓"') : "";
-    return '<th data-k="' + c.k + '"' + dir + '>' + c.t + '</th>';
-  }).join("") + '</tr></thead><tbody>';
+  var banner = state.captureBad
+    ? '<div class="capture-banner">اليوزرات اللي محققتش التارجت (' + T + ' ساعة) · ' + esc(label) + '</div>'
+    : '';
 
-  rows.slice().sort(function (a, b) {
-    var x = a[s.key], y = b[s.key];
-    if (typeof x === "number" && typeof y === "number") return (x - y) * s.dir;
-    x = String(x || ""); y = String(y || "");
-    return x < y ? -s.dir : (x > y ? s.dir : 0);
-  }).forEach(function (r) {
-    var bad = r.hours < state.target;
-    html += '<tr class="' + (bad ? "bad" : "ok") + '">' +
-      '<td>' + nameCell(r.name) + '</td>' +
-      '<td class="mono">' + esc(r.user) + '</td>' +
-      '<td class="mono">' + esc(r.date) + '</td>' +
-      '<td>' + roomCell(r.room) + '</td>' +
-      '<td>' + esc(r.shift) + '</td>' +
-      '<td class="mono">' + esc(r.pc) + '</td>' +
-      '<td>' + esc(r.att || "—") + '</td>' +
-      '<td><span class="sd-hours ' + (bad ? "bad" : "ok") + '">' + r.hours.toFixed(2) + '</span></td>' +
-      '<td><span class="pill ' + (bad ? "bad" : "ok") + '">' + (bad ? "تحت التارجت" : "محقق") + '</span></td>' +
-      '</tr>';
-  });
-
-  document.getElementById("out").innerHTML = html + '</tbody></table>';
-  Array.prototype.forEach.call(document.querySelectorAll("th[data-k]"), function (el) {
-    el.onclick = function () {
-      var k = el.getAttribute("data-k");
-      if (s.key === k) s.dir = -s.dir; else { s.key = k; s.dir = 1; }
-      render();
-    };
-  });
+  document.getElementById("out").innerHTML = banner + html;
 }
 
 /* --- متوسط الفرق (QC) — الكيوسيهات الخمسة بس (من غير Buffer، ده بقى بيظهر في تاب "كل اليوزرات") --- */
@@ -893,10 +988,34 @@ function saveSubmitData(date) {
   });
 }
 
-/* ===== تنزيل صورة ===== */
+/* ===== تنزيل صورة =====
+   في تاب "يوم واحد": الصورة بتطلع لليوزرات اللي محققتش التارجت بس.
+   باقي التابات: الصورة زي ما هي. */
 function downloadImage() {
   var btn = document.getElementById("img");
+  var single = (state.view === "single");
+  var fileName = "sf-dashboard-" + new Date().toISOString().slice(0, 10) + ".png";
+
+  function finish() {
+    state.capturing = false;
+    if (single) { state.captureBad = false; render(); }
+    btn.disabled = false; btn.textContent = "تنزيل صورة";
+  }
+
+  state.capturing = true;
   btn.disabled = true; btn.textContent = "بيجهّز الصورة…";
+
+  if (single) {
+    state.captureBad = true;
+    renderSingleDay();
+    if (!document.querySelector(".single-day-table")) {
+      finish();
+      alert("مفيش يوزرات تحت التارجت في اليوم/الفترة دي ✅ — مفيش صورة تتنزل.");
+      return;
+    }
+    var rg = singleRange_();
+    fileName = "sf-below-target-" + rg.from + (rg.from !== rg.to ? "_to_" + rg.to : "") + ".png";
+  }
 
   html2canvas(document.getElementById("capture"), {
     backgroundColor: "#eef1f8",
@@ -906,13 +1025,13 @@ function downloadImage() {
     canvas.toBlob(function (blob) {
       var a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = "sf-dashboard-" + new Date().toISOString().slice(0, 10) + ".png";
+      a.download = fileName;
       a.click();
       URL.revokeObjectURL(a.href);
-      btn.disabled = false; btn.textContent = "تنزيل صورة";
+      finish();
     });
   }).catch(function () {
-    btn.disabled = false; btn.textContent = "تنزيل صورة";
+    finish();
     alert("تعذر إنشاء الصورة. جرب تاني.");
   });
 }
@@ -924,53 +1043,83 @@ function esc(s) {
 }
 
 /* ===== الأحداث ===== */
+/* التابات دي فلترتها بتتعمل في المتصفح — تاب السابمت بيتخطى عشان مانمسحش أرقام لسه متكتبتش */
+function refresh() {
+  if (state.view === "submit") return;
+  render();
+}
+
 ["from", "to"].forEach(function (id) {
-  document.getElementById(id).addEventListener("change", function () { load(); });
+  document.getElementById(id).addEventListener("change", function () {
+    if (state.view === "teams") state.teams = null;   /* الفرق بتتحمّل من السيرفر بنفس المدى */
+    refresh();
+  });
 });
-document.getElementById("singleDay").addEventListener("change", render);
-document.getElementById("onlyBad").addEventListener("change", render);
-document.getElementById("q").addEventListener("input", render);
+
+/* تاب يوم واحد: لو كان يوم واحد وغيّرت "من يوم" بيمشي معاه "لغاية يوم"، ولو عايز فترة غيّر "لغاية يوم" بعدها */
+document.getElementById("sdFrom").addEventListener("change", function () {
+  var elFrom = document.getElementById("sdFrom"), elTo = document.getElementById("sdTo");
+  state.sdAuto = false;
+  var wasSingle = (sdLast.from === sdLast.to);
+  if (!elTo.value || wasSingle || elTo.value < elFrom.value) elTo.value = elFrom.value;
+  render();
+});
+document.getElementById("sdTo").addEventListener("change", function () {
+  var elFrom = document.getElementById("sdFrom"), elTo = document.getElementById("sdTo");
+  state.sdAuto = false;
+  if (!elFrom.value || elTo.value < elFrom.value) elFrom.value = elTo.value;
+  render();
+});
+document.getElementById("sdToday").onclick = function () {
+  state.sdAuto = true;
+  render();
+};
+
+document.getElementById("onlyBad").addEventListener("change", refresh);
+document.getElementById("q").addEventListener("input", refresh);
 
 document.getElementById("reset").onclick = function () {
   document.getElementById("from").value = DEFAULT_FROM;
   document.getElementById("to").value = "";
   document.getElementById("q").value = "";
   document.getElementById("onlyBad").checked = false;
+  state.sdAuto = true;
   state.open = {};
   load();
 };
 
 document.getElementById("tab-users").onclick = function () { setView("users"); };
 document.getElementById("tab-single").onclick = function () { setView("single"); };
-document.getElementById("tab-daily").onclick = function () { setView("daily"); };
 document.getElementById("tab-teams").onclick = function () { setView("teams"); };
 document.getElementById("tab-submit").onclick = function () { setView("submit"); };
 function setView(v) {
   state.view = v;
-  document.getElementById("tab-users").setAttribute("aria-selected", v === "users");
-  document.getElementById("tab-single").setAttribute("aria-selected", v === "single");
-  document.getElementById("tab-daily").setAttribute("aria-selected", v === "daily");
-  document.getElementById("tab-teams").setAttribute("aria-selected", v === "teams");
-  document.getElementById("tab-submit").setAttribute("aria-selected", v === "submit");
-  document.getElementById("singleDayField").style.display = (v === "single") ? "flex" : "none";
-  if (v === "single" && !document.getElementById("singleDay").value && state.rows.length) {
-    var maxDate = state.rows.reduce(function (m, r) { return r.date > m ? r.date : m; }, state.rows[0].date);
-    document.getElementById("singleDay").value = maxDate;
-  }
+  ["users", "single", "teams", "submit"].forEach(function (id) {
+    document.getElementById("tab-" + id).setAttribute("aria-selected", v === id);
+  });
+  var single = (v === "single");
+  document.getElementById("fFrom").style.display = single ? "none" : "flex";
+  document.getElementById("fTo").style.display = single ? "none" : "flex";
+  document.getElementById("fSdFrom").style.display = single ? "flex" : "none";
+  document.getElementById("fSdTo").style.display = single ? "flex" : "none";
+  document.getElementById("sdToday").style.display = single ? "inline-block" : "none";
   render();
 }
 
 document.getElementById("reload").onclick = function () { load(); };
 document.getElementById("img").onclick = downloadImage;
 
-/* تحديث تلقائي هادي (بيتخطى تاب السابمت عشان مانمسحش أرقام لسه متكتبتش) */
+/* تحديث تلقائي هادي (بيتخطى تاب السابمت، وبيتخطى وقت تجهيز الصورة) */
 setInterval(function () {
-  if (document.hidden || state.view === "submit") return;
+  if (document.hidden || state.view === "submit" || state.capturing) return;
   load(true);
 }, AUTO_REFRESH_MS);
 
+/* ===== تشغيل ===== */
 document.getElementById("from").value = DEFAULT_FROM;
 document.getElementById("from").min = DEFAULT_FROM;
+document.getElementById("sdFrom").value = todayStr();
+document.getElementById("sdTo").value = todayStr();
 load();
 </script>
 </body>
