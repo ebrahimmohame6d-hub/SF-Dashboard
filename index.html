@@ -96,7 +96,8 @@
   thead th:hover{color:var(--accent);background:#eaeefb}
   thead th[data-dir]::after{content:attr(data-dir);margin-inline-start:5px;color:var(--accent2)}
   tbody tr{transition:box-shadow .12s ease,background .12s ease}
-  tbody tr:hover td:not(.sd-team-cell):not(.s-name-cell){background:#eef3ff !important;box-shadow:inset 0 1px 0 var(--accent),inset 0 -1px 0 var(--accent)}
+  /* الـ hover على صفوف الداتا بس — شريط الكيوسي (group-head) مستثنى عشان لونه يفضل ثابت */
+  tbody tr:not(.group-head):hover td:not(.sd-team-cell):not(.s-name-cell){background:#eef3ff !important;box-shadow:inset 0 1px 0 var(--accent),inset 0 -1px 0 var(--accent)}
   td.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;direction:ltr;text-align:right;color:var(--muted)}
   td.num{text-align:center}
   td.hours{font-weight:800;text-align:center}
@@ -126,9 +127,12 @@
   .name{font-weight:800;color:var(--ink)}
   .name.empty{color:var(--muted);font-weight:500}
 
-  /* لون الكيوسي ثابت (solid) — من غير تدرّج */
-  .group-head{background:var(--c,var(--accent));color:#fff}
-  .group-head td{padding:12px 16px;font-size:14.5px;font-weight:800;border-bottom:none;white-space:normal}
+  /* لون الكيوسي ثابت (solid) — من غير تدرّج، وما بيتغيرش عند الوقوف بالماوس */
+  .group-head,
+  .group-head:hover{background:var(--c,var(--accent));color:#fff}
+  .group-head td,
+  .group-head:hover td{padding:12px 16px;font-size:14.5px;font-weight:800;border-bottom:none;white-space:normal;
+    background:var(--c,var(--accent)) !important;color:#fff !important;box-shadow:none !important}
   .group-head .gsub{font-weight:500;font-size:12px;opacity:.9;margin-inline-start:10px}
 
   .note{padding:44px 20px;text-align:center;color:var(--muted)}
@@ -304,9 +308,11 @@ function teamColor_(team) {
 }
 var NO_TEAM = teamColor_("Buffer");
 
-/* تاب سابمت: الترتيب زي شيت الـ Team Lead / QC (N/A = Buffer) */
+/* تاب سابمت: الترتيب زي شيت الـ Team Lead / QC.
+   صف "Buffer" اتغير اسمه في العرض لـ Ibrahim Mohamed
+   (المفتاح الداخلي فضل "Buffer" عشان الداتا المحفوظة في الشيت تفضل شغالة). */
 var SUBMIT_TEAMS = ["Shimaa Nasser","Ahmed Adel","Mira Samir","Eslam Ali","Eman Gamal","Buffer"];
-var SUBMIT_LABELS = { "Buffer": "Buffer (N/A)" };
+var SUBMIT_LABELS = { "Buffer": "Ibrahim Mohamed" };
 
 var state = {
   rows: [], target: 5.5, view: "users",
@@ -594,7 +600,7 @@ function missedTable(missed) {
   return h + '</table>';
 }
 
-/* --- يوم واحد: عرض شبكي زي شكل الروستر --- */
+/* --- يوم واحد: عرض شبكي زي شكل الروستر (من غير تيم Buffer) --- */
 function renderSingleDay() {
   document.getElementById("stats").innerHTML = "";
   var day = document.getElementById("singleDay").value;
@@ -605,7 +611,9 @@ function renderSingleDay() {
   }
 
   var q = document.getElementById("q").value.trim();
-  var rows = state.rows.filter(function (r) { return r.date === day && matchUser(r.user, r.name, q); });
+  var rows = state.rows.filter(function (r) {
+    return r.date === day && r.team !== "Buffer" && matchUser(r.user, r.name, q);
+  });
 
   var allUsers = {};
   rows.forEach(function (r) { allUsers[r.user] = 1; });
@@ -652,14 +660,6 @@ function renderSingleDay() {
       html += '</tr>';
     });
   });
-
-  /* Buffer تيم برضو: لو مفيش له سجلات في اليوم ده يفضل ظاهر بصفر */
-  if (!groups["Buffer"] && !q) {
-    var bcol = teamColor_("Buffer");
-    html += '<tr><td class="sd-empty" colspan="3">مفيش سجلات للـ Buffer في اليوم ده</td>' +
-      '<td class="sd-team-cell" style="--team-c1:' + bcol.c + '"><span class="sd-team-box">Buffer' +
-      '<span class="tsub">0 يوزر</span></span></td></tr>';
-  }
 
   html += '</tbody></table></div>';
 
