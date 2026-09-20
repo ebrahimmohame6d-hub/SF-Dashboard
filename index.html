@@ -65,6 +65,7 @@
   .stat:hover{box-shadow:0 0 0 3px var(--glow),0 10px 22px rgba(43,75,143,.16);transform:translateY(-2px)}
   .stat b{display:block;font-size:28px;font-weight:900;line-height:1.2;color:var(--c,var(--accent))}
   .stat span{font-size:12px;color:var(--muted);font-weight:500}
+  .stats-cap{flex:0 0 100%;font-size:12px;font-weight:600;color:var(--muted)}
 
   .filters{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;
     padding:14px 16px;background:var(--surface);border:1px solid var(--line);
@@ -558,28 +559,28 @@ function render() {
   if (state.view === "teams") { renderTeamsTab(); return; }
   if (state.view === "single") { renderSingleDay(); return; }
   var rows = filtered();
-  renderStats(filtered(true));   /* الكروت مش بتتأثر بخانة "تحت التارجت بس" */
+  renderSingleStats_(usersStatsRange_(), true);   /* الكروت من ساعات اليوم (زي تاب يوم واحد) مش متوسط كل الأيام */
   renderUsers(rows);
 }
 
-/* الكروت اللي فوق: اليوزرات المسجلة بأسماء بس (من غير Buffer). اليوزر "محقق" لو متوسط ساعاته في المدى المعروض >= التارجت */
-function renderStats(rows) {
-  var by = {};
-  rows.forEach(function (r) {
-    if (r.team === "Buffer") return;
-    var u = by[r.user] || (by[r.user] = { sum: 0, n: 0 });
-    u.sum += r.hours; u.n++;
-  });
-  var total = 0, ok = 0;
-  Object.keys(by).forEach(function (k) {
-    total++;
-    if (by[k].sum / by[k].n >= state.target) ok++;
-  });
-  document.getElementById("stats").innerHTML =
-    stat(total, "يوزر", "#2b4b8f") +
-    stat(ok, "يوزر محقق", "#0f9d58") +
-    stat(total - ok, "يوزر محققش", "#dc2626");
+/* مدى كروت تاب "كل اليوزرات": الحقلين فاضيين = يوم النهاردة (أو آخر يوم فيه داتا) — نفس أرقام تاب يوم واحد.
+   لو اخترت تواريخ، الكروت بتتحسب على المدى ده. */
+function usersStatsRange_() {
+  var f = document.getElementById("from").value;
+  var t = document.getElementById("to").value;
+  if (!f && !t) { var d = autoDay_(); return { from: d, to: d, auto: true }; }
+  return { from: f || "0000-00-00", to: t || "9999-99-99", auto: false };
 }
+
+/* سطر صغير تحت الكروت بيوضح الكروت محسوبة على أنهي يوم/فترة */
+function statsCaption_(rg) {
+  if (rg.auto || rg.from === rg.to) {
+    var dn = dayName_(rg.from);
+    return "اليوم: " + rg.from + (dn ? " — " + dn : "") + ((rg.auto && rg.from !== todayStr()) ? " · آخر يوم فيه داتا" : "");
+  }
+  return "الفترة: من " + (rg.from === "0000-00-00" ? "أول يوم" : rg.from) + " إلى " + (rg.to === "9999-99-99" ? "آخر يوم" : rg.to);
+}
+
 function stat(v, label, color) {
   return '<div class="stat" style="--c:' + color + '"><b>' + v + '</b><span>' + label + '</span></div>';
 }
@@ -746,7 +747,7 @@ function rosterTotal_() {
 
 /* كروت تاب يوم واحد: الإجمالي ثابت (68)، والمحقق/المحققش بيتغيروا مع اليوم أو الفترة.
    اليوزر اللي مالوش سجل في اليوم/الفترة بيتحسب "محققش". الكروت مش بتتأثر بالبحث. */
-function renderSingleStats_(rg) {
+function renderSingleStats_(rg, withCaption) {
   var by = {};
   state.rows.forEach(function (r) {
     if (r.team === "Buffer" || r.date < rg.from || r.date > rg.to) return;
@@ -759,7 +760,8 @@ function renderSingleStats_(rg) {
   document.getElementById("stats").innerHTML =
     stat(total, "يوزر", "#2b4b8f") +
     stat(ok, "يوزر محقق", "#0f9d58") +
-    stat(Math.max(0, total - ok), "يوزر محققش", "#dc2626");
+    stat(Math.max(0, total - ok), "يوزر محققش", "#dc2626") +
+    (withCaption ? '<div class="stats-cap">' + esc(statsCaption_(rg)) + '</div>' : '');
 }
 
 function renderSingleDay() {
