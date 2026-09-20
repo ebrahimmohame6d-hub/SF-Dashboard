@@ -43,6 +43,7 @@
     background:linear-gradient(120deg,#111a44 0%,var(--accent) 55%,var(--accent2) 130%);
     border-radius:var(--radius);color:#fff;box-shadow:0 10px 26px rgba(17,26,68,.32)}
   h1{font-size:23px;font-weight:900;margin:0;letter-spacing:-.3px}
+  h1 small:empty{display:none}
   h1 small{display:block;font-size:12.5px;font-weight:500;color:#d9e1fb;margin-top:4px}
   .head-actions{display:flex;gap:8px;align-items:center}
 
@@ -283,7 +284,7 @@
 
   <header>
     <h1>SF Dashboard
-      <small id="sub">جاري التحميل…</small>
+      <small id="sub"></small>
     </h1>
     <div class="head-actions">
       <button id="img" class="ghost">تنزيل صورة</button>
@@ -441,14 +442,12 @@ function load(silent) {
     document.getElementById("userlist").innerHTML =
       Object.keys(users).sort().map(function (u) { return '<option value="' + esc(u) + '">'; }).join("");
 
-    var covTxt = (res.meta && res.meta.namesCoverage != null) ? " · الأسماء متاحة لـ " + res.meta.namesCoverage + "% من السجلات" : "";
     var st = res.meta && res.meta.namesStatus;
     var warnTxt = "";
     if (st && st.external && st.external !== "ok") warnTxt = " · ⚠ شيت الأسماء الخارجي مش متاح (بيستخدم الأسماء الاحتياطية)";
     else if (st && st.gidFallback) warnTxt = " · ⚠ تاب الأسماء (gid) مش لاقيه، بيقرا أول تاب";
-    document.getElementById("sub").textContent = state.rows.length
-      ? "التارجت " + state.target + " ساعة · بيانات من " + res.minDate + covTxt + warnTxt
-      : "مفيش داتا من " + (res.minDate || "التاريخ المحدد");
+    /* السطر التحتاني للعنوان اتشال — بيظهر بس لو في مشكلة في قراءة شيت الأسماء */
+    document.getElementById("sub").textContent = warnTxt.replace(/^\s*·\s*/, "");
     document.getElementById("stamp").textContent =
       "آخر تحديث: " + new Date(res.generatedAt).toLocaleString("ar-EG");
 
