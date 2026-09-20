@@ -122,19 +122,20 @@
   .days-title.bad{color:var(--bad)}
   .days-grid + .days-title{margin-top:18px}
   .days-none{color:var(--muted);font-weight:600;font-size:13px}
-  .days-grid{display:flex;flex-wrap:wrap;gap:12px}
-  .day-card{flex:0 0 auto;min-width:226px;display:flex;align-items:center;justify-content:space-between;gap:14px;
-    padding:10px 14px;background:#ffffff;border:1px solid var(--line);border-radius:14px;
+  .days-grid{display:flex;flex-wrap:wrap;gap:10px}
+  .day-card{flex:0 0 auto;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:8px 12px;background:#ffffff;border:1px solid var(--line);border-radius:14px;
     cursor:default;transition:transform .15s ease,box-shadow .15s ease}
   .day-card:hover{transform:translateY(-4px) scale(1.04);
     box-shadow:0 0 0 3px var(--glow),0 14px 26px rgba(21,27,46,.2)}
   .day-date{display:flex;flex-direction:column;align-items:center;justify-content:center;
-    min-width:112px;padding:7px 12px;background:#eef1fb;border:1px solid #cfd8ee;border-radius:10px;direction:ltr}
-  .day-date b{font-family:var(--font-latin);font-weight:700;font-size:15px;color:#0f172a;letter-spacing:.2px;line-height:1.3}
-  .day-date small{font-family:"Tajawal",sans-serif;font-size:12px;color:var(--muted);font-weight:700;line-height:1.3;direction:rtl}
-  .day-hours{display:inline-flex;align-items:center;justify-content:center;flex:0 0 54px;
-    width:54px;height:54px;border-radius:50%;background:var(--bad-bg);color:var(--bad);
-    border:2px solid #f5b8b3;font-weight:900;font-size:14.5px}
+    min-width:92px;padding:5px 10px;background:#eef1fb;border:1px solid #cfd8ee;border-radius:9px;direction:ltr}
+  .day-date b{font-family:var(--font-latin);font-weight:700;font-size:13px;color:#0f172a;letter-spacing:.2px;line-height:1.3}
+  .day-date small{font-family:"Tajawal",sans-serif;font-size:11px;color:var(--muted);font-weight:700;line-height:1.3;direction:rtl}
+  .day-hours{display:inline-flex;align-items:center;justify-content:center;flex:0 0 44px;
+    width:44px;height:44px;border-radius:50%;background:var(--bad-bg);color:var(--bad);
+    border:2px solid #f5b8b3;font-weight:900;font-size:12.5px}
+  .day-card .att{min-width:32px;padding:2px 8px;font-size:12px}
   .day-hours.ok{background:var(--good-bg);color:var(--good);border-color:#a8dfc0}
 
   .name{font-family:var(--font-latin);font-weight:600;font-size:14px;color:#0f172a}
@@ -272,27 +273,35 @@
   .modal-back{position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;
     justify-content:center;padding:24px;z-index:50}
   .modal-back[hidden]{display:none}
-  .modal-card{background:#fff;border-radius:24px;width:min(940px,100%);max-height:calc(100vh - 48px);
-    overflow:auto;padding:32px 40px 36px;box-shadow:0 30px 80px rgba(15,23,42,.35)}
-  .modal-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:26px}
-  .modal-head h2{margin:0;font-family:var(--font-latin);font-size:24px;font-weight:700;color:#1c3f8f;line-height:1.3}
-  .modal-x{flex:0 0 46px;width:46px;height:46px;border-radius:50%;padding:0;border:none;background:#eef0f4;
-    color:#334155;font-size:28px;line-height:1;display:inline-flex;align-items:center;justify-content:center}
-  .modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  .m-tile{background:#e9effd;border-radius:14px;padding:16px 20px;min-width:0}
+  .modal-card{background:#fff;border-radius:20px;width:min(900px,100%);max-height:calc(100vh - 48px);
+    overflow:auto;padding:24px 28px 28px;box-shadow:0 30px 80px rgba(15,23,42,.35)}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+  .modal-head h2{margin:0;font-family:var(--font-latin);font-size:18px;font-weight:700;color:#1c3f8f;line-height:1.3}
+  .modal-x{flex:0 0 38px;width:38px;height:38px;border-radius:50%;padding:0;border:none;background:#eef0f4;
+    color:#334155;font-size:24px;line-height:1;display:inline-flex;align-items:center;justify-content:center}
+  .modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .m-tile{background:#e9effd;border-radius:12px;padding:12px 16px;min-width:0}
   .m-tile.wide{grid-column:1 / -1}
-  .m-label{font-family:var(--font-latin);font-size:12px;font-weight:700;letter-spacing:1.2px;
-    text-transform:uppercase;color:#475569;margin-bottom:8px}
-  .m-value{font-family:var(--font-latin);font-size:20px;font-weight:700;color:#0f172a;word-break:break-word}
+  .m-label{font-family:var(--font-latin);font-size:11px;font-weight:700;letter-spacing:1px;
+    text-transform:uppercase;color:#475569;margin-bottom:6px}
+  .m-value{font-family:var(--font-latin);font-size:16px;font-weight:700;color:#0f172a;word-break:break-word}
   .m-value.blue{color:#1c3f8f}
   .m-value.good{color:var(--good)}
   .m-value.bad{color:var(--bad)}
   .m-value .day-card{background:#fff}
   .m-value .day-date small{font-family:var(--font-latin);direction:ltr}
   @media (max-width:640px){
-    .modal-back{padding:12px}
-    .modal-card{padding:22px 18px 26px}
-    .modal-grid{grid-template-columns:1fr}
+    .modal-back{padding:10px}
+    .modal-card{padding:16px 14px 20px;border-radius:18px}
+    .modal-head{margin-bottom:12px}
+    .modal-head h2{font-size:15px}
+    .modal-x{flex:0 0 34px;width:34px;height:34px;font-size:22px}
+    .modal-grid{gap:8px}
+    .m-tile{padding:10px 12px}
+    .m-tile.mwide{grid-column:1 / -1}
+    .m-label{font-size:10px}
+    .m-value{font-size:14.5px}
+    .day-card{flex:1 1 100%}
   }
   @media (max-width:640px){
     .stat{flex:1 1 45%}
@@ -689,7 +698,7 @@ function renderUsers(rows) {
   document.getElementById("out").innerHTML = html + '</tbody></table>';
   Array.prototype.forEach.call(document.querySelectorAll(".toggle"), function (b) {
     b.onclick = function () {
-      openDetailsModal_(b.getAttribute("data-u"), document.getElementById("from").value, document.getElementById("to").value);
+      openDetailsModal_(b.getAttribute("data-u"), document.getElementById("from").value, document.getElementById("to").value, "missed");
     };
   });
 }
@@ -703,15 +712,23 @@ function dayNameEn_(iso) {
   return isNaN(d) ? "" : DAY_NAMES_EN[d.getDay()];
 }
 
-function mTile_(label, html, cls, wide) {
-  return '<div class="m-tile' + (wide ? ' wide' : '') + '"><div class="m-label">' + esc(label) + '</div>' +
+function mTile_(label, html, cls, wide, mwide) {
+  return '<div class="m-tile' + (wide ? ' wide' : '') + (mwide ? ' mwide' : '') + '"><div class="m-label">' + esc(label) + '</div>' +
     '<div class="m-value' + (cls ? ' ' + cls : '') + '">' + html + '</div></div>';
 }
 
-function mCards_(arr, cls) {
+/* ترتيب الحضور: P الأول، بعده PT، بعده أي حاجة تانية/فاضية */
+function attRank_(a) {
+  var u = String(a == null ? "" : a).trim().toUpperCase();
+  return u === "P" ? 0 : (u === "PT" ? 1 : 2);
+}
+
+/* clsOf: "ok" / "bad" ثابت، أو function بترجّع اللون لكل يوم */
+function mCards_(arr, clsOf) {
   if (!arr.length) return '<span class="days-none">None</span>';
   return '<div class="days-grid">' + arr.map(function (m) {
     var a = String(m.att == null ? "" : m.att).trim();
+    var cls = (typeof clsOf === "function") ? clsOf(m) : clsOf;
     return '<div class="day-card">' +
       '<div class="day-date"><b>' + esc(m.date) + '</b><small>' + esc(dayNameEn_(m.date)) + '</small></div>' +
       (a ? attBadge(a) : '') +
@@ -719,8 +736,10 @@ function mCards_(arr, cls) {
   }).join("") + '</div>';
 }
 
-/* from / to اختياريين (فاضيين = كل الأيام). بيفتح مودال بتفاصيل اليوزر: بياناته + الأيام الناقصة + الأيام المحققة */
-function openDetailsModal_(user, from, to) {
+/* from / to اختياريين (فاضيين = كل الأيام).
+   mode "missed" (كل اليوزرات): الأيام الناقصة بس، الـ P فوق وبعدهم الـ PT.
+   mode "all" (يوم واحد / فترة): كل الأيام محقق أو لا بالترتيب الزمني. */
+function openDetailsModal_(user, from, to, mode) {
   var T = state.target;
   var recs = state.rows.filter(function (r) {
     return r.user === user && (!from || r.date >= from) && (!to || r.date <= to);
@@ -730,27 +749,34 @@ function openDetailsModal_(user, from, to) {
   var last = recs[recs.length - 1];
   var rooms = {}, sum = 0;
   recs.forEach(function (r) { rooms[r.room] = 1; sum += r.hours; });
-  var okL = recs.filter(function (r) { return r.hours >= T; });
-  var badL = recs.filter(function (r) { return r.hours < T; });
   var avg = sum / recs.length;
   var name = last.name || "";
 
+  var daysTile;
+  if (mode === "all") {
+    daysTile = mTile_("All days (" + recs.length + ")",
+      mCards_(recs, function (m) { return m.hours >= T ? "ok" : "bad"; }), "", true);
+  } else {
+    var missed = recs.filter(function (r) { return r.hours < T; }).sort(function (a, b) {
+      return attRank_(a.att) - attRank_(b.att) || (a.date < b.date ? -1 : (a.date > b.date ? 1 : 0));
+    });
+    daysTile = mTile_("Missed days (" + missed.length + ")", mCards_(missed, "bad"), "", true);
+  }
+
   document.getElementById("modalTitle").textContent = "Details: " + (name || user);
   document.getElementById("modalBody").innerHTML = '<div class="modal-grid">' +
-    mTile_("Name", name ? esc(name) : "—") +
-    mTile_("User", esc(user)) +
+    mTile_("Name", name ? esc(name) : "—", "", false, true) +
+    mTile_("User", esc(user), "", false, true) +
     mTile_("Team (QC)", esc(last.team || "—")) +
     mTile_("Room", esc(Object.keys(rooms).join(", "))) +
     mTile_("Days recorded", String(recs.length), "blue") +
     mTile_("Avg hours", avg.toFixed(2), avg >= T ? "good" : "bad") +
-    mTile_("Missed days (" + badL.length + ")", mCards_(badL, "bad"), "", true) +
-    mTile_("Achieved days (" + okL.length + ")", mCards_(okL, "ok"), "", true) +
+    daysTile +
     '</div>';
 
   var m = document.getElementById("modal");
   m.hidden = false;
   document.body.style.overflow = "hidden";
-  document.getElementById("modalBody").scrollTop = 0;
   m.querySelector(".modal-card").scrollTop = 0;
 }
 
@@ -942,7 +968,7 @@ function renderSingleDay() {
 
   Array.prototype.forEach.call(document.querySelectorAll(".sd-toggle"), function (b) {
     b.onclick = function () {
-      openDetailsModal_(b.getAttribute("data-u"), rg.from, rg.to);
+      openDetailsModal_(b.getAttribute("data-u"), rg.from, rg.to, "all");
     };
   });
 }
