@@ -1246,6 +1246,27 @@ function downloadImage() {
         "thead th{position:static !important}" +
         "*{transition:none !important;animation:none !important}";
       doc.head.appendChild(st);
+
+      /* اليوزر: html2canvas مابيرسمش النص جوه inline-flex + text-transform (كان بيطلع البوكس فاضي).
+         فبنبدّله في النسخة المتصوّرة بس بنص عادي: الـ ID بحروف كبيرة والدومين جنبه. */
+      Array.prototype.forEach.call(doc.querySelectorAll(".uid"), function (el) {
+        var b = el.querySelector("b"), i = el.querySelector("i");
+        var id = b ? b.textContent.toUpperCase() : "";
+        var dom = i ? i.textContent : "";
+        while (el.firstChild) el.removeChild(el.firstChild);
+        el.style.display = "inline-block";
+        el.style.letterSpacing = "normal";
+        var s1 = doc.createElement("span");
+        s1.textContent = id;
+        s1.style.cssText = "font-weight:700;color:#0f172a;letter-spacing:.6px;text-transform:none";
+        el.appendChild(s1);
+        if (dom) {
+          var s2 = doc.createElement("span");
+          s2.textContent = dom;
+          s2.style.cssText = "font-weight:500;font-size:13px;color:#64748b;letter-spacing:.1px;text-transform:none";
+          el.appendChild(s2);
+        }
+      });
     }
   }).then(function (canvas) {
     canvas.toBlob(function (blob) {
