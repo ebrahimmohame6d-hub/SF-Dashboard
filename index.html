@@ -919,7 +919,6 @@ function renderSingleDay() {
     var uniq = {};
     all.forEach(function (e) { uniq[e.user] = 1; });
     var usersN = Object.keys(uniq).length;
-    var avg = all.reduce(function (s, e) { return s + e.hours; }, 0) / all.length;
 
     shown.forEach(function (e, i) {
       var bad = e.hours < T;
@@ -940,8 +939,7 @@ function renderSingleDay() {
       if (i === 0) {
         html += '<td class="sd-team-cell" rowspan="' + shown.length + '" style="--team-c1:' + col.c + '">' +
           '<span class="sd-team-box">' + esc(key) +
-          '<span class="tsub">' + usersN + ' يوزر · ' + below + ' تحت التارجت</span>' +
-          '<span class="tsub">متوسط ' + avg.toFixed(2) + ' ساعة</span></span></td>';
+          '<span class="tsub">' + usersN + ' يوزر · ' + below + ' تحت التارجت</span></span></td>';
       }
       html += '</tr>';
     });
