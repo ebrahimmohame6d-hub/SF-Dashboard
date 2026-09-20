@@ -747,9 +747,8 @@ function openDetailsModal_(user, from, to, mode) {
   if (!recs.length) return;
 
   var last = recs[recs.length - 1];
-  var rooms = {}, sum = 0;
-  recs.forEach(function (r) { rooms[r.room] = 1; sum += r.hours; });
-  var avg = sum / recs.length;
+  var rooms = {};
+  recs.forEach(function (r) { rooms[r.room] = 1; });
   var name = last.name || "";
 
   var daysTile;
@@ -770,7 +769,6 @@ function openDetailsModal_(user, from, to, mode) {
     mTile_("Team (QC)", esc(last.team || "—")) +
     mTile_("Room", esc(Object.keys(rooms).join(", "))) +
     mTile_("Days recorded", String(recs.length), "blue") +
-    mTile_("Avg hours", avg.toFixed(2), avg >= T ? "good" : "bad") +
     daysTile +
     '</div>';
 
