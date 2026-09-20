@@ -6,7 +6,7 @@
 <title>SF Dashboard v6</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root{
@@ -28,7 +28,6 @@
     --radius:8px;
     /* خطوط الأسماء واليوزرات: واضحة وكبيرة شوية */
     --font-latin:"Inter","Tajawal",system-ui,-apple-system,"Segoe UI",sans-serif;
-    --font-mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
@@ -100,7 +99,6 @@
   tbody tr{transition:box-shadow .12s ease,background .12s ease}
   /* الـ hover على صفوف الداتا بس — شريط الكيوسي (group-head) وصف تفاصيل الأيام (detail) مستثنيين عشان لونهم يفضل ثابت */
   tbody tr:not(.group-head):not(.detail):hover td:not(.sd-team-cell):not(.s-name-cell){background:#eef3ff !important;box-shadow:inset 0 1px 0 var(--accent),inset 0 -1px 0 var(--accent)}
-  td.mono{font-family:var(--font-mono);font-size:13px;font-weight:500;direction:ltr;text-align:right;color:#1e293b}
   td.num{text-align:center}
   td.hours{font-weight:800;text-align:center}
   .team-pill{display:inline-block;padding:3px 11px;border-radius:999px;font-size:12px;font-weight:700;color:#fff}
@@ -228,7 +226,11 @@
   .sd-box{display:inline-block;padding:6px 13px;border-radius:8px;background:#f1f4fb;border:1px solid #e0e6f3;direction:ltr}
   .sd-name{font-family:var(--font-latin);font-weight:600;font-size:14.5px;color:#0f172a;letter-spacing:.1px}
   .sd-name.empty{font-family:"Tajawal",sans-serif;color:var(--muted);font-weight:600;direction:rtl}
-  .sd-uid{font-family:var(--font-mono);direction:ltr;color:#1e293b;font-size:13px;font-weight:500;letter-spacing:.1px}
+  /* اليوزر: كود اليوزر واضح وغامق، والدومين (@meti.ai) أهدى منه */
+  .uid{display:inline-flex;align-items:baseline;direction:ltr;padding:6px 13px;border-radius:9px;
+    background:#f1f4fb;border:1px solid #e0e6f3;font-family:var(--font-latin);font-size:14px;line-height:1.4;white-space:nowrap}
+  .uid b{font-weight:700;color:#0f172a;letter-spacing:.6px;text-transform:uppercase}
+  .uid i{font-style:normal;font-weight:500;font-size:13px;color:#64748b;letter-spacing:.1px}
 
   .sd-hours{display:inline-flex;align-items:center;justify-content:center;
     width:46px;height:46px;border-radius:50%;
@@ -569,6 +571,15 @@ function stat(v, label, color) {
   return '<div class="stat" style="--c:' + color + '"><b>' + v + '</b><span>' + label + '</span></div>';
 }
 
+/* اليوزر: ID + دومين بشكل مرتب (الـ ID بيظهر بحروف كبيرة للتوحيد، والداتا نفسها ما بتتغيرش) */
+function uidCell(user) {
+  var u = String(user == null ? "" : user);
+  var at = u.indexOf("@");
+  var id = at > -1 ? u.slice(0, at) : u;
+  var dom = at > -1 ? u.slice(at) : "";
+  return '<span class="uid"><b>' + esc(id) + '</b>' + (dom ? '<i>' + esc(dom) + '</i>' : '') + '</span>';
+}
+
 function nameCell(name) {
   return name ? '<span class="name">' + esc(name) + '</span>' : '<span class="name empty">—</span>';
 }
@@ -619,7 +630,7 @@ function renderUsers(rows) {
       var open = !!state.open[u.user];
       html += '<tr>' +
         '<td>' + nameCell(u.name) + '</td>' +
-        '<td class="mono">' + esc(u.user) + '</td>' +
+        '<td>' + uidCell(u.user) + '</td>' +
         '<td>' + esc(u.roomText) + '</td>' +
         '<td class="num">' + u.total + '</td>' +
         '<td class="miss' + (u.missedCount ? '' : ' zero') + '">' + u.missedCount + '</td>' +
@@ -668,6 +679,14 @@ function latestDate_() {
   return m;
 }
 
+/* اليوم التلقائي: النهاردة لو عنده سجلات، لو لأ بيقف على آخر يوم فيه داتا (من غير رسالة ولا ضغطة) */
+function autoDay_() {
+  var t = todayStr();
+  var hasToday = state.rows.some(function (r) { return r.team !== "Buffer" && r.date === t; });
+  if (hasToday) return t;
+  return latestDate_() || t;
+}
+
 function singleRange_() {
   var f = document.getElementById("sdFrom").value;
   var t = document.getElementById("sdTo").value;
@@ -682,7 +701,7 @@ function renderSingleDay() {
   document.getElementById("stats").innerHTML = "";
   var elFrom = document.getElementById("sdFrom");
   var elTo = document.getElementById("sdTo");
-  if (state.sdAuto) { var t0 = todayStr(); elFrom.value = t0; elTo.value = t0; }
+  if (state.sdAuto) { var t0 = autoDay_(); elFrom.value = t0; elTo.value = t0; }
 
   var rg = singleRange_();
   sdLast = { from: rg.from, to: rg.to };
@@ -698,19 +717,8 @@ function renderSingleDay() {
 
   if (!base.length) {
     document.getElementById("count").textContent = "";
-    var last = latestDate_();
-    var msg = '<div class="note">مفيش سجلات ' + (isRange ? "في الفترة دي" : "ليوم " + esc(rg.from)) + '.';
-    if (last && last < rg.from) {
-      msg += '<br><br><button id="sdGoLast">روح لآخر يوم فيه داتا (' + esc(last) + ')</button>';
-    }
-    msg += '</div>';
-    document.getElementById("out").innerHTML = msg;
-    var goLast = document.getElementById("sdGoLast");
-    if (goLast) goLast.onclick = function () {
-      state.sdAuto = false;
-      elFrom.value = last; elTo.value = last;
-      render();
-    };
+    document.getElementById("out").innerHTML =
+      '<div class="note">مفيش سجلات ' + (isRange ? "في الفترة دي" : "ليوم " + esc(rg.from)) + '.</div>';
     return;
   }
 
@@ -777,7 +785,7 @@ function renderSingleDay() {
         html += '<td>' + attBadge(e.att) + '</td>';
       }
       html += '<td><span class="sd-box sd-name' + (e.name ? "" : " empty") + '">' + (e.name ? esc(e.name) : "بدون اسم") + '</span></td>' +
-        '<td><span class="sd-box sd-uid">' + esc(e.user) + '</span></td>';
+        '<td>' + uidCell(e.user) + '</td>';
       if (i === 0) {
         html += '<td class="sd-team-cell" rowspan="' + shown.length + '" style="--team-c1:' + col.c + '">' +
           '<span class="sd-team-box">' + esc(key) +
