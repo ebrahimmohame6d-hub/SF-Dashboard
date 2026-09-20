@@ -289,6 +289,8 @@
   .m-value.good{color:var(--good)}
   .m-value.bad{color:var(--bad)}
   .m-value .day-card{background:#fff}
+  .m-value .day-card.noatt{background:#f1f2f4;border-color:#e3e5e9}
+  .att-dash{background:transparent;color:#9aa1ad;border-color:transparent}
   .m-value .day-date small{font-family:var(--font-latin);direction:ltr}
   @media (max-width:640px){
     .modal-back{padding:10px}
@@ -729,9 +731,10 @@ function mCards_(arr, clsOf) {
   return '<div class="days-grid">' + arr.map(function (m) {
     var a = String(m.att == null ? "" : m.att).trim();
     var cls = (typeof clsOf === "function") ? clsOf(m) : clsOf;
-    return '<div class="day-card">' +
+    /* مفيش حضور = اليوزر ماجاش: الكارت رمادي خفيف وبدل P/PT شرطة */
+    return '<div class="day-card' + (a ? '' : ' noatt') + '">' +
       '<div class="day-date"><b>' + esc(m.date) + '</b><small>' + esc(dayNameEn_(m.date)) + '</small></div>' +
-      (a ? attBadge(a) : '') +
+      (a ? attBadge(a) : '<span class="att att-dash">-</span>') +
       '<span class="day-hours ' + cls + '">' + m.hours.toFixed(2) + '</span></div>';
   }).join("") + '</div>';
 }
