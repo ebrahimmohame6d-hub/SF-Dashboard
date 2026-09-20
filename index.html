@@ -328,7 +328,7 @@
       <button class="tab" role="tab" id="tab-users" aria-selected="true">كل اليوزرات</button>
       <button class="tab" role="tab" id="tab-single" aria-selected="false">يوم واحد</button>
       <button class="tab" role="tab" id="tab-teams" aria-selected="false">QC</button>
-      <button class="tab" role="tab" id="tab-submit" aria-selected="false">سابمت</button>
+      <button class="tab" role="tab" id="tab-submit" aria-selected="false">Submit</button>
     </div>
 
     <div class="panel">
@@ -486,7 +486,7 @@ function loadSubmitData(cb) {
   jsonp(API + "?action=submitData", function (res) {
     if (!res || !res.ok) {
       document.getElementById("out").innerHTML =
-        '<div class="note error">' + esc((res && res.error) || "تعذر تحميل بيانات السابمت.") + '</div>';
+        '<div class="note error">' + esc((res && res.error) || "تعذر تحميل بيانات Submit.") + '</div>';
       return;
     }
     state.submitRows = res.rows || [];
@@ -958,7 +958,7 @@ function renderSubmitTab() {
   document.getElementById("count").textContent = "";
 
   if (state.submitRows === null) {
-    document.getElementById("out").innerHTML = '<div class="note">جاري تحميل بيانات السابمت…</div>';
+    document.getElementById("out").innerHTML = '<div class="note">جاري تحميل بيانات Submit…</div>';
     loadSubmitData(renderSubmitTab);
     return;
   }
@@ -1004,7 +1004,7 @@ function renderSubmitTab() {
     '</tr></tfoot></table></div>';
 
   if (isSingleDay) {
-    html += '<div class="submit-savebar"><button id="subSave" class="primary">حفظ أرقام السابمت</button>' +
+    html += '<div class="submit-savebar"><button id="subSave" class="primary">حفظ أرقام Submit</button>' +
       '<span class="submit-saved-note' + (state.submitSavedWarn ? ' warn' : '') + '">' + esc(state.submitSavedNote || "") + '</span></div>';
   }
 
@@ -1046,7 +1046,7 @@ function saveSubmitData(date) {
   jsonp(API + qs, function (res) {
     if (!res || !res.ok) {
       alert((res && res.error) || "تعذر حفظ البيانات.");
-      btn.disabled = false; btn.textContent = "حفظ أرقام السابمت";
+      btn.disabled = false; btn.textContent = "حفظ أرقام Submit";
       return;
     }
     state.submitRows = null;
@@ -1065,7 +1065,7 @@ function saveSubmitData(date) {
     loadSubmitData(function () { render(); });
   }, function (msg) {
     alert(msg);
-    btn.disabled = false; btn.textContent = "حفظ أرقام السابمت";
+    btn.disabled = false; btn.textContent = "حفظ أرقام Submit";
   });
 }
 
