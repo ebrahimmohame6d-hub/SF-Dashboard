@@ -175,7 +175,8 @@
     padding:14px 16px;border-bottom:1px solid var(--line);background:#f9fafd}
   .submit-toolbar .field label{font-size:12px;color:var(--muted);font-weight:500}
   .submit-hint{font-size:12px;color:var(--muted);align-self:center;max-width:340px}
-  .submit-hint a{color:var(--accent);font-weight:700}
+  .submit-link{align-self:center;color:var(--accent);font-weight:700;font-size:13.5px;text-decoration:underline}
+  .submit-link:hover{color:var(--accent-ink)}
   .submit-body{padding:24px 16px;display:flex;justify-content:center}
 
   /* جدول السابمت: أسماء الكيوسيهات على الشمال، وعلى اليمين FP و QA و Total */
@@ -326,7 +327,7 @@
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" id="tab-users" aria-selected="true">كل اليوزرات</button>
       <button class="tab" role="tab" id="tab-single" aria-selected="false">يوم واحد</button>
-      <button class="tab" role="tab" id="tab-teams" aria-selected="false">متوسط الفرق (QC)</button>
+      <button class="tab" role="tab" id="tab-teams" aria-selected="false">QC</button>
       <button class="tab" role="tab" id="tab-submit" aria-selected="false">سابمت</button>
     </div>
 
@@ -518,9 +519,9 @@ function matchUser(user, name, q) {
 }
 
 /* فلتر تاب "كل اليوزرات": بحث + تحت التارجت + من/لغاية تاريخ */
-function filtered() {
+function filtered(ignoreBad) {
   var q = document.getElementById("q").value.trim();
-  var bad = document.getElementById("onlyBad").checked;
+  var bad = !ignoreBad && document.getElementById("onlyBad").checked;
   var from = document.getElementById("from").value;
   var to = document.getElementById("to").value;
   return state.rows.filter(function (r) {
@@ -557,22 +558,27 @@ function render() {
   if (state.view === "teams") { renderTeamsTab(); return; }
   if (state.view === "single") { renderSingleDay(); return; }
   var rows = filtered();
-  renderStats(rows);
+  renderStats(filtered(true));   /* الكروت مش بتتأثر بخانة "تحت التارجت بس" */
   renderUsers(rows);
 }
 
+/* الكروت اللي فوق: اليوزرات المسجلة بأسماء بس (من غير Buffer). اليوزر "محقق" لو متوسط ساعاته في المدى المعروض >= التارجت */
 function renderStats(rows) {
-  var users = {}, badUsers = {}, bad = 0, sum = 0;
+  var by = {};
   rows.forEach(function (r) {
-    users[r.user] = 1; sum += r.hours;
-    if (r.hours < state.target) { bad++; badUsers[r.user] = 1; }
+    if (r.team === "Buffer") return;
+    var u = by[r.user] || (by[r.user] = { sum: 0, n: 0 });
+    u.sum += r.hours; u.n++;
+  });
+  var total = 0, ok = 0;
+  Object.keys(by).forEach(function (k) {
+    total++;
+    if (by[k].sum / by[k].n >= state.target) ok++;
   });
   document.getElementById("stats").innerHTML =
-    stat(Object.keys(users).length, "يوزر", "#0f9d58") +
-    stat(rows.length, "سجل", "#5b3aa8") +
-    stat(bad, "يوم تحت التارجت", "#dc2626") +
-    stat(Object.keys(badUsers).length, "يوزر عنده يوم ناقص", "#b5820a") +
-    stat(rows.length ? (sum / rows.length).toFixed(2) : "0.00", "متوسط الساعات", "#2b4b8f");
+    stat(total, "يوزر", "#2b4b8f") +
+    stat(ok, "يوزر محقق", "#0f9d58") +
+    stat(total - ok, "يوزر محققش", "#dc2626");
 }
 function stat(v, label, color) {
   return '<div class="stat" style="--c:' + color + '"><b>' + v + '</b><span>' + label + '</span></div>';
@@ -969,11 +975,8 @@ function renderSubmitTab() {
     '<div class="field"><label for="subFrom">من تاريخ</label><input type="date" id="subFrom" value="' + esc(state.submitFrom || "") + '"></div>' +
     '<div class="field"><label for="subTo">لغاية تاريخ</label><input type="date" id="subTo" value="' + esc(state.submitTo || "") + '"></div>' +
     '<button id="subRefresh">تحديث</button>' +
-    '<span class="submit-hint"><b>' + (isSingleDay ? "اليوم: " + esc(from) : "الفترة: من " + esc(from) + " إلى " + esc(to)) + '</b><br>' + (isSingleDay
-      ? "اكتب عدد الـ FP والـ QA لكل كيوسي وهيتجمعوا لوحدهم، وبعدين اضغط حفظ."
-      : "عرض إجمالي للمدى المحدد (مش قابل للتعديل). اختار نفس اليوم في الحقلين عشان تدخل أرقام.") +
-    (state.submitSheetUrl ? ' <a href="' + esc(state.submitSheetUrl) + '" target="_blank" rel="noopener">فتح شيت السابمت</a>' : '') +
-    '</span></div>';
+    (state.submitSheetUrl ? '<a class="submit-link" href="' + esc(state.submitSheetUrl) + '" target="_blank" rel="noopener">فتح شيت ال Submit</a>' : '') +
+    '</div>';
 
   html += '<div class="submit-body"><table class="submit-table" dir="ltr"><thead><tr>' +
     '<th>Team Lead / QC</th><th>FP</th><th>QA</th><th>Total</th></tr></thead><tbody>';
