@@ -584,6 +584,9 @@ function nameCell(name) {
   return name ? '<span class="name">' + esc(name) + '</span>' : '<span class="name empty">—</span>';
 }
 
+/* حضور P بس (مش PT ومش الفاضي) */
+function isP_(att) { return String(att == null ? "" : att).trim().toUpperCase() === "P"; }
+
 /* الحضور: P / PT (أي قيمة تانية بتظهر زي ما هي) */
 function attBadge(att) {
   var v = String(att == null ? "" : att).trim();
@@ -714,6 +717,8 @@ function renderSingleDay() {
   var base = state.rows.filter(function (r) {
     return r.date >= rg.from && r.date <= rg.to && r.team !== "Buffer" && matchUser(r.user, r.name, q);
   });
+  /* صورة اللي مش محقق: في الفترة بنحسب أيام الحضور P بس (في يوم واحد الفلترة بتتم تحت وإحصائيات الفريق بتفضل كاملة) */
+  if (state.captureBad && isRange) base = base.filter(function (r) { return isP_(r.att); });
 
   if (!base.length) {
     document.getElementById("count").textContent = "";
@@ -762,7 +767,9 @@ function renderSingleDay() {
 
   orderedKeys.forEach(function (key) {
     var all = groups[key];
-    var shown = onlyBad ? all.filter(function (e) { return e.hours < T; }) : all;
+    var shown = onlyBad
+      ? all.filter(function (e) { return e.hours < T && (!state.captureBad || isRange || isP_(e.att)); })
+      : all;
     if (!shown.length) return;
     shown = shown.slice().sort(function (a, b) { return a.hours - b.hours; });
 
@@ -809,7 +816,7 @@ function renderSingleDay() {
     Object.keys(shownUsers).length + " يوزر · " + label + (isRange ? " (متوسط الساعات لكل يوزر)" : "");
 
   var banner = state.captureBad
-    ? '<div class="capture-banner">اليوزرات اللي محققتش التارجت (' + T + ' ساعة) · ' + esc(label) + '</div>'
+    ? '<div class="capture-banner">اليوزرات اللي محققتش التارجت (' + T + ' ساعة) · حضور P بس · ' + esc(label) + '</div>'
     : '';
 
   document.getElementById("out").innerHTML = banner + html;
@@ -1018,11 +1025,11 @@ function downloadImage() {
     renderSingleDay();
     if (!document.querySelector(".single-day-table")) {
       finish();
-      alert("مفيش يوزرات تحت التارجت في اليوم/الفترة دي ✅ — مفيش صورة تتنزل.");
+      alert("مفيش يوزرات حضورهم P وتحت التارجت في اليوم/الفترة دي ✅ — مفيش صورة تتنزل.");
       return;
     }
     var rg = singleRange_();
-    fileName = "sf-below-target-" + rg.from + (rg.from !== rg.to ? "_to_" + rg.to : "") + ".png";
+    fileName = "sf-below-target-P-" + rg.from + (rg.from !== rg.to ? "_to_" + rg.to : "") + ".png";
   }
 
   html2canvas(document.getElementById("capture"), {
