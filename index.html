@@ -628,12 +628,9 @@ function renderUsers(rows) {
   orderedKeys.forEach(function (key) {
     var members = groups[key].sort(function (a, b) { return b.missedCount - a.missedCount; });
     var col = teamColor_(key);
-    var groupAvg = members.reduce(function (s, u) { return s + u.avg; }, 0) / members.length;
 
     html += '<tr class="group-head" style="--c:' + col.c + '">' +
-      '<td colspan="6">' + esc(key) +
-      '<span class="gsub">' + members.length + ' يوزر · متوسط الفريق ' + groupAvg.toFixed(2) + ' ساعة</span>' +
-      '</td></tr>';
+      '<td colspan="6"><span dir="ltr">' + esc(key) + ' (' + members.length + ' user)</span></td></tr>';
 
     html += '<tr style="background:#f7f8fc">' +
       '<th style="position:static">الاسم</th><th style="position:static">اليوزر</th><th style="position:static">الروم</th>' +
