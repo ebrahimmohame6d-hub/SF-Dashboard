@@ -197,6 +197,7 @@
     padding:16px;border-top:1px solid var(--line)}
   .submit-savebar button.primary{background:var(--accent-ink);border-color:var(--accent-ink);color:#fff}
   .submit-saved-note{font-size:12px;color:var(--good);font-weight:700}
+  .submit-saved-note.warn{color:var(--bad)}
 
   /* ===== يوم واحد ===== */
   .single-day-wrap{overflow-x:auto}
@@ -945,7 +946,7 @@ function renderSubmitTab() {
 
   if (isSingleDay) {
     html += '<div class="submit-savebar"><button id="subSave" class="primary">حفظ أرقام السابمت</button>' +
-      '<span class="submit-saved-note">' + esc(state.submitSavedNote || "") + '</span></div>';
+      '<span class="submit-saved-note' + (state.submitSavedWarn ? ' warn' : '') + '">' + esc(state.submitSavedNote || "") + '</span></div>';
   }
 
   document.getElementById("out").innerHTML = html;
@@ -995,7 +996,18 @@ function saveSubmitData(date) {
       return;
     }
     state.submitRows = null;
-    state.submitSavedNote = "اتحفظ ✓ " + new Date().toLocaleTimeString("ar-EG");
+    var savedAt = new Date().toLocaleTimeString("ar-EG");
+    state.submitSavedWarn = false;
+    if (typeof res.saved !== "number") {
+      /* الرد ده جاي من نسخة قديمة من الباك إند — الأسماء الجديدة بتتجاهل من غير رسالة */
+      state.submitSavedWarn = true;
+      state.submitSavedNote = "⚠ الويب آب لسه على نسخة قديمة من Code.gs — اعمل Deploy بـ New version وجرب تاني";
+    } else if (res.skipped && res.skipped.length) {
+      state.submitSavedWarn = true;
+      state.submitSavedNote = "⚠ اتحفظ " + savedAt + " ما عدا: " + res.skipped.join("، ");
+    } else {
+      state.submitSavedNote = "اتحفظ ✓ " + savedAt;
+    }
     loadSubmitData(function () { render(); });
   }, function (msg) {
     alert(msg);
