@@ -957,18 +957,19 @@ function renderSubmitTab() {
     return;
   }
 
-  if (!state.submitFrom) state.submitFrom = todayStr();
-  if (!state.submitTo) state.submitTo = state.submitFrom;
-
-  var from = state.submitFrom, to = state.submitTo;
+  /* الحقلين فاضيين = النهاردة. تاريخ واحد بس = اليوم ده. الاتنين = فترة */
+  var from = state.submitFrom || "", to = state.submitTo || "";
+  if (!from && !to) { from = to = todayStr(); }
+  if (!from) from = to;
+  if (!to) to = from;
+  if (from > to) { var swp = from; from = to; to = swp; }
   var isSingleDay = (from === to);
 
   var html = '<div class="submit-toolbar">' +
-    '<div class="field"><label for="subFrom">من تاريخ</label><input type="date" id="subFrom" value="' + esc(from) + '"></div>' +
-    '<div class="field"><label for="subTo">لغاية تاريخ</label><input type="date" id="subTo" value="' + esc(to) + '"></div>' +
-    '<button id="subToday">النهاردة</button>' +
+    '<div class="field"><label for="subFrom">من تاريخ</label><input type="date" id="subFrom" value="' + esc(state.submitFrom || "") + '"></div>' +
+    '<div class="field"><label for="subTo">لغاية تاريخ</label><input type="date" id="subTo" value="' + esc(state.submitTo || "") + '"></div>' +
     '<button id="subRefresh">تحديث</button>' +
-    '<span class="submit-hint">' + (isSingleDay
+    '<span class="submit-hint"><b>' + (isSingleDay ? "اليوم: " + esc(from) : "الفترة: من " + esc(from) + " إلى " + esc(to)) + '</b><br>' + (isSingleDay
       ? "اكتب عدد الـ FP والـ QA لكل كيوسي وهيتجمعوا لوحدهم، وبعدين اضغط حفظ."
       : "عرض إجمالي للمدى المحدد (مش قابل للتعديل). اختار نفس اليوم في الحقلين عشان تدخل أرقام.") +
     (state.submitSheetUrl ? ' <a href="' + esc(state.submitSheetUrl) + '" target="_blank" rel="noopener">فتح شيت السابمت</a>' : '') +
@@ -1007,17 +1008,12 @@ function renderSubmitTab() {
   document.getElementById("out").innerHTML = html;
 
   document.getElementById("subFrom").onchange = function () {
-    state.submitFrom = this.value || todayStr();
+    state.submitFrom = this.value || "";
     state.submitSavedNote = "";
     render();
   };
   document.getElementById("subTo").onchange = function () {
-    state.submitTo = this.value || state.submitFrom;
-    state.submitSavedNote = "";
-    render();
-  };
-  document.getElementById("subToday").onclick = function () {
-    state.submitFrom = todayStr(); state.submitTo = state.submitFrom;
+    state.submitTo = this.value || "";
     state.submitSavedNote = "";
     render();
   };
@@ -1148,7 +1144,7 @@ document.getElementById("onlyBad").addEventListener("change", refresh);
 document.getElementById("q").addEventListener("input", refresh);
 
 document.getElementById("reset").onclick = function () {
-  document.getElementById("from").value = DEFAULT_FROM;
+  document.getElementById("from").value = "";
   document.getElementById("to").value = "";
   document.getElementById("q").value = "";
   document.getElementById("onlyBad").checked = false;
@@ -1156,6 +1152,7 @@ document.getElementById("reset").onclick = function () {
   document.getElementById("sdTo").value = "";
   state.sdOpen = {};
   state.open = {};
+  state.submitFrom = null; state.submitTo = null; state.submitSavedNote = "";
   load();
 };
 
@@ -1186,8 +1183,7 @@ setInterval(function () {
 }, AUTO_REFRESH_MS);
 
 /* ===== تشغيل ===== */
-document.getElementById("from").value = DEFAULT_FROM;
-document.getElementById("from").min = DEFAULT_FROM;
+document.getElementById("from").min = DEFAULT_FROM;   /* حقول التاريخ بتفضل فاضية (mm/dd/yyyy) = كل الداتا */
 load();
 </script>
 </body>
