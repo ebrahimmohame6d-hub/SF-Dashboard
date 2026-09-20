@@ -399,6 +399,12 @@ var API = "https://script.google.com/macros/s/AKfycbzoZuqCeMHQd37WmloJU98nvzIE-6
 var DEFAULT_FROM = "2026-08-25";
 var AUTO_REFRESH_MS = 5 * 60 * 1000;   /* تحديث تلقائي هادي كل 5 دقايق (الأسماء بتتحدّث معاه) */
 
+/* إعدادات تنزيل الصورة (مهمة للموبايل):
+   CAPTURE_MIN_W: أقل عرض للصورة بالبيكسل (بيتصوّر كأنه شاشة كمبيوتر مهما كان الجهاز)
+   CAPTURE_MAX_PIXELS: أقصى مساحة للكانفس — الموبايل (خصوصًا آيفون) بيفشل لو الكانفس أكبر من كده */
+var CAPTURE_MIN_W = 760;
+var CAPTURE_MAX_PIXELS = 12e6;
+
 var TEAM_ORDER = ["Mira Samir","Eman Gamal","Shimaa Nasser","Eslam Ali","Ahmed Adel","Buffer"];
 
 /* لون الكيوسي: لون واحد ثابت (solid) في كل مكان — تغييره من هنا بس.
@@ -1161,7 +1167,39 @@ function saveSubmitData(date) {
 
 /* ===== تنزيل صورة =====
    في تاب "يوم واحد": الصورة بتطلع لليوزرات اللي محققتش التارجت بس.
-   باقي التابات: الصورة زي ما هي. */
+   باقي التابات: الصورة زي ما هي.
+
+   إصلاح الموبايل:
+   - قبل كده html2canvas كان بيصوّر بعرض شاشة الموبايل (~390px)، والجدول أعرض من كده وجوه حاوية overflow،
+     فكان بيتقطع (عمود الفريق كان بيختفي والأسماء بتتقص). دلوقتي بنصوّر بعرض "شاشة كمبيوتر" (windowWidth)
+     على قد عرض الجدول الفعلي، ونفتح الـ overflow في النسخة المتصوّرة بس.
+   - الـ scale بيتظبط تلقائي عشان الكانفس مايعديش حد الذاكرة في الموبايل (كان بيطلع صورة فاضية/بايظة). */
+function captureWidth_() {
+  var w = CAPTURE_MIN_W;
+  Array.prototype.forEach.call(document.querySelectorAll("#out table"), function (t) {
+    /* offsetWidth للجدول = عرضه الطبيعي حتى لو أعرض من الشاشة. +40 = padding الـ wrap + حدود البانل + هامش */
+    w = Math.max(w, t.offsetWidth + 40);
+  });
+  return Math.min(Math.ceil(w), 2400);
+}
+
+function captureScale_(w) {
+  var h = Math.max(document.getElementById("capture").offsetHeight, 400);   /* تقدير محافظ لطول الصورة */
+  var s = Math.sqrt(CAPTURE_MAX_PIXELS / (w * h));
+  return Math.max(0.6, Math.min(2, Math.round(s * 100) / 100));
+}
+
+function saveBlob_(blob, fileName) {
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);   /* لازم يكون في الـ DOM عشان بعض متصفحات الموبايل */
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function () { URL.revokeObjectURL(url); }, 10000);   /* التأخير مهم — الموبايل بيلغي التنزيل لو اللينك اتشال فورًا */
+}
+
 function downloadImage() {
   var btn = document.getElementById("img");
   var single = (state.view === "single");
@@ -1188,19 +1226,37 @@ function downloadImage() {
     fileName = "sf-below-target-P-" + rg.from + (rg.from !== rg.to ? "_to_" + rg.to : "") + ".png";
   }
 
+  var W = captureWidth_();
+  var scale = captureScale_(W);
+
   html2canvas(document.getElementById("capture"), {
     backgroundColor: "#eef1f8",
-    scale: 2,
-    useCORS: true
+    scale: scale,
+    useCORS: true,
+    windowWidth: W,        /* بيخلي الصفحة تترسم بعرض ثابت (زي الكمبيوتر) مش بعرض الموبايل */
+    windowHeight: 1000,
+    scrollX: 0,
+    scrollY: 0,
+    onclone: function (doc) {
+      /* التعديلات دي على النسخة المتصوّرة بس، الصفحة الأصلية ما بتتأثرش */
+      var st = doc.createElement("style");
+      st.textContent =
+        ".wrap{max-width:none !important}" +
+        ".panel,.single-day-wrap{overflow:visible !important}" +
+        "thead th{position:static !important}" +
+        "*{transition:none !important;animation:none !important}";
+      doc.head.appendChild(st);
+    }
   }).then(function (canvas) {
     canvas.toBlob(function (blob) {
-      var a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = fileName;
-      a.click();
-      URL.revokeObjectURL(a.href);
+      if (!blob) {
+        finish();
+        alert("الصورة كبيرة أوي على الموبايل. جرّب تحدد فترة أقصر أو تفعّل «تحت التارجت بس» وحاول تاني.");
+        return;
+      }
+      saveBlob_(blob, fileName);
       finish();
-    });
+    }, "image/png");
   }).catch(function () {
     finish();
     alert("تعذر إنشاء الصورة. جرب تاني.");
