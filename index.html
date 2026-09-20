@@ -107,17 +107,21 @@
   .bar{height:6px;background:#e8edf5;border-radius:3px;overflow:hidden;min-width:80px}
   .bar b{display:block;height:100%;background:var(--bad)}
   .bar.ok b{background:var(--good)}
-  .toggle{border:none;background:none;color:var(--accent);padding:3px 8px;font-size:12.5px;font-weight:700;
+  .toggle,.sd-toggle{border:none;background:none;color:var(--accent);padding:3px 8px;font-size:12.5px;font-weight:700;
     cursor:pointer;text-decoration:underline;border-radius:4px;transition:box-shadow .12s ease}
-  .toggle:hover{box-shadow:0 0 0 3px var(--glow)}
+  .toggle:hover,.sd-toggle:hover{box-shadow:0 0 0 3px var(--glow)}
   tr.detail td{background:#f9fafd;padding:14px 16px;white-space:normal}
 
   /* ===== الأيام الناقصة (تفاصيل اليوزر): تاريخ في مربع + ساعات في دايرة، والكارت يبرز عند الوقوف ===== */
   .days-wrap{width:100%}
   .days-title{font-weight:800;font-size:13.5px;color:var(--accent-ink);margin-bottom:12px}
   .days-title span{color:var(--muted);font-weight:600;margin-inline-start:4px}
+  .days-title.good{color:var(--good)}
+  .days-title.bad{color:var(--bad)}
+  .days-grid + .days-title{margin-top:18px}
+  .days-none{color:var(--muted);font-weight:600;font-size:13px}
   .days-grid{display:flex;flex-wrap:wrap;gap:12px}
-  .day-card{flex:0 0 226px;display:flex;align-items:center;justify-content:space-between;gap:14px;
+  .day-card{flex:0 0 auto;min-width:226px;display:flex;align-items:center;justify-content:space-between;gap:14px;
     padding:10px 14px;background:#ffffff;border:1px solid var(--line);border-radius:14px;
     cursor:default;transition:transform .15s ease,box-shadow .15s ease}
   .day-card:hover{transform:translateY(-4px) scale(1.04);
@@ -129,6 +133,7 @@
   .day-hours{display:inline-flex;align-items:center;justify-content:center;flex:0 0 54px;
     width:54px;height:54px;border-radius:50%;background:var(--bad-bg);color:var(--bad);
     border:2px solid #f5b8b3;font-weight:900;font-size:14.5px}
+  .day-hours.ok{background:var(--good-bg);color:var(--good);border-color:#a8dfc0}
 
   .name{font-family:var(--font-latin);font-weight:600;font-size:14px;color:#0f172a}
   .name.empty{font-family:"Tajawal",sans-serif;color:var(--muted);font-weight:500}
@@ -208,7 +213,10 @@
   .single-day-table td{padding:8px 12px;border-bottom:1px solid #eef1f7;text-align:center;vertical-align:middle}
   .single-day-table td.sd-empty{color:var(--muted);font-weight:600;padding:16px}
 
-  .single-day-table tbody tr:hover td:not(.sd-team-cell){background:#f4f7ff}
+  .single-day-table tbody tr:not(.sd-detail):hover td:not(.sd-team-cell){background:#f4f7ff}
+  .single-day-table tr.detail td{text-align:right}
+  .sd-info{padding:10px 16px;background:#f3f5fb;border-bottom:1px solid var(--line);
+    font-weight:700;font-size:13px;color:var(--accent-ink)}
   /* خانة الكيوسي: لون واحد ثابت (solid) */
   .sd-team-cell,
   .sd-team-cell:hover,
@@ -301,7 +309,7 @@
         <input type="date" id="to">
       </div>
 
-      <!-- فلتر تاب "يوم واحد": بيفتح على النهاردة، ولو عايز فترة اختار من يوم لغاية يوم -->
+      <!-- فلتر تاب "يوم واحد": الحقلين فاضيين = بيعرض النهاردة تلقائي، ولما تختار تاريخ الداتا بتتغير -->
       <div class="field" id="fSdFrom" style="display:none">
         <label for="sdFrom">من يوم</label>
         <input type="date" id="sdFrom">
@@ -310,7 +318,6 @@
         <label for="sdTo">لغاية يوم</label>
         <input type="date" id="sdTo">
       </div>
-      <button id="sdToday" style="display:none">النهاردة</button>
 
       <label class="check"><input type="checkbox" id="onlyBad"> تحت التارجت بس</label>
       <button id="reset">مسح الفلاتر</button>
@@ -364,11 +371,10 @@ var state = {
   rows: [], target: 5.5, view: "users",
   open: {}, teams: null,
   submitRows: null, submitFrom: null, submitTo: null, submitSavedNote: "", submitSheetUrl: "",
-  sdAuto: true,          /* true = تاب يوم واحد واقف تلقائي على النهاردة */
+  sdOpen: {},            /* يوزرات فاتح تفاصيل أيامها في تاب يوم واحد (فترة) */
   captureBad: false,     /* true = بنجهّز صورة لليوزرات اللي مش محققة بس */
   capturing: false
 };
-var sdLast = { from: "", to: "" };
 
 /* ===== JSONP ===== */
 function jsonp(url, cb, onErr) {
@@ -691,24 +697,44 @@ function autoDay_() {
   return latestDate_() || t;
 }
 
+/* الحقلين فاضيين = اليوم التلقائي. تاريخ واحد بس = اليوم ده. الاتنين = فترة */
 function singleRange_() {
   var f = document.getElementById("sdFrom").value;
   var t = document.getElementById("sdTo").value;
-  if (!f && !t) { f = t = todayStr(); }
+  var auto = (!f && !t);
+  if (auto) { f = t = autoDay_(); }
   if (!f) f = t;
   if (!t) t = f;
   if (f > t) { var x = f; f = t; t = x; }
-  return { from: f, to: t };
+  return { from: f, to: t, auto: auto };
+}
+
+/* تفاصيل أيام يوزر في فترة: الأيام المحققة والأيام الناقصة */
+function sdDetail_(recs) {
+  var T = state.target;
+  var list = (recs || []).slice().sort(function (a, b) { return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
+  var okL = list.filter(function (r) { return r.hours >= T; });
+  var badL = list.filter(function (r) { return r.hours < T; });
+  function cards(arr, cls) {
+    if (!arr.length) return '<div class="days-none">مفيش</div>';
+    return arr.map(function (m) {
+      var a = String(m.att == null ? "" : m.att).trim();
+      return '<div class="day-card">' +
+        '<div class="day-date"><b>' + esc(m.date) + '</b><small>' + esc(dayName_(m.date)) + '</small></div>' +
+        (a ? attBadge(a) : '') +
+        '<span class="day-hours ' + cls + '">' + m.hours.toFixed(2) + '</span></div>';
+    }).join("");
+  }
+  return '<div class="days-wrap">' +
+    '<div class="days-title good">أيام محققة<span>(' + okL.length + ')</span></div><div class="days-grid">' + cards(okL, "ok") + '</div>' +
+    '<div class="days-title bad">أيام ناقصة<span>(' + badL.length + ')</span></div><div class="days-grid">' + cards(badL, "bad") + '</div>' +
+    '</div>';
 }
 
 function renderSingleDay() {
   document.getElementById("stats").innerHTML = "";
-  var elFrom = document.getElementById("sdFrom");
-  var elTo = document.getElementById("sdTo");
-  if (state.sdAuto) { var t0 = autoDay_(); elFrom.value = t0; elTo.value = t0; }
 
   var rg = singleRange_();
-  sdLast = { from: rg.from, to: rg.to };
   var isRange = rg.from !== rg.to;
   var label = isRange ? ("من " + rg.from + " إلى " + rg.to) : rg.from;
   var T = state.target;
@@ -728,7 +754,7 @@ function renderSingleDay() {
     return;
   }
 
-  /* entries: صف لكل سجل (يوم واحد) — أو صف لكل يوزر بمتوسط ساعاته (فترة) */
+  /* entries: صف لكل سجل (يوم واحد) — أو صف لكل يوزر بمتوسط ساعاته (فترة) مع تفاصيل أيامه */
   var entries = [];
   if (!isRange) {
     base.forEach(function (r) {
@@ -737,14 +763,15 @@ function renderSingleDay() {
   } else {
     var by = {};
     base.forEach(function (r) {
-      var u = by[r.user] || (by[r.user] = { user: r.user, name: r.name, team: r.team || "", sum: 0, days: 0, missed: 0 });
+      var u = by[r.user] || (by[r.user] = { user: r.user, name: r.name, team: r.team || "", sum: 0, days: 0, missed: 0, recs: [] });
       u.sum += r.hours; u.days++;
       if (r.hours < T) u.missed++;
       if (!u.name && r.name) u.name = r.name;
+      u.recs.push({ date: r.date, hours: r.hours, att: r.att });
     });
     Object.keys(by).forEach(function (k) {
       var u = by[k];
-      entries.push({ user: u.user, name: u.name, team: u.team, hours: u.sum / u.days, att: "", days: u.days, missed: u.missed });
+      entries.push({ user: u.user, name: u.name, team: u.team, hours: u.sum / u.days, att: "", days: u.days, missed: u.missed, recs: u.recs });
     });
   }
 
@@ -757,7 +784,7 @@ function renderSingleDay() {
     .concat(Object.keys(groups).filter(function (k) { return TEAM_ORDER.indexOf(k) === -1; }));
 
   var head = isRange
-    ? '<th>متوسط الساعات</th><th>أيام مسجلة</th><th>أيام ناقصة</th>'
+    ? '<th>متوسط الساعات</th><th>أيام مسجلة</th><th>أيام ناقصة</th><th>التفاصيل</th>'
     : '<th>الساعات</th><th>الحضور</th>';
 
   var html = '<div class="single-day-wrap"><table class="single-day-table"><thead><tr>' +
@@ -765,6 +792,7 @@ function renderSingleDay() {
     '</tr></thead><tbody>';
 
   var shownCount = 0, shownUsers = {};
+  var canOpen = isRange && !state.captureBad;
 
   orderedKeys.forEach(function (key) {
     var all = groups[key];
@@ -781,26 +809,37 @@ function renderSingleDay() {
     var usersN = Object.keys(uniq).length;
     var avg = all.reduce(function (s, e) { return s + e.hours; }, 0) / all.length;
 
+    /* خانة الفريق بتغطي صفوف اليوزرات + صفوف التفاصيل المفتوحة */
+    var extra = 0;
+    if (canOpen) shown.forEach(function (e) { if (state.sdOpen[e.user]) extra++; });
+
     shown.forEach(function (e, i) {
       var bad = e.hours < T;
+      var open = canOpen && !!state.sdOpen[e.user];
       shownCount++; shownUsers[e.user] = 1;
       html += '<tr>' +
         '<td><span class="sd-hours ' + (bad ? "bad" : "ok") + '">' + e.hours.toFixed(2) + '</span></td>';
       if (isRange) {
         html += '<td><span class="sd-count plain">' + e.days + '</span></td>' +
-          '<td><span class="sd-count ' + (e.missed ? "bad" : "ok") + '">' + e.missed + '</span></td>';
+          '<td><span class="sd-count ' + (e.missed ? "bad" : "ok") + '">' + e.missed + '</span></td>' +
+          '<td>' + (state.captureBad
+            ? '<span style="color:var(--muted)">—</span>'
+            : '<button class="sd-toggle" data-u="' + esc(e.user) + '">' + (open ? "إخفاء" : "التفاصيل") + '</button>') + '</td>';
       } else {
         html += '<td>' + attBadge(e.att) + '</td>';
       }
       html += '<td><span class="sd-box sd-name' + (e.name ? "" : " empty") + '">' + (e.name ? esc(e.name) : "بدون اسم") + '</span></td>' +
         '<td>' + uidCell(e.user) + '</td>';
       if (i === 0) {
-        html += '<td class="sd-team-cell" rowspan="' + shown.length + '" style="--team-c1:' + col.c + '">' +
+        html += '<td class="sd-team-cell" rowspan="' + (shown.length + extra) + '" style="--team-c1:' + col.c + '">' +
           '<span class="sd-team-box">' + esc(key) +
           '<span class="tsub">' + usersN + ' يوزر · ' + below + ' تحت التارجت</span>' +
           '<span class="tsub">متوسط ' + avg.toFixed(2) + ' ساعة</span></span></td>';
       }
       html += '</tr>';
+      if (open) {
+        html += '<tr class="detail sd-detail"><td colspan="6">' + sdDetail_(e.recs) + '</td></tr>';
+      }
     });
   });
 
@@ -816,11 +855,27 @@ function renderSingleDay() {
   document.getElementById("count").textContent =
     Object.keys(shownUsers).length + " يوزر · " + label + (isRange ? " (متوسط الساعات لكل يوزر)" : "");
 
-  var banner = state.captureBad
-    ? '<div class="capture-banner">اليوزرات اللي محققتش التارجت (' + T + ' ساعة) · حضور P بس · ' + esc(label) + '</div>'
-    : '';
+  /* شريط بيوضح اليوم/الفترة المعروضة (عشان الحقول فاضية) — وفي الصورة بيبقى شريط اللي مش محقق */
+  var top;
+  if (state.captureBad) {
+    top = '<div class="capture-banner">اليوزرات اللي محققتش التارجت (' + T + ' ساعة) · حضور P بس · ' + esc(label) + '</div>';
+  } else {
+    var dn = dayName_(rg.from);
+    var infoText = isRange
+      ? "الفترة: من " + rg.from + " إلى " + rg.to
+      : "اليوم: " + rg.from + (dn ? " — " + dn : "") + ((rg.auto && rg.from !== todayStr()) ? " · آخر يوم فيه داتا" : "");
+    top = '<div class="sd-info">' + esc(infoText) + '</div>';
+  }
 
-  document.getElementById("out").innerHTML = banner + html;
+  document.getElementById("out").innerHTML = top + html;
+
+  Array.prototype.forEach.call(document.querySelectorAll(".sd-toggle"), function (b) {
+    b.onclick = function () {
+      var u = b.getAttribute("data-u");
+      state.sdOpen[u] = !state.sdOpen[u];
+      renderSingleDay();
+    };
+  });
 }
 
 /* --- متوسط الفرق (QC) — الكيوسيهات الخمسة بس (من غير Buffer، ده بقى بيظهر في تاب "كل اليوزرات") --- */
@@ -1083,24 +1138,11 @@ function refresh() {
   });
 });
 
-/* تاب يوم واحد: لو كان يوم واحد وغيّرت "من يوم" بيمشي معاه "لغاية يوم"، ولو عايز فترة غيّر "لغاية يوم" بعدها */
-document.getElementById("sdFrom").addEventListener("change", function () {
-  var elFrom = document.getElementById("sdFrom"), elTo = document.getElementById("sdTo");
-  state.sdAuto = false;
-  var wasSingle = (sdLast.from === sdLast.to);
-  if (!elTo.value || wasSingle || elTo.value < elFrom.value) elTo.value = elFrom.value;
-  render();
+/* تاب يوم واحد: الحقول فاضية (mm/dd/yyyy) = النهاردة تلقائي (أو آخر يوم فيه داتا)، ولما تختار تاريخ الداتا بتتغير.
+   تاريخ واحد بس = اليوم ده، والاتنين = فترة. */
+["sdFrom", "sdTo"].forEach(function (id) {
+  document.getElementById(id).addEventListener("change", function () { renderSingleDay(); });
 });
-document.getElementById("sdTo").addEventListener("change", function () {
-  var elFrom = document.getElementById("sdFrom"), elTo = document.getElementById("sdTo");
-  state.sdAuto = false;
-  if (!elFrom.value || elTo.value < elFrom.value) elFrom.value = elTo.value;
-  render();
-});
-document.getElementById("sdToday").onclick = function () {
-  state.sdAuto = true;
-  render();
-};
 
 document.getElementById("onlyBad").addEventListener("change", refresh);
 document.getElementById("q").addEventListener("input", refresh);
@@ -1110,7 +1152,9 @@ document.getElementById("reset").onclick = function () {
   document.getElementById("to").value = "";
   document.getElementById("q").value = "";
   document.getElementById("onlyBad").checked = false;
-  state.sdAuto = true;
+  document.getElementById("sdFrom").value = "";
+  document.getElementById("sdTo").value = "";
+  state.sdOpen = {};
   state.open = {};
   load();
 };
@@ -1129,7 +1173,6 @@ function setView(v) {
   document.getElementById("fTo").style.display = single ? "none" : "flex";
   document.getElementById("fSdFrom").style.display = single ? "flex" : "none";
   document.getElementById("fSdTo").style.display = single ? "flex" : "none";
-  document.getElementById("sdToday").style.display = single ? "inline-block" : "none";
   render();
 }
 
@@ -1145,8 +1188,6 @@ setInterval(function () {
 /* ===== تشغيل ===== */
 document.getElementById("from").value = DEFAULT_FROM;
 document.getElementById("from").min = DEFAULT_FROM;
-document.getElementById("sdFrom").value = todayStr();
-document.getElementById("sdTo").value = todayStr();
 load();
 </script>
 </body>
