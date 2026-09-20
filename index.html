@@ -737,10 +737,34 @@ function sdDetail_(recs) {
     '</div>';
 }
 
-function renderSingleDay() {
-  document.getElementById("stats").innerHTML = "";
+/* إجمالي اليوزرات المسجلة بأسماء (من غير Buffer) — ثابت في كل الأيام */
+function rosterTotal_() {
+  var m = {};
+  state.rows.forEach(function (r) { if (r.team !== "Buffer") m[r.user] = 1; });
+  return Object.keys(m).length;
+}
 
+/* كروت تاب يوم واحد: الإجمالي ثابت (68)، والمحقق/المحققش بيتغيروا مع اليوم أو الفترة.
+   اليوزر اللي مالوش سجل في اليوم/الفترة بيتحسب "محققش". الكروت مش بتتأثر بالبحث. */
+function renderSingleStats_(rg) {
+  var by = {};
+  state.rows.forEach(function (r) {
+    if (r.team === "Buffer" || r.date < rg.from || r.date > rg.to) return;
+    var u = by[r.user] || (by[r.user] = { sum: 0, n: 0 });
+    u.sum += r.hours; u.n++;
+  });
+  var ok = 0;
+  Object.keys(by).forEach(function (k) { if (by[k].sum / by[k].n >= state.target) ok++; });
+  var total = rosterTotal_();
+  document.getElementById("stats").innerHTML =
+    stat(total, "يوزر", "#2b4b8f") +
+    stat(ok, "يوزر محقق", "#0f9d58") +
+    stat(Math.max(0, total - ok), "يوزر محققش", "#dc2626");
+}
+
+function renderSingleDay() {
   var rg = singleRange_();
+  renderSingleStats_(rg);
   var isRange = rg.from !== rg.to;
   var label = isRange ? ("من " + rg.from + " إلى " + rg.to) : rg.from;
   var T = state.target;
