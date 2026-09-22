@@ -399,12 +399,6 @@ var API = "https://script.google.com/macros/s/AKfycbzoZuqCeMHQd37WmloJU98nvzIE-6
 var DEFAULT_FROM = "2026-08-25";
 var AUTO_REFRESH_MS = 5 * 60 * 1000;   /* تحديث تلقائي هادي كل 5 دقايق (الأسماء بتتحدّث معاه) */
 
-/* إعدادات تنزيل الصورة (مهمة للموبايل):
-   CAPTURE_MIN_W: أقل عرض للصورة بالبيكسل (بيتصوّر كأنه شاشة كمبيوتر مهما كان الجهاز)
-   CAPTURE_MAX_PIXELS: أقصى مساحة للكانفس — الموبايل (خصوصًا آيفون) بيفشل لو الكانفس أكبر من كده */
-var CAPTURE_MIN_W = 760;
-var CAPTURE_MAX_PIXELS = 12e6;
-
 var TEAM_ORDER = ["Mira Samir","Eman Gamal","Shimaa Nasser","Eslam Ali","Ahmed Adel","Buffer"];
 
 /* لون الكيوسي: لون واحد ثابت (solid) في كل مكان — تغييره من هنا بس.
@@ -828,6 +822,8 @@ function rosterTotal_() {
 
 /* كروت تاب يوم واحد: الإجمالي ثابت (68)، والمحقق/المحققش بيتغيروا مع اليوم أو الفترة.
    اليوزر اللي مالوش سجل في اليوم/الفترة بيتحسب "محققش". الكروت مش بتتأثر بالبحث. */
+/* "يوزر محققش" = عدد اليوزرات اللي عندهم سجل في المدى وساعاتهم أقل من التارجت (زي مجموع "تحت التارجت"
+   في كروت الفرق بالظبط). اليوزر اللي مالوش سجل خالص في المدى ده مش بيتحسب في أي من الاتنين. */
 function renderSingleStats_(rg, withCaption) {
   var by = {};
   state.rows.forEach(function (r) {
@@ -835,13 +831,15 @@ function renderSingleStats_(rg, withCaption) {
     var u = by[r.user] || (by[r.user] = { sum: 0, n: 0 });
     u.sum += r.hours; u.n++;
   });
-  var ok = 0;
-  Object.keys(by).forEach(function (k) { if (by[k].sum / by[k].n >= state.target) ok++; });
+  var ok = 0, bad = 0;
+  Object.keys(by).forEach(function (k) {
+    if (by[k].sum / by[k].n >= state.target) ok++; else bad++;
+  });
   var total = rosterTotal_();
   document.getElementById("stats").innerHTML =
     stat(total, "يوزر", "#2b4b8f") +
     stat(ok, "يوزر محقق", "#0f9d58") +
-    stat(Math.max(0, total - ok), "يوزر محققش", "#dc2626") +
+    stat(bad, "يوزر محققش", "#dc2626") +
     (withCaption ? '<div class="stats-cap">' + esc(statsCaption_(rg)) + '</div>' : '');
 }
 
@@ -919,6 +917,7 @@ function renderSingleDay() {
     var uniq = {};
     all.forEach(function (e) { uniq[e.user] = 1; });
     var usersN = Object.keys(uniq).length;
+    var avg = all.reduce(function (s, e) { return s + e.hours; }, 0) / all.length;
 
     shown.forEach(function (e, i) {
       var bad = e.hours < T;
@@ -939,7 +938,8 @@ function renderSingleDay() {
       if (i === 0) {
         html += '<td class="sd-team-cell" rowspan="' + shown.length + '" style="--team-c1:' + col.c + '">' +
           '<span class="sd-team-box">' + esc(key) +
-          '<span class="tsub">' + usersN + ' يوزر · ' + below + ' تحت التارجت</span></span></td>';
+          '<span class="tsub">' + usersN + ' يوزر · ' + below + ' تحت التارجت</span>' +
+          '<span class="tsub">متوسط ' + avg.toFixed(2) + ' ساعة</span></span></td>';
       }
       html += '</tr>';
     });
@@ -1165,39 +1165,7 @@ function saveSubmitData(date) {
 
 /* ===== تنزيل صورة =====
    في تاب "يوم واحد": الصورة بتطلع لليوزرات اللي محققتش التارجت بس.
-   باقي التابات: الصورة زي ما هي.
-
-   إصلاح الموبايل:
-   - قبل كده html2canvas كان بيصوّر بعرض شاشة الموبايل (~390px)، والجدول أعرض من كده وجوه حاوية overflow،
-     فكان بيتقطع (عمود الفريق كان بيختفي والأسماء بتتقص). دلوقتي بنصوّر بعرض "شاشة كمبيوتر" (windowWidth)
-     على قد عرض الجدول الفعلي، ونفتح الـ overflow في النسخة المتصوّرة بس.
-   - الـ scale بيتظبط تلقائي عشان الكانفس مايعديش حد الذاكرة في الموبايل (كان بيطلع صورة فاضية/بايظة). */
-function captureWidth_() {
-  var w = CAPTURE_MIN_W;
-  Array.prototype.forEach.call(document.querySelectorAll("#out table"), function (t) {
-    /* offsetWidth للجدول = عرضه الطبيعي حتى لو أعرض من الشاشة. +40 = padding الـ wrap + حدود البانل + هامش */
-    w = Math.max(w, t.offsetWidth + 40);
-  });
-  return Math.min(Math.ceil(w), 2400);
-}
-
-function captureScale_(w) {
-  var h = Math.max(document.getElementById("capture").offsetHeight, 400);   /* تقدير محافظ لطول الصورة */
-  var s = Math.sqrt(CAPTURE_MAX_PIXELS / (w * h));
-  return Math.max(0.6, Math.min(2, Math.round(s * 100) / 100));
-}
-
-function saveBlob_(blob, fileName) {
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement("a");
-  a.href = url;
-  a.download = fileName;
-  document.body.appendChild(a);   /* لازم يكون في الـ DOM عشان بعض متصفحات الموبايل */
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(function () { URL.revokeObjectURL(url); }, 10000);   /* التأخير مهم — الموبايل بيلغي التنزيل لو اللينك اتشال فورًا */
-}
-
+   باقي التابات: الصورة زي ما هي. */
 function downloadImage() {
   var btn = document.getElementById("img");
   var single = (state.view === "single");
@@ -1224,58 +1192,19 @@ function downloadImage() {
     fileName = "sf-below-target-P-" + rg.from + (rg.from !== rg.to ? "_to_" + rg.to : "") + ".png";
   }
 
-  var W = captureWidth_();
-  var scale = captureScale_(W);
-
   html2canvas(document.getElementById("capture"), {
     backgroundColor: "#eef1f8",
-    scale: scale,
-    useCORS: true,
-    windowWidth: W,        /* بيخلي الصفحة تترسم بعرض ثابت (زي الكمبيوتر) مش بعرض الموبايل */
-    windowHeight: 1000,
-    scrollX: 0,
-    scrollY: 0,
-    onclone: function (doc) {
-      /* التعديلات دي على النسخة المتصوّرة بس، الصفحة الأصلية ما بتتأثرش */
-      var st = doc.createElement("style");
-      st.textContent =
-        ".wrap{max-width:none !important}" +
-        ".panel,.single-day-wrap{overflow:visible !important}" +
-        "thead th{position:static !important}" +
-        "*{transition:none !important;animation:none !important}";
-      doc.head.appendChild(st);
-
-      /* اليوزر: html2canvas مابيرسمش النص جوه inline-flex + text-transform (كان بيطلع البوكس فاضي).
-         فبنبدّله في النسخة المتصوّرة بس بنص عادي: الـ ID بحروف كبيرة والدومين جنبه. */
-      Array.prototype.forEach.call(doc.querySelectorAll(".uid"), function (el) {
-        var b = el.querySelector("b"), i = el.querySelector("i");
-        var id = b ? b.textContent.toUpperCase() : "";
-        var dom = i ? i.textContent : "";
-        while (el.firstChild) el.removeChild(el.firstChild);
-        el.style.display = "inline-block";
-        el.style.letterSpacing = "normal";
-        var s1 = doc.createElement("span");
-        s1.textContent = id;
-        s1.style.cssText = "font-weight:700;color:#0f172a;letter-spacing:.6px;text-transform:none";
-        el.appendChild(s1);
-        if (dom) {
-          var s2 = doc.createElement("span");
-          s2.textContent = dom;
-          s2.style.cssText = "font-weight:500;font-size:13px;color:#64748b;letter-spacing:.1px;text-transform:none";
-          el.appendChild(s2);
-        }
-      });
-    }
+    scale: 2,
+    useCORS: true
   }).then(function (canvas) {
     canvas.toBlob(function (blob) {
-      if (!blob) {
-        finish();
-        alert("الصورة كبيرة أوي على الموبايل. جرّب تحدد فترة أقصر أو تفعّل «تحت التارجت بس» وحاول تاني.");
-        return;
-      }
-      saveBlob_(blob, fileName);
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(a.href);
       finish();
-    }, "image/png");
+    });
   }).catch(function () {
     finish();
     alert("تعذر إنشاء الصورة. جرب تاني.");
