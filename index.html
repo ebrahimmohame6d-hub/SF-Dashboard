@@ -66,7 +66,9 @@
   .stat:hover{box-shadow:0 0 0 3px var(--glow),0 10px 22px rgba(43,75,143,.16);transform:translateY(-2px)}
   .stat b{display:block;font-size:28px;font-weight:900;line-height:1.2;color:var(--c,var(--accent))}
   .stat span{font-size:12px;color:var(--muted);font-weight:500}
-  .stats-cap{flex:0 0 100%;font-size:12px;font-weight:600;color:var(--muted)}
+  .stats-cap{flex:0 0 100%;display:inline-flex;align-self:flex-start;align-items:center;gap:8px;
+    padding:8px 16px;background:#eef1fb;border:1px solid #cfd8ee;border-inline-start:4px solid var(--accent);
+    border-radius:9px;font-size:13px;font-weight:700;color:var(--accent-ink)}
 
   .filters{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;
     padding:14px 16px;background:var(--surface);border:1px solid var(--line);
@@ -219,8 +221,9 @@
 
   .single-day-table tbody tr:not(.sd-detail):hover td:not(.sd-team-cell){background:#f4f7ff}
   .single-day-table tr.detail td{text-align:right}
-  .sd-info{padding:10px 16px;background:#f3f5fb;border-bottom:1px solid var(--line);
-    font-weight:700;font-size:13px;color:var(--accent-ink)}
+  .sd-info{display:inline-flex;align-items:center;gap:8px;margin:0 16px 12px;padding:9px 16px;
+    background:#eef1fb;border:1px solid #cfd8ee;border-inline-start:4px solid var(--accent);
+    border-radius:9px;font-weight:700;font-size:13px;color:var(--accent-ink)}
   /* خانة الكيوسي: لون واحد ثابت (solid) */
   .sd-team-cell,
   .sd-team-cell:hover,
