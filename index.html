@@ -1167,33 +1167,60 @@ function saveSubmitData(date) {
 }
 
 /* ===== تنزيل صورة =====
-   في تاب "يوم واحد": الصورة بتطلع لليوزرات اللي محققتش التارجت بس.
-   باقي التابات: الصورة زي ما هي. */
+   بغض النظر عن أنهي تاب واقف فيه، تحميل الصورة دايمًا بيروح لتاب "يوم واحد" ليوم إمبارح،
+   ويطلّع اليوزرات اللي محققتش التارجت وحضورهم P بس، وبعدين يرجّع الصفحة زي ما كانت. */
+function yesterdayStr_() {
+  var d = new Date();
+  d.setDate(d.getDate() - 1);
+  var local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
+}
+
 function downloadImage() {
   var btn = document.getElementById("img");
-  var single = (state.view === "single");
-  var fileName = "sf-dashboard-" + new Date().toISOString().slice(0, 10) + ".png";
+
+  /* حالة الصفحة الحالية عشان نرجّعها بعد التصوير */
+  var prev = {
+    view: state.view,
+    sdFrom: document.getElementById("sdFrom").value,
+    sdTo: document.getElementById("sdTo").value,
+    q: document.getElementById("q").value,
+    onlyBad: document.getElementById("onlyBad").checked
+  };
+
+  function restore() {
+    setView(prev.view);
+    document.getElementById("sdFrom").value = prev.sdFrom;
+    document.getElementById("sdTo").value = prev.sdTo;
+    document.getElementById("q").value = prev.q;
+    document.getElementById("onlyBad").checked = prev.onlyBad;
+    state.captureBad = false;
+    render();
+  }
 
   function finish() {
     state.capturing = false;
-    if (single) { state.captureBad = false; render(); }
+    restore();
     btn.disabled = false; btn.textContent = "تنزيل صورة";
   }
 
   state.capturing = true;
   btn.disabled = true; btn.textContent = "بيجهّز الصورة…";
 
-  if (single) {
-    state.captureBad = true;
-    renderSingleDay();
-    if (!document.querySelector(".single-day-table")) {
-      finish();
-      alert("مفيش يوزرات حضورهم P وتحت التارجت في اليوم/الفترة دي ✅ — مفيش صورة تتنزل.");
-      return;
-    }
-    var rg = singleRange_();
-    fileName = "sf-below-target-P-" + rg.from + (rg.from !== rg.to ? "_to_" + rg.to : "") + ".png";
+  var y = yesterdayStr_();
+  setView("single");
+  document.getElementById("sdFrom").value = y;
+  document.getElementById("sdTo").value = y;
+  document.getElementById("q").value = "";
+  state.captureBad = true;
+  renderSingleDay();
+
+  if (!document.querySelector(".single-day-table")) {
+    finish();
+    alert("مفيش يوزرات حضورهم P وتحت التارجت لإمبارح (" + y + ") ✅ — مفيش صورة تتنزل.");
+    return;
   }
+  var fileName = "sf-below-target-P-" + y + ".png";
 
   html2canvas(document.getElementById("capture"), {
     backgroundColor: "#eef1f8",
