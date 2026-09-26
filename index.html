@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -26,7 +26,7 @@
     --warn:#d97706;
     --warn-bg:#fef3d9;
     --radius:8px;
-    /* خطوط الأسماء واليوزرات: واضحة وكبيرة شوية */
+    /* Name/user fonts: clear and slightly larger */
     --font-latin:"Inter","Tajawal",system-ui,-apple-system,"Segoe UI",sans-serif;
   }
   *{box-sizing:border-box}
@@ -95,18 +95,18 @@
 
   .panel{background:var(--surface);border:1px solid var(--line);border-radius:0 var(--radius) var(--radius) var(--radius);overflow-x:auto}
   table{width:100%;border-collapse:collapse;font-size:13.5px}
-  th,td{padding:10px 14px;text-align:right;border-bottom:1px solid #eef1f7;white-space:nowrap}
+  th,td{padding:10px 14px;text-align:left;border-bottom:1px solid #eef1f7;white-space:nowrap}
   thead th{position:sticky;top:0;background:#f3f5fb;font-weight:800;font-size:12px;
     color:var(--accent-ink);cursor:pointer;user-select:none;border-bottom:2px solid var(--line);z-index:2;
     transition:color .15s ease,background .15s ease}
   thead th:hover{color:var(--accent);background:#eaeefb}
   tbody tr{transition:box-shadow .12s ease,background .12s ease}
-  /* الـ hover على صفوف الداتا بس — شريط الكيوسي (group-head) وصف تفاصيل الأيام (detail) مستثنيين عشان لونهم يفضل ثابت */
+  /* Hover only on data rows — team header bar (group-head) and day-details row (detail) are excluded so their color stays fixed */
   tbody tr:not(.group-head):not(.detail):hover td:not(.sd-team-cell):not(.s-name-cell){background:#eef3ff !important;box-shadow:inset 0 1px 0 var(--accent),inset 0 -1px 0 var(--accent)}
   td.num{text-align:center}
   td.hours{font-weight:800;text-align:center}
   .team-pill{display:inline-block;padding:3px 11px;border-radius:999px;font-size:12px;font-weight:700;color:#fff}
-  /* الأيام المسجلة (أخضر) والناقصة (أحمر): مربع بحواف متنية قريب من البيضاوي */
+  /* Recorded days (green) and missing days (red): rounded pill-like box */
   .cnt{display:inline-block;min-width:52px;padding:6px 18px;border-radius:16px;
     font-weight:800;font-size:14.5px;line-height:1.3;text-align:center;border:1px solid transparent}
   .cnt.ok{background:var(--good-bg);color:var(--good);border-color:#bfe6cf}
@@ -116,7 +116,7 @@
   .toggle:hover,.sd-toggle:hover{box-shadow:0 0 0 3px var(--glow)}
   tr.detail td{background:#f9fafd;padding:14px 16px;white-space:normal}
 
-  /* ===== الأيام الناقصة (تفاصيل اليوزر): تاريخ في مربع + ساعات في دايرة، والكارت يبرز عند الوقوف ===== */
+  /* ===== Missing days (user details): date in a box + hours in a circle, card lifts on hover ===== */
   .days-wrap{width:100%}
   .days-title{font-weight:800;font-size:13.5px;color:var(--accent-ink);margin-bottom:12px}
   .days-title span{color:var(--muted);font-weight:600;margin-inline-start:4px}
@@ -133,7 +133,7 @@
   .day-date{display:flex;flex-direction:column;align-items:center;justify-content:center;
     min-width:92px;padding:5px 10px;background:#eef1fb;border:1px solid #cfd8ee;border-radius:9px;direction:ltr}
   .day-date b{font-family:var(--font-latin);font-weight:700;font-size:13px;color:#0f172a;letter-spacing:.2px;line-height:1.3}
-  .day-date small{font-family:"Tajawal",sans-serif;font-size:11px;color:var(--muted);font-weight:700;line-height:1.3;direction:rtl}
+  .day-date small{font-family:"Tajawal",sans-serif;font-size:11px;color:var(--muted);font-weight:700;line-height:1.3;direction:ltr}
   .day-hours{display:inline-flex;align-items:center;justify-content:center;flex:0 0 44px;
     width:44px;height:44px;border-radius:50%;background:var(--bad-bg);color:var(--bad);
     border:2px solid #f5b8b3;font-weight:900;font-size:12.5px}
@@ -143,7 +143,7 @@
   .name{font-family:var(--font-latin);font-weight:600;font-size:14px;color:#0f172a}
   .name.empty{font-family:"Tajawal",sans-serif;color:var(--muted);font-weight:500}
 
-  /* لون الكيوسي ثابت (solid) — من غير تدرّج، وما بيتغيرش عند الوقوف بالماوس */
+  /* Team color is a fixed solid color — no gradient, and it doesn't change on hover */
   .group-head,
   .group-head:hover{background:var(--c,var(--accent));color:#fff}
   .group-head td,
@@ -160,7 +160,7 @@
     justify-content:space-between;flex-wrap:wrap;gap:8px}
 
   .teamcard{display:flex;flex-wrap:wrap;gap:18px;padding:22px;justify-content:center}
-  /* بطاقة الفريق: مربع عادي (مش دايرة) بلون ثابت واحد لكل الكروت */
+  /* Team card: a plain square (not a circle) with one fixed color for every card */
   .tcard{width:190px;min-height:170px;flex:0 0 auto;background:var(--surface);
     border:1px solid var(--line);border-top:6px solid var(--c,var(--accent));border-radius:var(--radius);
     display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -175,7 +175,7 @@
   .tcard .row2 b.good{color:var(--good)}
   .tcard .row2 b.bad{color:var(--bad)}
 
-  /* ===== سابمت ===== */
+  /* ===== Submit ===== */
   .submit-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;
     padding:14px 16px;border-bottom:1px solid var(--line);background:#f9fafd}
   .submit-toolbar .field label{font-size:12px;color:var(--muted);font-weight:500}
@@ -184,7 +184,7 @@
   .submit-link:hover{color:var(--accent-ink)}
   .submit-body{padding:24px 16px;display:flex;justify-content:center}
 
-  /* جدول السابمت: أسماء الكيوسيهات على الشمال، وعلى اليمين FP و QA و Total */
+  /* Submit table: team names on the left, FP / QA / Total on the right */
   .submit-table{width:100%;max-width:640px;direction:ltr;
     border-collapse:separate;border-spacing:0;
     border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
@@ -210,7 +210,7 @@
   .submit-saved-note{font-size:12px;color:var(--good);font-weight:700}
   .submit-saved-note.warn{color:var(--bad)}
 
-  /* ===== يوم واحد ===== */
+  /* ===== Single Day ===== */
   .single-day-wrap{overflow-x:auto}
   table.single-day-table{width:100%;border-collapse:collapse;font-size:14px}
   .single-day-table thead th{position:sticky;top:0;background:#1c2f66;color:#fff;
@@ -220,11 +220,11 @@
   .single-day-table td.sd-empty{color:var(--muted);font-weight:600;padding:16px}
 
   .single-day-table tbody tr:not(.sd-detail):hover td:not(.sd-team-cell){background:#f4f7ff}
-  .single-day-table tr.detail td{text-align:right}
+  .single-day-table tr.detail td{text-align:left}
   .sd-info{display:inline-flex;align-items:center;gap:8px;margin:0 16px 12px;padding:9px 16px;
     background:#eef1fb;border:1px solid #cfd8ee;border-inline-start:4px solid var(--accent);
     border-radius:9px;font-weight:700;font-size:13px;color:var(--accent-ink)}
-  /* خانة الكيوسي: لون واحد ثابت (solid) */
+  /* Team cell: one fixed solid color */
   .sd-team-cell,
   .sd-team-cell:hover,
   .sd-team-cell:focus,
@@ -238,11 +238,11 @@
     color:#fff;font-weight:900;font-size:14px;line-height:1.4}
   .sd-team-cell .tsub{display:block;font-size:10.5px;font-weight:600;opacity:.92;margin-top:3px}
 
-  /* الاسم واليوزر: بوكس واضح + خط أوضح وأكبر */
+  /* Name and user: clear box + larger, clearer font */
   .sd-box{display:inline-block;padding:6px 13px;border-radius:8px;background:#f1f4fb;border:1px solid #e0e6f3;direction:ltr}
   .sd-name{font-family:var(--font-latin);font-weight:600;font-size:14.5px;color:#0f172a;letter-spacing:.1px}
-  .sd-name.empty{font-family:"Tajawal",sans-serif;color:var(--muted);font-weight:600;direction:rtl}
-  /* اليوزر: كود اليوزر واضح وغامق، والدومين (@meti.ai) أهدى منه */
+  .sd-name.empty{font-family:"Tajawal",sans-serif;color:var(--muted);font-weight:600;direction:ltr}
+  /* User: the user code is bold and clear, the domain (@meti.ai) is quieter */
   .uid{display:inline-block;direction:ltr;padding:6px 13px;border-radius:9px;
     background:#f1f4fb;border:1px solid #e0e6f3;font-family:"Inter",system-ui,sans-serif;font-size:14px;
     line-height:1.4;white-space:nowrap}
@@ -256,7 +256,7 @@
   .sd-hours.ok{background:var(--good-bg);color:var(--good)}
   .sd-hours:hover{transform:scale(1.08);box-shadow:0 0 0 3px var(--glow),0 8px 18px rgba(0,0,0,.18);cursor:default}
 
-  /* الحضور: P / PT */
+  /* Attendance: P / PT */
   .att{display:inline-block;min-width:42px;padding:4px 11px;border-radius:8px;
     font-family:var(--font-latin);font-weight:700;font-size:13.5px;letter-spacing:.3px;border:1px solid transparent}
   .att-p{background:var(--good-bg);color:var(--good);border-color:#bfe6cf}
@@ -269,11 +269,11 @@
   .sd-count.ok{background:var(--good-bg);color:var(--good)}
   .sd-count.plain{background:#eef1fb;color:var(--accent-ink)}
 
-  /* شريط عنوان الصورة (بيظهر بس وإحنا بنجهّز صورة اللي مش محقق) */
+  /* Image capture banner (shown only while preparing the below-target image) */
   .capture-banner{padding:12px 16px;background:var(--bad-bg);color:#991b1b;font-weight:800;font-size:14px;
     border-bottom:1px solid #f5b8b3}
 
-  /* ===== مودال التفاصيل ===== */
+  /* ===== Details modal ===== */
   .modal-back{position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;
     justify-content:center;padding:24px;z-index:50}
   .modal-back[hidden]{display:none}
@@ -328,8 +328,8 @@
       <small id="sub"></small>
     </h1>
     <div class="head-actions">
-      <button id="img" class="ghost">تنزيل صورة</button>
-      <button id="reload" class="primary">تحديث الداتا</button>
+      <button id="img" class="ghost">Download Image</button>
+      <button id="reload" class="primary">Refresh Data</button>
     </div>
   </header>
 
@@ -338,44 +338,44 @@
 
     <div class="filters">
       <div class="field">
-        <label for="q">دور على يوزر أو اسم (اكتب الأرقام بس)</label>
+        <label for="q">Search by user or name (numbers only)</label>
         <input type="search" id="q" list="userlist" placeholder="123456" autocomplete="off">
         <datalist id="userlist"></datalist>
       </div>
 
-      <!-- فلتر التاريخ العام (كل اليوزرات / متوسط الفرق) -->
+      <!-- General date filter (all users / team averages) -->
       <div class="field" id="fFrom">
-        <label for="from">من تاريخ</label>
+        <label for="from">From date</label>
         <input type="date" id="from">
       </div>
       <div class="field" id="fTo">
-        <label for="to">لغاية تاريخ</label>
+        <label for="to">To date</label>
         <input type="date" id="to">
       </div>
 
-      <!-- فلتر تاب "يوم واحد": الحقلين فاضيين = بيعرض النهاردة تلقائي، ولما تختار تاريخ الداتا بتتغير -->
+      <!-- "Single Day" tab filter: empty fields = today automatically, and picking a date changes the data -->
       <div class="field" id="fSdFrom" style="display:none">
-        <label for="sdFrom">من يوم</label>
+        <label for="sdFrom">From day</label>
         <input type="date" id="sdFrom">
       </div>
       <div class="field" id="fSdTo" style="display:none">
-        <label for="sdTo">لغاية يوم</label>
+        <label for="sdTo">To day</label>
         <input type="date" id="sdTo">
       </div>
 
-      <label class="check"><input type="checkbox" id="onlyBad"> تحت التارجت بس</label>
-      <button id="reset">مسح الفلاتر</button>
+      <label class="check"><input type="checkbox" id="onlyBad"> Below target only</label>
+      <button id="reset">Clear filters</button>
     </div>
 
     <div class="tabs" role="tablist">
-      <button class="tab" role="tab" id="tab-users" aria-selected="true">كل اليوزرات</button>
-      <button class="tab" role="tab" id="tab-single" aria-selected="false">يوم واحد</button>
+      <button class="tab" role="tab" id="tab-users" aria-selected="true">All Users</button>
+      <button class="tab" role="tab" id="tab-single" aria-selected="false">Single Day</button>
       <button class="tab" role="tab" id="tab-teams" aria-selected="false">QC</button>
       <button class="tab" role="tab" id="tab-submit" aria-selected="false">Submit</button>
     </div>
 
     <div class="panel">
-      <div id="out"><div class="note">جاري تحميل الداتا من جوجل شيت…</div></div>
+      <div id="out"><div class="note">Loading data from the Google Sheet…</div></div>
     </div>
   </div>
 
@@ -386,7 +386,7 @@
 
 </div>
 
-<!-- مودال التفاصيل -->
+<!-- Details modal -->
 <div id="modal" class="modal-back" hidden>
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle" dir="ltr">
     <div class="modal-head">
@@ -398,36 +398,36 @@
 </div>
 
 <script>
-/* ===== إعدادات ===== */
+/* ===== Settings ===== */
 var API = "https://script.google.com/macros/s/AKfycbzoZuqCeMHQd37WmloJU98nvzIE-6Rb8TIBdJRd5k8ND72rNeka-8Wu9DXn5NSgzqYaXA/exec";
 var DEFAULT_FROM = "2026-08-25";
-var AUTO_REFRESH_MS = 5 * 60 * 1000;   /* تحديث تلقائي هادي كل 5 دقايق (الأسماء بتتحدّث معاه) */
+var AUTO_REFRESH_MS = 5 * 60 * 1000;   /* Quiet auto-refresh every 5 minutes (names update with it too) */
 
 var TEAM_ORDER = ["Mira Samir","Eman Gamal","Shimaa Nasser","Eslam Ali","Ahmed Adel","Buffer"];
 
-/* لون الكيوسي: لون واحد ثابت (solid) في كل مكان — تغييره من هنا بس.
-   نفس الـ string بيتحط مباشرة (من غير object مشترك) عشان يبقى فعلاً نفس
-   اللون بالظبط في كل تاب (كل اليوزرات / يوم واحد / متوسط الفرق / سابمت). */
+/* Team color: one fixed (solid) color everywhere — change it here only.
+   The same string is set directly (not via a shared object) so it's truly
+   the exact same color in every tab (All Users / Single Day / Team Averages / Submit). */
 var QC_COLOR = "#183a6b";
 function teamColor_(team) {
   return { c: QC_COLOR, c2: QC_COLOR };
 }
 var NO_TEAM = teamColor_("Buffer");
 
-/* تاب سابمت: الترتيب زي شيت الـ Team Lead / QC.
-   صف "Buffer" اتغير اسمه في العرض لـ Ibrahim Mohamed
-   (المفتاح الداخلي فضل "Buffer" عشان الداتا المحفوظة في الشيت تفضل شغالة). */
+/* Submit tab: order matches the Team Lead / QC sheet.
+   The "Buffer" row's display name was changed to Ibrahim Mohamed
+   (the internal key stays "Buffer" so the data already saved in the sheet keeps working). */
 var SUBMIT_TEAMS = ["Shimaa Nasser","Ahmed Adel","Mira Samir","Eslam Ali","Eman Gamal","Rabab Gamal","Buffer"];
 var SUBMIT_LABELS = { "Buffer": "Ibrahim Mohamed" };
 
-var DAY_NAMES = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+var DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 
 var state = {
   rows: [], target: 5.5, view: "users",
   open: {}, teams: null,
   submitRows: null, submitFrom: null, submitTo: null, submitSavedNote: "", submitSheetUrl: "",
-  sdOpen: {},            /* يوزرات فاتح تفاصيل أيامها في تاب يوم واحد (فترة) */
-  captureBad: false,     /* true = بنجهّز صورة لليوزرات اللي مش محققة بس */
+  sdOpen: {},            /* users whose day details are open in the Single Day (period) tab */
+  captureBad: false,     /* true = we're preparing an image of below-target users only */
   capturing: false
 };
 
@@ -437,25 +437,25 @@ function jsonp(url, cb, onErr) {
   var s = document.createElement("script");
   var done = false;
   var timer = setTimeout(function () {
-    if (!done) { cleanup(); onErr("الطلب أخد وقت طويل. اتأكد إن الـ deployment شغال ومتاح لأي حد."); }
+    if (!done) { cleanup(); onErr("The request took too long. Make sure the deployment is running and accessible to anyone."); }
   }, 40000);
   window[name] = function (d) { done = true; clearTimeout(timer); cleanup(); cb(d); };
   function cleanup() { try { delete window[name]; } catch (e) { window[name] = undefined; } s.remove(); }
   s.src = url + (url.indexOf("?") === -1 ? "?" : "&") + "callback=" + name + "&_=" + Date.now();
   s.onerror = function () {
-    if (!done) { clearTimeout(timer); cleanup(); onErr("مش قادر يوصل للويب آب. راجع اللينك وصلاحيات الـ deployment."); }
+    if (!done) { clearTimeout(timer); cleanup(); onErr("Can't reach the web app. Check the link and the deployment permissions."); }
   };
   document.body.appendChild(s);
 }
 
-/* ===== تاريخ اليوم بالتوقيت المحلي (yyyy-mm-dd) ===== */
+/* ===== Today's date in local time (yyyy-mm-dd) ===== */
 function todayStr() {
   var d = new Date();
   var local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
   return local.toISOString().slice(0, 10);
 }
 
-/* اسم اليوم بالعربي من تاريخ yyyy-mm-dd */
+/* Day name from a yyyy-mm-dd date */
 function dayName_(iso) {
   var p = String(iso || "").split("-");
   if (p.length !== 3) return "";
@@ -463,20 +463,20 @@ function dayName_(iso) {
   return isNaN(d) ? "" : DAY_NAMES[d.getDay()];
 }
 
-/* ===== تحميل ===== */
-/* بنحمّل كل الداتا من MIN_DATE، وفلترة التاريخ بتتم في المتصفح.
-   silent === true: تحديث تلقائي من غير رسايل تحميل ولا مسح للشاشة لو فشل */
+/* ===== Loading ===== */
+/* We load all data from MIN_DATE, and date filtering happens in the browser.
+   silent === true: quiet auto-refresh, no loading messages and the screen isn't cleared on failure */
 function load(silent) {
   silent = (silent === true);
   var btn = document.getElementById("reload");
   if (!silent) {
-    btn.disabled = true; btn.textContent = "بيحمّل…";
-    document.getElementById("out").innerHTML = '<div class="note">جاري تحميل الداتا…</div>';
+    btn.disabled = true; btn.textContent = "Loading…";
+    document.getElementById("out").innerHTML = '<div class="note">Loading data…</div>';
   }
 
   jsonp(API + "?action=data", function (res) {
-    if (!silent) { btn.disabled = false; btn.textContent = "تحديث الداتا"; }
-    if (!res || !res.ok) return fail((res && res.error) || "الويب آب رجّع رد مش مفهوم.");
+    if (!silent) { btn.disabled = false; btn.textContent = "Refresh Data"; }
+    if (!res || !res.ok) return fail((res && res.error) || "The web app returned an unrecognized response.");
 
     state.rows = res.rows || [];
     state.target = res.target || 5.5;
@@ -496,22 +496,22 @@ function load(silent) {
 
     var st = res.meta && res.meta.namesStatus;
     var warnTxt = "";
-    if (st && st.external && st.external !== "ok") warnTxt = " · ⚠ شيت الأسماء الخارجي مش متاح (بيستخدم الأسماء الاحتياطية)";
-    else if (st && st.gidFallback) warnTxt = " · ⚠ تاب الأسماء (gid) مش لاقيه، بيقرا أول تاب";
-    /* السطر التحتاني للعنوان اتشال — بيظهر بس لو في مشكلة في قراءة شيت الأسماء */
+    if (st && st.external && st.external !== "ok") warnTxt = " · ⚠ External names sheet unavailable (using fallback names)";
+    else if (st && st.gidFallback) warnTxt = " · ⚠ Names tab (gid) not found, reading the first tab instead";
+    /* The subtitle line below the header — shown only if there's a problem reading the names sheet */
     document.getElementById("sub").textContent = warnTxt.replace(/^\s*·\s*/, "");
     document.getElementById("stamp").textContent =
-      "آخر تحديث: " + new Date(res.generatedAt).toLocaleString("ar-EG");
+      "Last updated: " + new Date(res.generatedAt).toLocaleString("en-US");
 
     if (!state.rows.length && state.view !== "submit") return noData();
 
     render();
-    if (keepTeams) loadTeams(renderTeamsTab);   /* نجدد كروت الفرق من غير ما الشاشة تفضى */
+    if (keepTeams) loadTeams(renderTeamsTab);   /* refresh team cards without blanking the screen */
   }, fail);
 
   function fail(msg) {
     if (silent) return;
-    btn.disabled = false; btn.textContent = "تحديث الداتا";
+    btn.disabled = false; btn.textContent = "Refresh Data";
     document.getElementById("out").innerHTML = '<div class="note error">' + esc(msg) + '</div>';
   }
 }
@@ -525,7 +525,7 @@ function loadTeams(cb) {
 
   jsonp(API + qs, function (res) {
     if (!res || !res.ok) { document.getElementById("out").innerHTML =
-      '<div class="note error">' + esc((res && res.error) || "تعذر تحميل بيانات الفرق.") + '</div>'; return; }
+      '<div class="note error">' + esc((res && res.error) || "Failed to load team data.") + '</div>'; return; }
     state.teams = res.teams || [];
     cb();
   }, function (msg) {
@@ -533,12 +533,12 @@ function loadTeams(cb) {
   });
 }
 
-/* ===== سابمت: تحميل الداتا المحفوظة من الشيت ===== */
+/* ===== Submit: load saved data from the sheet ===== */
 function loadSubmitData(cb) {
   jsonp(API + "?action=submitData", function (res) {
     if (!res || !res.ok) {
       document.getElementById("out").innerHTML =
-        '<div class="note error">' + esc((res && res.error) || "تعذر تحميل بيانات Submit.") + '</div>';
+        '<div class="note error">' + esc((res && res.error) || "Failed to load Submit data.") + '</div>';
       return;
     }
     state.submitRows = res.rows || [];
@@ -552,12 +552,12 @@ function loadSubmitData(cb) {
 function noData() {
   document.getElementById("stats").innerHTML = "";
   document.getElementById("out").innerHTML =
-    '<div class="note">مفيش سجلات في النطاق ده.<br><br>' +
-    'الداتا متاحة بس من <code>' + esc(DEFAULT_FROM) + '</code> فما بعد.<br>' +
-    '<a href="' + API + '?action=debug" target="_blank" rel="noopener">فتح صفحة التشخيص</a></div>';
+    '<div class="note">No records in this range.<br><br>' +
+    'Data is only available from <code>' + esc(DEFAULT_FROM) + '</code> onward.<br>' +
+    '<a href="' + API + '?action=debug" target="_blank" rel="noopener">Open the diagnostics page</a></div>';
 }
 
-/* ===== فلترة ===== */
+/* ===== Filtering ===== */
 function digits(s) { return String(s).replace(/\D+/g, ""); }
 
 function matchUser(user, name, q) {
@@ -570,7 +570,7 @@ function matchUser(user, name, q) {
   return false;
 }
 
-/* فلتر تاب "كل اليوزرات": بحث + تحت التارجت + من/لغاية تاريخ */
+/* "All Users" tab filter: search + below target + from/to date */
 function filtered(ignoreBad) {
   var q = document.getElementById("q").value.trim();
   var bad = !ignoreBad && document.getElementById("onlyBad").checked;
@@ -596,26 +596,26 @@ function groupUsers(rows) {
     var u = m[k];
     u.avg = u.total ? u.sum / u.total : 0;
     u.pct = u.total ? u.missed.length / u.total : 0;
-    u.roomText = Object.keys(u.rooms).join("، ");
+    u.roomText = Object.keys(u.rooms).join(", ");
     u.missedCount = u.missed.length;
     u.missed.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
     return u;
   });
 }
 
-/* ===== رسم ===== */
+/* ===== Rendering ===== */
 function render() {
   if (state.view === "submit") { renderSubmitTab(); return; }
   if (!state.rows.length) return noData();
   if (state.view === "teams") { renderTeamsTab(); return; }
   if (state.view === "single") { renderSingleDay(); return; }
   var rows = filtered();
-  renderSingleStats_(usersStatsRange_(), true);   /* الكروت من ساعات اليوم (زي تاب يوم واحد) مش متوسط كل الأيام */
+  renderSingleStats_(usersStatsRange_(), true);   /* Cards use today's hours (like the Single Day tab), not the average of all days */
   renderUsers(rows);
 }
 
-/* مدى كروت تاب "كل اليوزرات": الحقلين فاضيين = يوم النهاردة (أو آخر يوم فيه داتا) — نفس أرقام تاب يوم واحد.
-   لو اخترت تواريخ، الكروت بتتحسب على المدى ده. */
+/* Range for the "All Users" tab cards: empty fields = today (or the latest day with data) — same numbers as the Single Day tab.
+   If you pick dates, the cards are computed over that range. */
 function usersStatsRange_() {
   var f = document.getElementById("from").value;
   var t = document.getElementById("to").value;
@@ -623,20 +623,20 @@ function usersStatsRange_() {
   return { from: f || "0000-00-00", to: t || "9999-99-99", auto: false };
 }
 
-/* سطر صغير تحت الكروت بيوضح الكروت محسوبة على أنهي يوم/فترة */
+/* Small line under the cards clarifying which day/period the cards are computed on */
 function statsCaption_(rg) {
   if (rg.auto || rg.from === rg.to) {
     var dn = dayName_(rg.from);
-    return "اليوم: " + rg.from + (dn ? " — " + dn : "") + ((rg.auto && rg.from !== todayStr()) ? " · آخر يوم فيه داتا" : "");
+    return "Today: " + rg.from + (dn ? " — " + dn : "") + ((rg.auto && rg.from !== todayStr()) ? " · latest day with data" : "");
   }
-  return "الفترة: من " + (rg.from === "0000-00-00" ? "أول يوم" : rg.from) + " إلى " + (rg.to === "9999-99-99" ? "آخر يوم" : rg.to);
+  return "Period: from " + (rg.from === "0000-00-00" ? "the first day" : rg.from) + " to " + (rg.to === "9999-99-99" ? "the last day" : rg.to);
 }
 
 function stat(v, label, color) {
   return '<div class="stat" style="--c:' + color + '"><b>' + v + '</b><span>' + label + '</span></div>';
 }
 
-/* اليوزر: ID + دومين بشكل مرتب (الـ ID بيظهر بحروف كبيرة للتوحيد، والداتا نفسها ما بتتغيرش) */
+/* User: ID + domain laid out neatly (the ID is uppercased for consistency; the underlying data is unchanged) */
 function uidCell(user) {
   var u = String(user == null ? "" : user);
   var at = u.indexOf("@");
@@ -649,10 +649,10 @@ function nameCell(name) {
   return name ? '<span class="name">' + esc(name) + '</span>' : '<span class="name empty">—</span>';
 }
 
-/* حضور P بس (مش PT ومش الفاضي) */
+/* P attendance only (not PT and not empty) */
 function isP_(att) { return String(att == null ? "" : att).trim().toUpperCase() === "P"; }
 
-/* الحضور: P / PT (أي قيمة تانية بتظهر زي ما هي) */
+/* Attendance: P / PT (any other value is shown as-is) */
 function attBadge(att) {
   var v = String(att == null ? "" : att).trim();
   if (!v) return '<span class="att att-none">—</span>';
@@ -661,15 +661,15 @@ function attBadge(att) {
   return '<span class="att ' + cls + '">' + esc(v) + '</span>';
 }
 
-/* --- كل اليوزرات: مجمّعة بالفريق زي شكل الروستر (Buffer ظاهر هنا كفريق زي باقي الكيوسيهات) --- */
+/* --- All Users: grouped by team like the roster (Buffer shows here as a team like the other rooms) --- */
 function renderUsers(rows) {
   var list = groupUsers(rows);
-  document.getElementById("count").textContent = list.length + " يوزر معروض";
+  document.getElementById("count").textContent = list.length + " users shown";
   if (!list.length) return empty();
 
   var groups = {};
   list.forEach(function (u) {
-    var key = u.team || "بدون فريق معروف";
+    var key = u.team || "No known team";
     (groups[key] || (groups[key] = [])).push(u);
   });
 
@@ -685,9 +685,9 @@ function renderUsers(rows) {
       '<td colspan="6"><span dir="ltr">' + esc(key) + ' (' + members.length + ' user)</span></td></tr>';
 
     html += '<tr style="background:#f7f8fc">' +
-      '<th style="position:static">الاسم</th><th style="position:static">اليوزر</th><th style="position:static">الروم</th>' +
-      '<th style="position:static">أيام مسجلة</th><th style="position:static">أيام ناقصة</th>' +
-      '<th style="position:static">التفاصيل</th></tr>';
+      '<th style="position:static">Name</th><th style="position:static">User</th><th style="position:static">Room</th>' +
+      '<th style="position:static">Days Recorded</th><th style="position:static">Missing Days</th>' +
+      '<th style="position:static">Details</th></tr>';
 
     members.forEach(function (u) {
       html += '<tr>' +
@@ -696,7 +696,7 @@ function renderUsers(rows) {
         '<td>' + esc(u.roomText) + '</td>' +
         '<td class="num"><span class="cnt ok">' + u.total + '</span></td>' +
         '<td class="num"><span class="cnt bad">' + u.missedCount + '</span></td>' +
-        '<td><button class="toggle" data-u="' + esc(u.user) + '">التفاصيل</button></td>' +
+        '<td><button class="toggle" data-u="' + esc(u.user) + '">Details</button></td>' +
         '</tr>';
     });
   });
@@ -709,7 +709,7 @@ function renderUsers(rows) {
   });
 }
 
-/* ===== مودال التفاصيل (Details: الاسم) — بطاقات فاتحة زي الشكل المرجعي ===== */
+/* ===== Details modal (Details: name) — light cards like the reference design ===== */
 var DAY_NAMES_EN = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 function dayNameEn_(iso) {
   var p = String(iso || "").split("-");
@@ -723,19 +723,19 @@ function mTile_(label, html, cls, wide, mwide) {
     '<div class="m-value' + (cls ? ' ' + cls : '') + '">' + html + '</div></div>';
 }
 
-/* ترتيب الحضور: P الأول، بعده PT، بعده أي حاجة تانية/فاضية */
+/* Attendance rank: P first, then PT, then anything else/empty */
 function attRank_(a) {
   var u = String(a == null ? "" : a).trim().toUpperCase();
   return u === "P" ? 0 : (u === "PT" ? 1 : 2);
 }
 
-/* clsOf: "ok" / "bad" ثابت، أو function بترجّع اللون لكل يوم */
+/* clsOf: fixed "ok" / "bad", or a function returning the class per day */
 function mCards_(arr, clsOf) {
   if (!arr.length) return '<span class="days-none">None</span>';
   return '<div class="days-grid">' + arr.map(function (m) {
     var a = String(m.att == null ? "" : m.att).trim();
     var cls = (typeof clsOf === "function") ? clsOf(m) : clsOf;
-    /* مفيش حضور = اليوزر ماجاش: الكارت رمادي خفيف وبدل P/PT شرطة */
+    /* No attendance = the user didn't show up: the card is light gray and shows a dash instead of P/PT */
     return '<div class="day-card' + (a ? '' : ' noatt') + '">' +
       '<div class="day-date"><b>' + esc(m.date) + '</b><small>' + esc(dayNameEn_(m.date)) + '</small></div>' +
       (a ? attBadge(a) : '<span class="att att-dash">-</span>') +
@@ -743,9 +743,9 @@ function mCards_(arr, clsOf) {
   }).join("") + '</div>';
 }
 
-/* from / to اختياريين (فاضيين = كل الأيام).
-   mode "missed" (كل اليوزرات): الأيام الناقصة بس، الـ P فوق وبعدهم الـ PT.
-   mode "all" (يوم واحد / فترة): كل الأيام محقق أو لا بالترتيب الزمني. */
+/* from / to are optional (empty = all days).
+   mode "missed" (All Users): missing days only, P first then PT.
+   mode "all" (Single Day / period): every day, met or not, in chronological order. */
 function openDetailsModal_(user, from, to, mode) {
   var T = state.target;
   var recs = state.rows.filter(function (r) {
@@ -790,14 +790,14 @@ function closeDetailsModal_() {
   document.body.style.overflow = "";
 }
 
-/* --- يوم واحد: بيفتح على النهاردة تلقائي، ولو عايز فترة اختار من يوم لغاية يوم (من غير تيم Buffer) --- */
+/* --- Single Day: opens on today automatically; for a period pick a from/to day (Buffer team excluded) --- */
 function latestDate_() {
   var m = "";
   state.rows.forEach(function (r) { if (r.team !== "Buffer" && r.date > m) m = r.date; });
   return m;
 }
 
-/* اليوم التلقائي: النهاردة لو عنده سجلات، لو لأ بيقف على آخر يوم فيه داتا (من غير رسالة ولا ضغطة) */
+/* The automatic day: today if it has records, otherwise the latest day with data (no message, no click needed) */
 function autoDay_() {
   var t = todayStr();
   var hasToday = state.rows.some(function (r) { return r.team !== "Buffer" && r.date === t; });
@@ -805,7 +805,7 @@ function autoDay_() {
   return latestDate_() || t;
 }
 
-/* الحقلين فاضيين = اليوم التلقائي. تاريخ واحد بس = اليوم ده. الاتنين = فترة */
+/* Both fields empty = the automatic day. One date only = that day. Both = a period */
 function singleRange_() {
   var f = document.getElementById("sdFrom").value;
   var t = document.getElementById("sdTo").value;
@@ -817,17 +817,18 @@ function singleRange_() {
   return { from: f, to: t, auto: auto };
 }
 
-/* إجمالي اليوزرات المسجلة بأسماء (من غير Buffer) — ثابت في كل الأيام */
+/* Total number of named users on the roster (excluding Buffer) — fixed across all days */
 function rosterTotal_() {
   var m = {};
   state.rows.forEach(function (r) { if (r.team !== "Buffer") m[r.user] = 1; });
   return Object.keys(m).length;
 }
 
-/* كروت تاب يوم واحد: الإجمالي ثابت (68)، والمحقق/المحققش بيتغيروا مع اليوم أو الفترة.
-   اليوزر اللي مالوش سجل في اليوم/الفترة بيتحسب "محققش". الكروت مش بتتأثر بالبحث. */
-/* "يوزر محققش" = عدد اليوزرات اللي عندهم سجل في المدى وساعاتهم أقل من التارجت (زي مجموع "تحت التارجت"
-   في كروت الفرق بالظبط). اليوزر اللي مالوش سجل خالص في المدى ده مش بيتحسب في أي من الاتنين. */
+/* Single Day tab cards: the total is fixed, met/not-met change with the day or period.
+   A user with no record on the day/period counts as "not met". The cards aren't affected by search. */
+/* "User not met" = number of users who have a record in the range and whose hours are below target
+   (exactly like the "below target" total on the team cards). A user with no record at all in the
+   range isn't counted in either bucket. */
 function renderSingleStats_(rg, withCaption) {
   var by = {};
   state.rows.forEach(function (r) {
@@ -841,9 +842,9 @@ function renderSingleStats_(rg, withCaption) {
   });
   var total = rosterTotal_();
   document.getElementById("stats").innerHTML =
-    stat(total, "يوزر", "#2b4b8f") +
-    stat(ok, "يوزر محقق", "#0f9d58") +
-    stat(bad, "يوزر محققش", "#dc2626") +
+    stat(total, "Users", "#2b4b8f") +
+    stat(ok, "Users meeting target", "#0f9d58") +
+    stat(bad, "Users below target", "#dc2626") +
     (withCaption ? '<div class="stats-cap">' + esc(statsCaption_(rg)) + '</div>' : '');
 }
 
@@ -851,7 +852,7 @@ function renderSingleDay() {
   var rg = singleRange_();
   renderSingleStats_(rg);
   var isRange = rg.from !== rg.to;
-  var label = isRange ? ("من " + rg.from + " إلى " + rg.to) : rg.from;
+  var label = isRange ? ("from " + rg.from + " to " + rg.to) : rg.from;
   var T = state.target;
   var q = document.getElementById("q").value.trim();
   var onlyBad = document.getElementById("onlyBad").checked || state.captureBad;
@@ -859,17 +860,17 @@ function renderSingleDay() {
   var base = state.rows.filter(function (r) {
     return r.date >= rg.from && r.date <= rg.to && r.team !== "Buffer" && matchUser(r.user, r.name, q);
   });
-  /* صورة اللي مش محقق: في الفترة بنحسب أيام الحضور P بس (في يوم واحد الفلترة بتتم تحت وإحصائيات الفريق بتفضل كاملة) */
+  /* Below-target image: for a period we only count days with P attendance (for a single day, filtering happens below and team stats stay complete) */
   if (state.captureBad && isRange) base = base.filter(function (r) { return isP_(r.att); });
 
   if (!base.length) {
     document.getElementById("count").textContent = "";
     document.getElementById("out").innerHTML =
-      '<div class="note">مفيش سجلات ' + (isRange ? "في الفترة دي" : "ليوم " + esc(rg.from)) + '.</div>';
+      '<div class="note">No records ' + (isRange ? "in this period" : "for " + esc(rg.from)) + '.</div>';
     return;
   }
 
-  /* entries: صف لكل سجل (يوم واحد) — أو صف لكل يوزر بمتوسط ساعاته (فترة) مع تفاصيل أيامه */
+  /* entries: one row per record (single day) — or one row per user with their average hours (period), with day details */
   var entries = [];
   if (!isRange) {
     base.forEach(function (r) {
@@ -892,18 +893,18 @@ function renderSingleDay() {
 
   var groups = {};
   entries.forEach(function (e) {
-    var key = e.team || "بدون فريق معروف";
+    var key = e.team || "No known team";
     (groups[key] || (groups[key] = [])).push(e);
   });
   var orderedKeys = TEAM_ORDER.filter(function (k) { return groups[k]; })
     .concat(Object.keys(groups).filter(function (k) { return TEAM_ORDER.indexOf(k) === -1; }));
 
   var head = isRange
-    ? '<th>متوسط الساعات</th><th>أيام مسجلة</th><th>أيام ناقصة</th><th>التفاصيل</th>'
-    : '<th>الساعات</th><th>الحضور</th>';
+    ? '<th>Average Hours</th><th>Days Recorded</th><th>Missing Days</th><th>Details</th>'
+    : '<th>Hours</th><th>Attendance</th>';
 
   var html = '<div class="single-day-wrap"><table class="single-day-table"><thead><tr>' +
-    head + '<th>الاسم</th><th>اليوزر</th><th>الفريق (QC)</th>' +
+    head + '<th>Name</th><th>User</th><th>Team (QC)</th>' +
     '</tr></thead><tbody>';
 
   var shownCount = 0, shownUsers = {};
@@ -921,7 +922,6 @@ function renderSingleDay() {
     var uniq = {};
     all.forEach(function (e) { uniq[e.user] = 1; });
     var usersN = Object.keys(uniq).length;
-    var avg = all.reduce(function (s, e) { return s + e.hours; }, 0) / all.length;
 
     shown.forEach(function (e, i) {
       var bad = e.hours < T;
@@ -933,17 +933,16 @@ function renderSingleDay() {
           '<td><span class="sd-count ' + (e.missed ? "bad" : "ok") + '">' + e.missed + '</span></td>' +
           '<td>' + (state.captureBad
             ? '<span style="color:var(--muted)">—</span>'
-            : '<button class="sd-toggle" data-u="' + esc(e.user) + '">' + "التفاصيل" + '</button>') + '</td>';
+            : '<button class="sd-toggle" data-u="' + esc(e.user) + '">' + "Details" + '</button>') + '</td>';
       } else {
         html += '<td>' + attBadge(e.att) + '</td>';
       }
-      html += '<td><span class="sd-box sd-name' + (e.name ? "" : " empty") + '">' + (e.name ? esc(e.name) : "بدون اسم") + '</span></td>' +
+      html += '<td><span class="sd-box sd-name' + (e.name ? "" : " empty") + '">' + (e.name ? esc(e.name) : "No name") + '</span></td>' +
         '<td>' + uidCell(e.user) + '</td>';
       if (i === 0) {
         html += '<td class="sd-team-cell" rowspan="' + shown.length + '" style="--team-c1:' + col.c + '">' +
           '<span class="sd-team-box">' + esc(key) +
-          '<span class="tsub">' + usersN + ' يوزر · ' + below + ' تحت التارجت</span>' +
-          '<span class="tsub">متوسط ' + avg.toFixed(2) + ' ساعة</span></span></td>';
+          '<span class="tsub">' + usersN + ' users · ' + below + ' below target</span></span></td>';
       }
       html += '</tr>';
     });
@@ -954,22 +953,22 @@ function renderSingleDay() {
   if (!shownCount) {
     document.getElementById("count").textContent = "";
     document.getElementById("out").innerHTML =
-      '<div class="note">كل اليوزرات محققة التارجت ' + (isRange ? "في الفترة دي" : "في اليوم ده") + ' ✅</div>';
+      '<div class="note">All users met the target ' + (isRange ? "for this period" : "for this day") + ' ✅</div>';
     return;
   }
 
   document.getElementById("count").textContent =
-    Object.keys(shownUsers).length + " يوزر · " + label + (isRange ? " (متوسط الساعات لكل يوزر)" : "");
+    Object.keys(shownUsers).length + " users · " + label + (isRange ? " (average hours per user)" : "");
 
-  /* شريط بيوضح اليوم/الفترة المعروضة (عشان الحقول فاضية) — وفي الصورة بيبقى شريط اللي مش محقق */
+  /* A line clarifying which day/period is shown (since the fields are empty) — turns into a "below target" banner while preparing the image */
   var top;
   if (state.captureBad) {
-    top = '<div class="capture-banner">اليوزرات اللي محققتش التارجت (' + T + ' ساعة) · حضور P بس · ' + esc(label) + '</div>';
+    top = '<div class="capture-banner">Users who did not meet the target (' + T + ' hours) · P attendance only · ' + esc(label) + '</div>';
   } else {
     var dn = dayName_(rg.from);
     var infoText = isRange
-      ? "الفترة: من " + rg.from + " إلى " + rg.to
-      : "اليوم: " + rg.from + (dn ? " — " + dn : "") + ((rg.auto && rg.from !== todayStr()) ? " · آخر يوم فيه داتا" : "");
+      ? "Period: from " + rg.from + " to " + rg.to
+      : "Today: " + rg.from + (dn ? " — " + dn : "") + ((rg.auto && rg.from !== todayStr()) ? " · latest day with data" : "");
     top = '<div class="sd-info">' + esc(infoText) + '</div>';
   }
 
@@ -982,18 +981,18 @@ function renderSingleDay() {
   });
 }
 
-/* --- متوسط الفرق (QC) — الكيوسيهات الخمسة بس (من غير Buffer، ده بقى بيظهر في تاب "كل اليوزرات") --- */
+/* --- Team averages (QC) — the five rooms only (excluding Buffer, which shows on the "All Users" tab) --- */
 function renderTeamsTab() {
   document.getElementById("stats").innerHTML = "";
   if (state.teams === null) {
-    document.getElementById("out").innerHTML = '<div class="note">جاري تحميل بيانات الفرق…</div>';
+    document.getElementById("out").innerHTML = '<div class="note">Loading team data…</div>';
     loadTeams(renderTeamsTab);
     return;
   }
   var teams = state.teams.filter(function (t) { return t.tl !== "Buffer"; });
-  document.getElementById("count").textContent = teams.length + " فريق";
+  document.getElementById("count").textContent = teams.length + " teams";
   if (!teams.length) {
-    document.getElementById("out").innerHTML = '<div class="note">مفيش سجلات لرومات الفرق المعروفة في النطاق الحالي.</div>';
+    document.getElementById("out").innerHTML = '<div class="note">No records for known team rooms in the current range.</div>';
     return;
   }
 
@@ -1003,10 +1002,10 @@ function renderTeamsTab() {
     var col = teamColor_(t.tl);
     html += '<div class="tcard" style="--c:' + col.c + '">' +
       '<h3>' + esc(t.tl) + '</h3>' +
-      '<div class="big">' + t.avgHours.toFixed(2) + '<small>ساعة/يوم</small></div>' +
+      '<div class="big">' + t.avgHours.toFixed(2) + '<small>hrs/day</small></div>' +
       '<div class="row2">' +
-        '<span>عدد الأفراد<b>' + t.members + '</b></span>' +
-        '<span>محقق الساعات<b class="' + (achievedPct >= 70 ? "good" : "bad") + '">' + achievedPct + '%</b></span>' +
+        '<span>Members<b>' + t.members + '</b></span>' +
+        '<span>Hours achieved<b class="' + (achievedPct >= 70 ? "good" : "bad") + '">' + achievedPct + '%</b></span>' +
       '</div>' +
       '</div>';
   });
@@ -1017,10 +1016,10 @@ function renderTeamsTab() {
 
 function empty() {
   document.getElementById("out").innerHTML =
-    '<div class="note">مفيش نتايج بالفلاتر دي. امسح الفلاتر أو وسّع نطاق التاريخ.</div>';
+    '<div class="note">No results for these filters. Clear the filters or widen the date range.</div>';
 }
 
-/* --- سابمت: جدول (كيوسي | FP | QA | Total) — إدخال يومي + إجمالي لأي مدى --- */
+/* --- Submit: table (Team | FP | QA | Total) — daily entry + totals for any range --- */
 function sumSubmit_(team, from, to) {
   var fp = 0, qa = 0;
   state.submitRows.forEach(function (r) {
@@ -1037,7 +1036,7 @@ function submitInput_(team, field) {
   return (isFinite(n) && n > 0) ? Math.round(n) : 0;
 }
 
-/* بيحسب التوتال لكل كيوسي وإجمالي العمودين لحظيًا وإنت بتكتب */
+/* Recomputes each team's total and the overall column totals live as you type */
 function recalcSubmit_() {
   var sumFp = 0, sumQa = 0;
   SUBMIT_TEAMS.forEach(function (team, i) {
@@ -1056,12 +1055,12 @@ function renderSubmitTab() {
   document.getElementById("count").textContent = "";
 
   if (state.submitRows === null) {
-    document.getElementById("out").innerHTML = '<div class="note">جاري تحميل بيانات Submit…</div>';
+    document.getElementById("out").innerHTML = '<div class="note">Loading Submit data…</div>';
     loadSubmitData(renderSubmitTab);
     return;
   }
 
-  /* الحقلين فاضيين = النهاردة. تاريخ واحد بس = اليوم ده. الاتنين = فترة */
+  /* Both fields empty = today. One date only = that day. Both = a period */
   var from = state.submitFrom || "", to = state.submitTo || "";
   if (!from && !to) { from = to = todayStr(); }
   if (!from) from = to;
@@ -1070,10 +1069,10 @@ function renderSubmitTab() {
   var isSingleDay = (from === to);
 
   var html = '<div class="submit-toolbar">' +
-    '<div class="field"><label for="subFrom">من تاريخ</label><input type="date" id="subFrom" value="' + esc(state.submitFrom || "") + '"></div>' +
-    '<div class="field"><label for="subTo">لغاية تاريخ</label><input type="date" id="subTo" value="' + esc(state.submitTo || "") + '"></div>' +
-    '<button id="subRefresh">تحديث</button>' +
-    (state.submitSheetUrl ? '<a class="submit-link" href="' + esc(state.submitSheetUrl) + '" target="_blank" rel="noopener">فتح شيت ال Submit</a>' : '') +
+    '<div class="field"><label for="subFrom">From date</label><input type="date" id="subFrom" value="' + esc(state.submitFrom || "") + '"></div>' +
+    '<div class="field"><label for="subTo">To date</label><input type="date" id="subTo" value="' + esc(state.submitTo || "") + '"></div>' +
+    '<button id="subRefresh">Refresh</button>' +
+    (state.submitSheetUrl ? '<a class="submit-link" href="' + esc(state.submitSheetUrl) + '" target="_blank" rel="noopener">Open the Submit sheet</a>' : '') +
     '</div>';
 
   html += '<div class="submit-body"><table class="submit-table" dir="ltr"><thead><tr>' +
@@ -1097,12 +1096,12 @@ function renderSubmitTab() {
     html += '<td class="s-total" id="sTot' + i + '">' + s.total + '</td></tr>';
   });
 
-  html += '</tbody><tfoot><tr><td>الإجمالي</td>' +
+  html += '</tbody><tfoot><tr><td>Total</td>' +
     '<td id="sSumFp">' + gFp + '</td><td id="sSumQa">' + gQa + '</td><td id="sSumAll">' + (gFp + gQa) + '</td>' +
     '</tr></tfoot></table></div>';
 
   if (isSingleDay) {
-    html += '<div class="submit-savebar"><button id="subSave" class="primary">حفظ أرقام Submit</button>' +
+    html += '<div class="submit-savebar"><button id="subSave" class="primary">Save Submit numbers</button>' +
       '<span class="submit-saved-note' + (state.submitSavedWarn ? ' warn' : '') + '">' + esc(state.submitSavedNote || "") + '</span></div>';
   }
 
@@ -1133,7 +1132,7 @@ function renderSubmitTab() {
 
 function saveSubmitData(date) {
   var btn = document.getElementById("subSave");
-  btn.disabled = true; btn.textContent = "بيحفظ…";
+  btn.disabled = true; btn.textContent = "Saving…";
 
   var items = SUBMIT_TEAMS.map(function (team) {
     return { team: team, fp: submitInput_(team, "fp"), qa: submitInput_(team, "qa") };
@@ -1143,33 +1142,34 @@ function saveSubmitData(date) {
 
   jsonp(API + qs, function (res) {
     if (!res || !res.ok) {
-      alert((res && res.error) || "تعذر حفظ البيانات.");
-      btn.disabled = false; btn.textContent = "حفظ أرقام Submit";
+      alert((res && res.error) || "Failed to save data.");
+      btn.disabled = false; btn.textContent = "Save Submit numbers";
       return;
     }
     state.submitRows = null;
-    var savedAt = new Date().toLocaleTimeString("ar-EG");
+    var savedAt = new Date().toLocaleTimeString("en-US");
     state.submitSavedWarn = false;
     if (typeof res.saved !== "number") {
-      /* الرد ده جاي من نسخة قديمة من الباك إند — الأسماء الجديدة بتتجاهل من غير رسالة */
+      /* This response is coming from an older backend version — new names are ignored silently */
       state.submitSavedWarn = true;
-      state.submitSavedNote = "⚠ الويب آب لسه على نسخة قديمة من Code.gs — اعمل Deploy بـ New version وجرب تاني";
+      state.submitSavedNote = "⚠ The web app is still on an old version of Code.gs — deploy a New version and try again";
     } else if (res.skipped && res.skipped.length) {
       state.submitSavedWarn = true;
-      state.submitSavedNote = "⚠ اتحفظ " + savedAt + " ما عدا: " + res.skipped.join("، ");
+      state.submitSavedNote = "⚠ Saved " + savedAt + " except: " + res.skipped.join(", ");
     } else {
-      state.submitSavedNote = "اتحفظ ✓ " + savedAt;
+      state.submitSavedNote = "Saved ✓ " + savedAt;
     }
     loadSubmitData(function () { render(); });
   }, function (msg) {
     alert(msg);
-    btn.disabled = false; btn.textContent = "حفظ أرقام Submit";
+    btn.disabled = false; btn.textContent = "Save Submit numbers";
   });
 }
 
-/* ===== تنزيل صورة =====
-   بغض النظر عن أنهي تاب واقف فيه، تحميل الصورة دايمًا بيروح لتاب "يوم واحد" ليوم إمبارح،
-   ويطلّع اليوزرات اللي محققتش التارجت وحضورهم P بس، وبعدين يرجّع الصفحة زي ما كانت. */
+/* ===== Download image =====
+   Regardless of which tab you're on, downloading the image always switches to the "Single Day" tab
+   for yesterday's date, shows the users who didn't meet the target with P attendance only,
+   then restores the page as it was. */
 function yesterdayStr_() {
   var d = new Date();
   d.setDate(d.getDate() - 1);
@@ -1180,7 +1180,7 @@ function yesterdayStr_() {
 function downloadImage() {
   var btn = document.getElementById("img");
 
-  /* حالة الصفحة الحالية عشان نرجّعها بعد التصوير */
+  /* Current page state, so we can restore it after capturing */
   var prev = {
     view: state.view,
     sdFrom: document.getElementById("sdFrom").value,
@@ -1202,11 +1202,11 @@ function downloadImage() {
   function finish() {
     state.capturing = false;
     restore();
-    btn.disabled = false; btn.textContent = "تنزيل صورة";
+    btn.disabled = false; btn.textContent = "Download Image";
   }
 
   state.capturing = true;
-  btn.disabled = true; btn.textContent = "بيجهّز الصورة…";
+  btn.disabled = true; btn.textContent = "Preparing image…";
 
   var y = yesterdayStr_();
   setView("single");
@@ -1218,7 +1218,7 @@ function downloadImage() {
 
   if (!document.querySelector(".single-day-table")) {
     finish();
-    alert("مفيش يوزرات حضورهم P وتحت التارجت لإمبارح (" + y + ") ✅ — مفيش صورة تتنزل.");
+    alert("No P-attendance users below target for yesterday (" + y + ") ✅ — no image to download.");
     return;
   }
   var fileName = "sf-below-target-P-" + y + ".png";
@@ -1238,7 +1238,7 @@ function downloadImage() {
     });
   }).catch(function () {
     finish();
-    alert("تعذر إنشاء الصورة. جرب تاني.");
+    alert("Failed to create the image. Try again.");
   });
 }
 
@@ -1248,8 +1248,8 @@ function esc(s) {
   });
 }
 
-/* ===== الأحداث ===== */
-/* التابات دي فلترتها بتتعمل في المتصفح — تاب السابمت بيتخطى عشان مانمسحش أرقام لسه متكتبتش */
+/* ===== Events ===== */
+/* These tabs filter in the browser — the Submit tab is skipped so we don't wipe numbers not yet saved */
 function refresh() {
   if (state.view === "submit") return;
   render();
@@ -1257,13 +1257,13 @@ function refresh() {
 
 ["from", "to"].forEach(function (id) {
   document.getElementById(id).addEventListener("change", function () {
-    if (state.view === "teams") state.teams = null;   /* الفرق بتتحمّل من السيرفر بنفس المدى */
+    if (state.view === "teams") state.teams = null;   /* Teams are reloaded from the server with the same range */
     refresh();
   });
 });
 
-/* تاب يوم واحد: الحقول فاضية (mm/dd/yyyy) = النهاردة تلقائي (أو آخر يوم فيه داتا)، ولما تختار تاريخ الداتا بتتغير.
-   تاريخ واحد بس = اليوم ده، والاتنين = فترة. */
+/* Single Day tab: empty fields = today automatically (or the latest day with data), and picking a date changes the data.
+   One date only = that day, both = a period. */
 ["sdFrom", "sdTo"].forEach(function (id) {
   document.getElementById(id).addEventListener("change", function () { renderSingleDay(); });
 });
@@ -1303,7 +1303,7 @@ function setView(v) {
 
 document.getElementById("modalClose").onclick = closeDetailsModal_;
 document.getElementById("modal").addEventListener("click", function (e) {
-  if (e.target === this) closeDetailsModal_();     /* الضغط على الخلفية بيقفل */
+  if (e.target === this) closeDetailsModal_();     /* Clicking the backdrop closes it */
 });
 document.addEventListener("keydown", function (e) {
   if (e.key === "Escape" && !document.getElementById("modal").hidden) closeDetailsModal_();
@@ -1312,14 +1312,14 @@ document.addEventListener("keydown", function (e) {
 document.getElementById("reload").onclick = function () { load(); };
 document.getElementById("img").onclick = downloadImage;
 
-/* تحديث تلقائي هادي (بيتخطى تاب السابمت، وبيتخطى وقت تجهيز الصورة) */
+/* Quiet auto-refresh (skips the Submit tab, and skips while an image is being prepared) */
 setInterval(function () {
   if (document.hidden || state.view === "submit" || state.capturing) return;
   load(true);
 }, AUTO_REFRESH_MS);
 
-/* ===== تشغيل ===== */
-document.getElementById("from").min = DEFAULT_FROM;   /* حقول التاريخ بتفضل فاضية (mm/dd/yyyy) = كل الداتا */
+/* ===== Run ===== */
+document.getElementById("from").min = DEFAULT_FROM;   /* Date fields stay empty (mm/dd/yyyy) = all data */
 load();
 </script>
 </body>
