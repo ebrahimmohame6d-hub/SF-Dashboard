@@ -243,10 +243,11 @@
   .sd-name{font-family:var(--font-latin);font-weight:600;font-size:14.5px;color:#0f172a;letter-spacing:.1px}
   .sd-name.empty{font-family:"Tajawal",sans-serif;color:var(--muted);font-weight:600;direction:rtl}
   /* اليوزر: كود اليوزر واضح وغامق، والدومين (@meti.ai) أهدى منه */
-  .uid{display:inline-flex;align-items:baseline;direction:ltr;padding:6px 13px;border-radius:9px;
-    background:#f1f4fb;border:1px solid #e0e6f3;font-family:var(--font-latin);font-size:14px;line-height:1.4;white-space:nowrap}
-  .uid b{font-weight:700;color:#0f172a;letter-spacing:.6px;text-transform:uppercase}
-  .uid i{font-style:normal;font-weight:500;font-size:13px;color:#64748b;letter-spacing:.1px}
+  .uid{display:inline-block;direction:ltr;padding:6px 13px;border-radius:9px;
+    background:#f1f4fb;border:1px solid #e0e6f3;font-family:"Inter",system-ui,sans-serif;font-size:14px;
+    line-height:1.4;white-space:nowrap}
+  .uid .uid-id{font-weight:700;color:#0f172a;letter-spacing:.6px;text-transform:uppercase}
+  .uid .uid-dom{font-weight:500;font-size:13px;color:#64748b;letter-spacing:.1px}
 
   .sd-hours{display:inline-flex;align-items:center;justify-content:center;
     width:46px;height:46px;border-radius:50%;
@@ -641,7 +642,7 @@ function uidCell(user) {
   var at = u.indexOf("@");
   var id = at > -1 ? u.slice(0, at) : u;
   var dom = at > -1 ? u.slice(at) : "";
-  return '<span class="uid"><b>' + esc(id) + '</b>' + (dom ? '<i>' + esc(dom) + '</i>' : '') + '</span>';
+  return '<span class="uid"><span class="uid-id">' + esc(id) + '</span>' + (dom ? '<span class="uid-dom">' + esc(dom) + '</span>' : '') + '</span>';
 }
 
 function nameCell(name) {
