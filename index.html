@@ -30,7 +30,7 @@
     --font-latin:"Inter","Tajawal",system-ui,-apple-system,"Segoe UI",sans-serif;
   }
   *{box-sizing:border-box}
-  html,body{margin:0;padding:0}
+  html,body{margin:0;padding:0;overflow-x:hidden}
   body{
     background:var(--bg);color:var(--ink);
     font-family:"Tajawal",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -93,7 +93,7 @@
   .tab[aria-selected="true"]{background:var(--surface);color:var(--accent-ink);
     border-color:var(--accent);box-shadow:0 -3px 0 0 var(--accent) inset}
 
-  .panel{background:var(--surface);border:1px solid var(--line);border-radius:0 var(--radius) var(--radius) var(--radius);overflow-x:auto}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:0 var(--radius) var(--radius) var(--radius);overflow-x:auto;-webkit-overflow-scrolling:touch}
   table{width:100%;border-collapse:collapse;font-size:13.5px}
   th,td{padding:10px 14px;text-align:left;border-bottom:1px solid #eef1f7;white-space:nowrap}
   thead th{position:sticky;top:0;background:#f3f5fb;font-weight:800;font-size:12px;
@@ -115,6 +115,9 @@
     cursor:pointer;text-decoration:underline;border-radius:4px;transition:box-shadow .12s ease}
   .toggle:hover,.sd-toggle:hover{box-shadow:0 0 0 3px var(--glow)}
   tr.detail td{background:#f9fafd;padding:14px 16px;white-space:normal}
+
+  /* Scroll hint shown above wide tables — hidden on desktop, shown only on narrow screens (see media query) */
+  .scroll-hint{display:none}
 
   /* ===== Missing days (user details): date in a box + hours in a circle, card lifts on hover ===== */
   .days-wrap{width:100%}
@@ -182,7 +185,7 @@
   .submit-hint{font-size:12px;color:var(--muted);align-self:center;max-width:340px}
   .submit-link{align-self:center;color:var(--accent);font-weight:700;font-size:13.5px;text-decoration:underline}
   .submit-link:hover{color:var(--accent-ink)}
-  .submit-body{padding:24px 16px;display:flex;justify-content:center}
+  .submit-body{padding:24px 16px;display:flex;justify-content:center;overflow-x:auto;-webkit-overflow-scrolling:touch}
 
   /* Submit table: team names on the left, FP / QA / Total on the right */
   .submit-table{width:100%;max-width:640px;direction:ltr;
@@ -211,7 +214,7 @@
   .submit-saved-note.warn{color:var(--bad)}
 
   /* ===== Single Day ===== */
-  .single-day-wrap{overflow-x:auto}
+  .single-day-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
   table.single-day-table{width:100%;border-collapse:collapse;font-size:14px}
   .single-day-table thead th{position:sticky;top:0;background:#1c2f66;color:#fff;
     font-size:12px;font-weight:800;padding:9px 12px;text-align:center;z-index:2;cursor:default}
@@ -314,6 +317,32 @@
     h1{font-size:19px}
     input{min-width:135px}
     header{padding:16px}
+  }
+  /* ===== Extra mobile tightening + fix for tables overflowing the screen ===== */
+  @media (max-width:640px){
+    .wrap{padding:16px 10px 56px}
+    header{padding:14px;gap:10px}
+    .head-actions{width:100%;justify-content:flex-end;flex-wrap:wrap}
+    .head-actions button{padding:8px 14px;font-size:12.5px}
+    .stats{gap:8px}
+    .stat{padding:12px 14px}
+    .stat b{font-size:22px}
+    .filters{gap:8px;padding:12px}
+    .field{flex:1 1 47%}
+    input{min-width:0;width:100%}
+    /* Tabs scroll sideways instead of wrapping button text into two lines */
+    .tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:4px}
+    .tab{white-space:nowrap;flex:0 0 auto;padding:10px 16px;font-size:12.5px}
+    /* Tighter tables so more columns are visible before you need to scroll */
+    th,td{padding:8px 10px;font-size:12.5px}
+    .name,.sd-name{font-size:13px}
+    .uid{padding:5px 10px;font-size:12.5px}
+    .scroll-hint{display:block;font-size:11.5px;color:var(--accent-ink);font-weight:700;
+      padding:6px 12px;background:#eef1fb;border-bottom:1px solid var(--line);white-space:nowrap}
+    .day-card{flex:1 1 100%}
+    .submit-toolbar{padding:12px}
+    .submit-table th,.submit-table td{padding:8px 8px;font-size:13px}
+    .submit-table .s-name-cell{min-width:120px;font-size:12.5px}
   }
   @media (prefers-reduced-motion:reduce){
     *{transition:none !important}
@@ -701,7 +730,8 @@ function renderUsers(rows) {
     });
   });
 
-  document.getElementById("out").innerHTML = html + '</tbody></table>';
+  document.getElementById("out").innerHTML =
+    '<div class="scroll-hint">⟵ مرر يمين وشمال لعرض باقي الأعمدة</div>' + html + '</tbody></table>';
   Array.prototype.forEach.call(document.querySelectorAll(".toggle"), function (b) {
     b.onclick = function () {
       openDetailsModal_(b.getAttribute("data-u"), document.getElementById("from").value, document.getElementById("to").value, "missed");
@@ -972,7 +1002,8 @@ function renderSingleDay() {
     top = '<div class="sd-info">' + esc(infoText) + '</div>';
   }
 
-  document.getElementById("out").innerHTML = top + html;
+  document.getElementById("out").innerHTML =
+    top + '<div class="scroll-hint">⟵ مرر يمين وشمال لعرض باقي الأعمدة</div>' + html;
 
   Array.prototype.forEach.call(document.querySelectorAll(".sd-toggle"), function (b) {
     b.onclick = function () {
@@ -1075,7 +1106,8 @@ function renderSubmitTab() {
     (state.submitSheetUrl ? '<a class="submit-link" href="' + esc(state.submitSheetUrl) + '" target="_blank" rel="noopener">Open the Submit sheet</a>' : '') +
     '</div>';
 
-  html += '<div class="submit-body"><table class="submit-table" dir="ltr"><thead><tr>' +
+  html += '<div class="scroll-hint">⟵ مرر يمين وشمال لعرض باقي الأعمدة</div>' +
+    '<div class="submit-body"><table class="submit-table" dir="ltr"><thead><tr>' +
     '<th>Team Lead / QC</th><th>FP</th><th>QA</th><th>Total</th></tr></thead><tbody>';
 
   var gFp = 0, gQa = 0;
