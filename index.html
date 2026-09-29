@@ -523,12 +523,24 @@ function load(silent) {
     document.getElementById("userlist").innerHTML =
       Object.keys(users).sort().map(function (u) { return '<option value="' + esc(u) + '">'; }).join("");
 
+    /* Banner under the title — shows problems reading the names sheet AND/OR the attendance sheet,
+       taken straight from res.meta (no need to open a separate debug link — just screenshot the dashboard) */
     var st = res.meta && res.meta.namesStatus;
-    var warnTxt = "";
-    if (st && st.external && st.external !== "ok") warnTxt = " · ⚠ External names sheet unavailable (using fallback names)";
-    else if (st && st.gidFallback) warnTxt = " · ⚠ Names tab (gid) not found, reading the first tab instead";
-    /* The subtitle line below the header — shown only if there's a problem reading the names sheet */
-    document.getElementById("sub").textContent = warnTxt.replace(/^\s*·\s*/, "");
+    var at = res.meta && res.meta.attend;
+    var parts = [];
+    if (st && st.external && st.external !== "ok") parts.push("External names sheet unavailable (using fallback names)");
+    else if (st && st.gidFallback) parts.push("Names tab (gid) not found, reading the first tab instead");
+    if (at) {
+      if (!at.okDays && (at.missingDays && at.missingDays.length || at.budgetSkipped)) {
+        var reason = at.lastError ? (": " + at.lastError) : "";
+        var skipNote = at.budgetSkipped ? (" · " + at.budgetSkipped + " day(s) skipped for speed") : "";
+        parts.push("Attendance unavailable" + reason + skipNote);
+      } else if (at.lastError && !at.okDays) {
+        parts.push("Attendance error: " + at.lastError);
+      }
+    }
+    document.getElementById("sub").textContent = parts.length ? ("⚠ " + parts.join(" · ⚠ ")) : "";
+
     document.getElementById("stamp").textContent =
       "Last updated: " + new Date(res.generatedAt).toLocaleString("en-US");
 
