@@ -1252,8 +1252,7 @@ function downloadImage() {
   state.capturing = true;
   btn.disabled = true; btn.textContent = "Preparing image…";
 
-  var y = yesterdayStr_();
-  setView("single");
+  var y = latestDate_() || yesterdayStr_();   /* آخر يوم فيه داتا (نفس اللي بيفتحه Single Day)، وامبارح احتياطي */  setView("single");
   document.getElementById("sdFrom").value = y;
   document.getElementById("sdTo").value = y;
   document.getElementById("q").value = "";
@@ -1262,8 +1261,7 @@ function downloadImage() {
 
   if (!document.querySelector(".single-day-table")) {
     finish();
-    alert("No P-attendance users below target for yesterday (" + y + ") ✅ — no image to download.");
-    return;
+    alert("No P-attendance users below target for the latest day (" + y + ") ✅ — no image to download.");    return;
   }
   var fileName = "sf-below-target-P-" + y + ".png";
 
