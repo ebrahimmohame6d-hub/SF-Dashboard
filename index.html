@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SF Dashboard v6</title>
+<title>SF Dashboard v7</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -118,6 +118,20 @@
 
   /* Scroll hint shown above wide tables — hidden on desktop, shown only on narrow screens (see media query) */
   .scroll-hint{display:none}
+
+  /* ===== Month selector (26th → 25th period) ===== */
+  .gh-flex{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .mbox{display:inline-flex;align-items:center;gap:10px}
+  .mrange{font-size:12px;font-weight:500;opacity:.9;direction:ltr}
+  .month-sel,.m-sel{height:34px;padding:0 10px;border-radius:8px;border:1px solid var(--line);
+    background:#fff;color:var(--accent-ink);font-family:inherit;font-size:13px;font-weight:800;
+    cursor:pointer;min-width:0}
+  .month-sel:focus,.m-sel:focus{outline:none;box-shadow:0 0 0 3px var(--glow)}
+  .group-head .month-sel{border:0}
+  .month-bar{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:12px 16px;
+    background:#f3f5fb;border-bottom:1px solid var(--line)}
+  .month-bar b{font-size:13px;font-weight:800;color:var(--accent-ink)}
+  .month-bar .mrange{color:var(--muted)}
 
   /* ===== Missing days (user details): date in a box + hours in a circle, card lifts on hover ===== */
   .days-wrap{width:100%}
@@ -287,10 +301,18 @@
   .modal-x{flex:0 0 38px;width:38px;height:38px;border-radius:50%;padding:0;border:none;background:#eef0f4;
     color:#334155;font-size:24px;line-height:1;display:inline-flex;align-items:center;justify-content:center}
   .modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .modal-grid.g3{grid-template-columns:repeat(3,1fr);margin-top:12px}
+  .modal-grid.mt{margin-top:12px}
   .m-tile{background:#e9effd;border-radius:12px;padding:12px 16px;min-width:0}
   .m-tile.wide{grid-column:1 / -1}
   .m-label{font-family:var(--font-latin);font-size:11px;font-weight:700;letter-spacing:1px;
     text-transform:uppercase;color:#475569;margin-bottom:6px}
+  .m-label-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  /* "Below target" small box inside the details modal */
+  .m-check{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;background:#fff;
+    border:1px solid #cfd8ee;border-radius:8px;cursor:pointer;user-select:none;
+    text-transform:none;letter-spacing:0;font-size:12.5px;font-weight:700;color:var(--ink)}
+  .m-check input{min-width:auto;width:16px;height:16px;padding:0;accent-color:var(--bad);cursor:pointer}
   .m-value{font-family:var(--font-latin);font-size:16px;font-weight:700;color:#0f172a;word-break:break-word}
   .m-value.blue{color:#1c3f8f}
   .m-value.good{color:var(--good)}
@@ -299,6 +321,10 @@
   .m-value .day-card.noatt{background:#d3d7de;border-color:#b9bfc9}
   .att-dash{background:transparent;color:#5b6472;border-color:transparent;font-weight:800}
   .m-value .day-date small{font-family:var(--font-latin);direction:ltr}
+  .m-monthbar{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;
+    padding:10px 14px;background:#f3f5fb;border:1px solid var(--line);border-radius:12px}
+  .m-monthbar b{font-size:13px;font-weight:800;color:var(--accent-ink)}
+  .m-monthbar .mrange{color:var(--muted)}
   @media (max-width:640px){
     .modal-back{padding:10px}
     .modal-card{padding:16px 14px 20px;border-radius:18px}
@@ -306,6 +332,7 @@
     .modal-head h2{font-size:15px}
     .modal-x{flex:0 0 34px;width:34px;height:34px;font-size:22px}
     .modal-grid{gap:8px}
+    .modal-grid.g3{gap:8px}
     .m-tile{padding:10px 12px}
     .m-tile.mwide{grid-column:1 / -1}
     .m-label{font-size:10px}
@@ -372,7 +399,7 @@
         <datalist id="userlist"></datalist>
       </div>
 
-      <!-- General date filter (all users / team averages) -->
+      <!-- General date filter (all users / team averages) — the month selector fills these automatically -->
       <div class="field" id="fFrom">
         <label for="from">From date</label>
         <input type="date" id="from">
@@ -432,6 +459,11 @@ var API = "https://script.google.com/macros/s/AKfycbzoZuqCeMHQd37WmloJU98nvzIE-6
 var DEFAULT_FROM = "2026-08-25";
 var AUTO_REFRESH_MS = 5 * 60 * 1000;   /* Quiet auto-refresh every 5 minutes (names update with it too) */
 
+/* Which month opens by default in All Users / QC:
+   "all"     = all data (like before)
+   "current" = the current month (26th → 25th) */
+var DEFAULT_MONTH = "all";
+
 var TEAM_ORDER = ["Mira Samir","Eman Gamal","Shimaa Nasser","Eslam Ali","Ahmed Adel","Buffer"];
 
 /* Team color: one fixed (solid) color everywhere — change it here only.
@@ -454,11 +486,115 @@ var DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Sa
 var state = {
   rows: [], target: 5.5, view: "users",
   open: {}, teams: null,
+  month: "all",          /* "all" | "YYYY-MM" (26th of previous month → 25th of that month) | "custom" */
   submitRows: null, submitFrom: null, submitTo: null, submitSavedNote: "", submitSheetUrl: "",
   sdOpen: {},            /* users whose day details are open in the Single Day (period) tab */
   captureBad: false,     /* true = we're preparing an image of below-target users only */
   capturing: false
 };
+
+/* State of the open details modal: { user, month, from, to, below } */
+var modalState = null;
+
+/* ===== Month periods: month M = from the 26th of the previous month to the 25th of M =====
+   Example: August 2026 = 2026-07-26 → 2026-08-25 */
+var MONTHS_EN = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+function pad2_(n) { return (n < 10 ? "0" : "") + n; }
+function isoOf_(d) { return d.getFullYear() + "-" + pad2_(d.getMonth() + 1) + "-" + pad2_(d.getDate()); }
+
+/* The period ("YYYY-MM") a date belongs to: the 26th and later count toward the next month */
+function periodKeyOf_(dateStr) {
+  var p = String(dateStr || "").split("-");
+  var y = +p[0], m = +p[1], d = +p[2];
+  if (!y || !m || !d) return "";
+  if (d >= 26) { m++; if (m === 13) { m = 1; y++; } }
+  return y + "-" + pad2_(m);
+}
+
+/* "2026-08" → { start:"2026-07-26", end:"2026-08-25", label:"August 2026", text:"26 Jul → 25 Aug 2026" } */
+function periodRange_(key) {
+  var p = key.split("-");
+  var y = +p[0], m = +p[1];
+  var s = new Date(y, m - 2, 26);     /* JS handles month -1 → December of the previous year */
+  var e = new Date(y, m - 1, 25);
+  var mon3 = function (d) { return MONTHS_EN[d.getMonth()].slice(0, 3); };
+  return {
+    start: isoOf_(s), end: isoOf_(e),
+    label: MONTHS_EN[m - 1] + " " + y,
+    text: s.getDate() + " " + mon3(s) + (s.getFullYear() !== e.getFullYear() ? " " + s.getFullYear() : "") +
+          " → " + e.getDate() + " " + mon3(e) + " " + e.getFullYear()
+  };
+}
+
+/* All periods that have data, newest first */
+function periodKeys_() {
+  var m = {};
+  state.rows.forEach(function (r) { var k = periodKeyOf_(r.date); if (k) m[k] = 1; });
+  return Object.keys(m).sort().reverse();
+}
+
+/* <option> list for a month select. sel = the selected value */
+function monthOptionsHtml_(sel, customText) {
+  var keys = periodKeys_();
+  if (sel && sel !== "all" && sel !== "custom" && keys.indexOf(sel) === -1) {
+    keys.push(sel); keys.sort().reverse();
+  }
+  var h = '<option value="all"' + (sel === "all" ? " selected" : "") + '>All months</option>';
+  keys.forEach(function (k) {
+    h += '<option value="' + k + '"' + (k === sel ? " selected" : "") + '>' + esc(periodRange_(k).label) + '</option>';
+  });
+  if (sel === "custom") h += '<option value="custom" selected>' + esc(customText || "Custom range") + '</option>';
+  return h;
+}
+
+function monthRangeText_(sel, from, to) {
+  if (sel === "all") return "All data";
+  if (sel === "custom") return (from || "…") + " → " + (to || "…");
+  return periodRange_(sel).text;
+}
+
+/* Month select + range text (used inside the dark team bar in All Users, and in the month bar) */
+function monthBoxHtml_() {
+  var f = document.getElementById("from").value, t = document.getElementById("to").value;
+  return '<span class="mbox"><span class="mrange">' + esc(monthRangeText_(state.month, f, t)) + '</span>' +
+    '<select class="month-sel" aria-label="Month">' + monthOptionsHtml_(state.month, (f || "…") + " → " + (t || "…")) + '</select></span>';
+}
+
+/* A small bar with the month select (used in QC and when no users match) */
+function monthBarHtml_() {
+  var f = document.getElementById("from").value, t = document.getElementById("to").value;
+  return '<div class="month-bar"><b>Month</b>' +
+    '<select class="month-sel" aria-label="Month">' + monthOptionsHtml_(state.month, (f || "…") + " → " + (t || "…")) + '</select>' +
+    '<span class="mrange">' + esc(monthRangeText_(state.month, f, t)) + '</span></div>';
+}
+
+/* Fills the From / To fields from the selected month ("all" = empty fields) */
+function applyMonthToInputs_() {
+  var f = document.getElementById("from"), t = document.getElementById("to");
+  if (state.month === "all") { f.value = ""; t.value = ""; return; }
+  if (state.month === "custom") return;
+  var p = periodRange_(state.month);
+  f.value = p.start < DEFAULT_FROM ? DEFAULT_FROM : p.start;
+  t.value = p.end;
+}
+
+/* When the user edits From / To by hand, the month select follows: matches a month or becomes "Custom range" */
+function syncMonthFromInputs_() {
+  var f = document.getElementById("from").value, t = document.getElementById("to").value;
+  if (!f && !t) { state.month = "all"; return; }
+  var keys = periodKeys_();
+  for (var i = 0; i < keys.length; i++) {
+    var p = periodRange_(keys[i]);
+    var ps = p.start < DEFAULT_FROM ? DEFAULT_FROM : p.start;
+    if (ps === f && p.end === t) { state.month = keys[i]; return; }
+  }
+  state.month = "custom";
+}
+
+function defaultMonth_() {
+  return DEFAULT_MONTH === "current" ? periodKeyOf_(todayStr()) : "all";
+}
 
 /* ===== JSONP ===== */
 function jsonp(url, cb, onErr) {
@@ -656,7 +792,7 @@ function render() {
 }
 
 /* Range for the "All Users" tab cards: empty fields = today (or the latest day with data) — same numbers as the Single Day tab.
-   If you pick dates, the cards are computed over that range. */
+   If you pick dates (or a month), the cards are computed over that range. */
 function usersStatsRange_() {
   var f = document.getElementById("from").value;
   var t = document.getElementById("to").value;
@@ -702,7 +838,8 @@ function attBadge(att) {
   return '<span class="att ' + cls + '">' + esc(v) + '</span>';
 }
 
-/* --- All Users: grouped by team like the roster (Buffer shows here as a team like the other rooms) --- */
+/* --- All Users: grouped by team like the roster (Buffer shows here as a team like the other rooms) ---
+   The month selector sits on the right side of the first (top) team bar. */
 function renderUsers(rows) {
   var list = groupUsers(rows);
   document.getElementById("count").textContent = list.length + " users shown";
@@ -718,12 +855,15 @@ function renderUsers(rows) {
     .concat(Object.keys(groups).filter(function (k) { return TEAM_ORDER.indexOf(k) === -1; }));
 
   var html = '<table><tbody>';
+  var firstBar = true;
   orderedKeys.forEach(function (key) {
     var members = groups[key].sort(function (a, b) { return b.missedCount - a.missedCount; });
     var col = teamColor_(key);
 
     html += '<tr class="group-head" style="--c:' + col.c + '">' +
-      '<td colspan="6"><span dir="ltr">' + esc(key) + ' (' + members.length + ' user)</span></td></tr>';
+      '<td colspan="6"><div class="gh-flex"><span dir="ltr">' + esc(key) + ' (' + members.length + ' user)</span>' +
+      (firstBar ? monthBoxHtml_() : '') + '</div></td></tr>';
+    firstBar = false;
 
     html += '<tr style="background:#f7f8fc">' +
       '<th style="position:static">Name</th><th style="position:static">User</th><th style="position:static">Room</th>' +
@@ -746,12 +886,15 @@ function renderUsers(rows) {
     '<div class="scroll-hint">⟵ مرر يمين وشمال لعرض باقي الأعمدة</div>' + html + '</tbody></table>';
   Array.prototype.forEach.call(document.querySelectorAll(".toggle"), function (b) {
     b.onclick = function () {
-      openDetailsModal_(b.getAttribute("data-u"), document.getElementById("from").value, document.getElementById("to").value, "missed");
+      openDetailsModal_(b.getAttribute("data-u"), document.getElementById("from").value, document.getElementById("to").value);
     };
   });
 }
 
-/* ===== Details modal (Details: name) — light cards like the reference design ===== */
+/* ===== Details modal (Details: name) =====
+   Shows ALL days (green = met target, red = below target).
+   The small "Below target" box filters to the days below target only; unchecked = everything.
+   It also has its own month selector (26th → 25th). */
 var DAY_NAMES_EN = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 function dayNameEn_(iso) {
   var p = String(iso || "").split("-");
@@ -785,41 +928,19 @@ function mCards_(arr, clsOf) {
   }).join("") + '</div>';
 }
 
-/* from / to are optional (empty = all days).
-   mode "missed" (All Users): missing days only, P first then PT.
-   mode "all" (Single Day / period): every day, met or not, in chronological order. */
-function openDetailsModal_(user, from, to, mode) {
-  var T = state.target;
-  var recs = state.rows.filter(function (r) {
-    return r.user === user && (!from || r.date >= from) && (!to || r.date <= to);
-  }).sort(function (a, b) { return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
-  if (!recs.length) return;
+/* from / to are optional (empty = all days). The modal keeps its own month state, independent from the page. */
+function openDetailsModal_(user, from, to) {
+  var hasUser = state.rows.some(function (r) { return r.user === user; });
+  if (!hasUser) return;
 
-  var last = recs[recs.length - 1];
-  var rooms = {};
-  recs.forEach(function (r) { rooms[r.room] = 1; });
-  var name = last.name || "";
+  /* All Users tab: start on the month selected on the page. Other tabs (Single Day period): start on that exact range. */
+  var mk = (state.view === "users") ? state.month : "custom";
+  if (mk === "all") { from = ""; to = ""; }
+  else if (mk !== "custom") { var p = periodRange_(mk); from = p.start; to = p.end; }
+  else if (!from && !to) mk = "all";
 
-  var daysTile;
-  if (mode === "all") {
-    daysTile = mTile_("All days (" + recs.length + ")",
-      mCards_(recs, function (m) { return m.hours >= T ? "ok" : "bad"; }), "", true);
-  } else {
-    var missed = recs.filter(function (r) { return r.hours < T; }).sort(function (a, b) {
-      return attRank_(a.att) - attRank_(b.att) || (a.date < b.date ? -1 : (a.date > b.date ? 1 : 0));
-    });
-    daysTile = mTile_("Missed days (" + missed.length + ")", mCards_(missed, "bad"), "", true);
-  }
-
-  document.getElementById("modalTitle").textContent = "Details: " + (name || user);
-  document.getElementById("modalBody").innerHTML = '<div class="modal-grid">' +
-    mTile_("Name", name ? esc(name) : "—", "", false, true) +
-    mTile_("User", esc(user), "", false, true) +
-    mTile_("Team (QC)", esc(last.team || "—")) +
-    mTile_("Room", esc(Object.keys(rooms).join(", "))) +
-    mTile_("Days recorded", String(recs.length), "blue") +
-    daysTile +
-    '</div>';
+  modalState = { user: user, month: mk, from: from || "", to: to || "", below: false };
+  renderModal_();
 
   var m = document.getElementById("modal");
   m.hidden = false;
@@ -827,9 +948,84 @@ function openDetailsModal_(user, from, to, mode) {
   m.querySelector(".modal-card").scrollTop = 0;
 }
 
+function setModalMonth_(k) {
+  if (!modalState) return;
+  modalState.month = k;
+  if (k === "all") { modalState.from = ""; modalState.to = ""; }
+  else if (k !== "custom") { var p = periodRange_(k); modalState.from = p.start; modalState.to = p.end; }
+  renderModal_();
+}
+
+function renderModal_() {
+  var ms = modalState;
+  if (!ms) return;
+  var T = state.target;
+
+  var all = state.rows.filter(function (r) { return r.user === ms.user; })
+    .sort(function (a, b) { return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
+  if (!all.length) return;
+
+  var recs = all.filter(function (r) {
+    return (!ms.from || r.date >= ms.from) && (!ms.to || r.date <= ms.to);
+  });
+
+  var last = all[all.length - 1];
+  var rooms = {};
+  (recs.length ? recs : all).forEach(function (r) { rooms[r.room] = 1; });
+  var name = last.name || "";
+
+  var met = recs.filter(function (r) { return r.hours >= T; }).length;
+  var missedN = recs.length - met;
+
+  var list;
+  if (ms.below) {
+    /* below target only: P first, then PT, then the rest (by date) */
+    list = recs.filter(function (r) { return r.hours < T; }).sort(function (a, b) {
+      return attRank_(a.att) - attRank_(b.att) || (a.date < b.date ? -1 : (a.date > b.date ? 1 : 0));
+    });
+  } else {
+    list = recs;   /* everything, in date order */
+  }
+
+  var cards;
+  if (list.length) {
+    cards = mCards_(list, function (m) { return m.hours >= T ? "ok" : "bad"; });
+  } else {
+    cards = '<span class="days-none">' + (ms.below
+      ? "No days below target in this period ✅"
+      : "No records in this period.") + '</span>';
+  }
+
+  var daysTile = '<div class="m-tile wide">' +
+    '<div class="m-label m-label-row"><span>' + (ms.below ? "Below target days" : "All days") + ' (' + list.length + ')</span>' +
+    '<label class="m-check"><input type="checkbox" id="mBelow"' + (ms.below ? " checked" : "") + '> Below target</label></div>' +
+    '<div class="m-value">' + cards + '</div></div>';
+
+  var customText = (ms.from || "…") + " → " + (ms.to || "…");
+  var monthBar = '<div class="m-monthbar"><b>Month</b>' +
+    '<select id="mMonth" class="m-sel" aria-label="Month">' + monthOptionsHtml_(ms.month, customText) + '</select>' +
+    '<span class="mrange">' + esc(monthRangeText_(ms.month, ms.from, ms.to)) + '</span></div>';
+
+  document.getElementById("modalTitle").textContent = "Details: " + (name || ms.user);
+  document.getElementById("modalBody").innerHTML = monthBar +
+    '<div class="modal-grid">' +
+      mTile_("Name", name ? esc(name) : "—", "", false, true) +
+      mTile_("User", esc(ms.user), "", false, true) +
+      mTile_("Team (QC)", esc(last.team || "—")) +
+      mTile_("Room", esc(Object.keys(rooms).join(", "))) +
+    '</div>' +
+    '<div class="modal-grid g3">' +
+      mTile_("Days recorded", String(recs.length), "blue") +
+      mTile_("Met target", String(met), "good") +
+      mTile_("Below target", String(missedN), "bad") +
+    '</div>' +
+    '<div class="modal-grid mt">' + daysTile + '</div>';
+}
+
 function closeDetailsModal_() {
   document.getElementById("modal").hidden = true;
   document.body.style.overflow = "";
+  modalState = null;
 }
 
 /* --- Single Day: opens on today automatically; for a period pick a from/to day (Buffer team excluded) --- */
@@ -1019,7 +1215,7 @@ function renderSingleDay() {
 
   Array.prototype.forEach.call(document.querySelectorAll(".sd-toggle"), function (b) {
     b.onclick = function () {
-      openDetailsModal_(b.getAttribute("data-u"), rg.from, rg.to, "all");
+      openDetailsModal_(b.getAttribute("data-u"), rg.from, rg.to);
     };
   });
 }
@@ -1035,11 +1231,12 @@ function renderTeamsTab() {
   var teams = state.teams.filter(function (t) { return t.tl !== "Buffer"; });
   document.getElementById("count").textContent = teams.length + " teams";
   if (!teams.length) {
-    document.getElementById("out").innerHTML = '<div class="note">No records for known team rooms in the current range.</div>';
+    document.getElementById("out").innerHTML = monthBarHtml_() +
+      '<div class="note">No records for known team rooms in the current range.</div>';
     return;
   }
 
-  var html = '<div class="teamcard">';
+  var html = monthBarHtml_() + '<div class="teamcard">';
   teams.forEach(function (t) {
     var achievedPct = Math.round(t.achievedPct * 100);
     var col = teamColor_(t.tl);
@@ -1058,8 +1255,10 @@ function renderTeamsTab() {
 }
 
 function empty() {
-  document.getElementById("out").innerHTML =
-    '<div class="note">No results for these filters. Clear the filters or widen the date range.</div>';
+  /* Keep the month select visible so you can switch to another month when this one has no results */
+  var bar = (state.view === "users" || state.view === "teams") ? monthBarHtml_() : "";
+  document.getElementById("out").innerHTML = bar +
+    '<div class="note">No results for these filters. Clear the filters or pick another month.</div>';
 }
 
 /* --- Submit: table (Team | FP | QA | Total) — daily entry + totals for any range --- */
@@ -1317,8 +1516,21 @@ function refresh() {
   render();
 }
 
+/* Month select (All Users bar / QC bar): fills From / To with the 26th → 25th period.
+   Delegated, because the select is re-created on every render. */
+document.addEventListener("change", function (e) {
+  var el = e.target;
+  if (!el || !el.classList || !el.classList.contains("month-sel")) return;
+  state.month = el.value;
+  applyMonthToInputs_();
+  if (state.view === "teams") state.teams = null;   /* Teams are reloaded from the server with the same range */
+  refresh();
+});
+
+/* Manual date edits: the month select switches to the matching month or "Custom range" */
 ["from", "to"].forEach(function (id) {
   document.getElementById(id).addEventListener("change", function () {
+    syncMonthFromInputs_();
     if (state.view === "teams") state.teams = null;   /* Teams are reloaded from the server with the same range */
     refresh();
   });
@@ -1340,6 +1552,8 @@ document.getElementById("reset").onclick = function () {
   document.getElementById("onlyBad").checked = false;
   document.getElementById("sdFrom").value = "";
   document.getElementById("sdTo").value = "";
+  state.month = defaultMonth_();
+  applyMonthToInputs_();
   state.sdOpen = {};
   state.open = {};
   state.submitFrom = null; state.submitTo = null; state.submitSavedNote = "";
@@ -1363,6 +1577,14 @@ function setView(v) {
   render();
 }
 
+/* Details modal: its own month select and the "Below target" box */
+document.getElementById("modalBody").addEventListener("change", function (e) {
+  var el = e.target;
+  if (!modalState || !el) return;
+  if (el.id === "mMonth") { setModalMonth_(el.value); }
+  else if (el.id === "mBelow") { modalState.below = el.checked; renderModal_(); }
+});
+
 document.getElementById("modalClose").onclick = closeDetailsModal_;
 document.getElementById("modal").addEventListener("click", function (e) {
   if (e.target === this) closeDetailsModal_();     /* Clicking the backdrop closes it */
@@ -1381,7 +1603,9 @@ setInterval(function () {
 }, AUTO_REFRESH_MS);
 
 /* ===== Run ===== */
-document.getElementById("from").min = DEFAULT_FROM;   /* Date fields stay empty (mm/dd/yyyy) = all data */
+document.getElementById("from").min = DEFAULT_FROM;
+state.month = defaultMonth_();
+applyMonthToInputs_();     /* "all" keeps the date fields empty (= all data); "current" fills the current 26th → 25th period */
 load();
 </script>
 </body>
