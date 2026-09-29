@@ -133,6 +133,29 @@
   .month-bar b{font-size:13px;font-weight:800;color:var(--accent-ink)}
   .month-bar .mrange{color:var(--muted)}
 
+  /* ===== Team Hours tab: one row per member, one column per day, Total at the end ===== */
+  .th-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:0 16px 16px}
+  table.hours-table{border-collapse:separate;border-spacing:0;font-size:13.5px;width:auto;min-width:100%;
+    border:1px solid #cfd8ea;border-radius:8px;overflow:hidden}
+  .hours-table th,.hours-table td{padding:10px 14px;text-align:center;white-space:nowrap;
+    border-bottom:1px solid #d8dfec;border-inline-start:1px solid #e3e8f2}
+  .hours-table thead th,
+  .hours-table thead th:hover{position:static;background:#1c3f6e;color:#fff;cursor:default;
+    font-weight:800;font-size:13px;border-bottom:none}
+  .hours-table tbody tr:nth-child(even) td{background:#f5f7fc}
+  .hours-table .col-name{min-width:210px;text-align:left}
+  .hours-table .col-user{text-align:left}
+  .hours-table th.col-name,.hours-table td.col-name{position:sticky;left:0;z-index:1;background:#fff}
+  .hours-table thead th.col-name{background:#1c3f6e;z-index:3}
+  .hours-table tbody tr:nth-child(even) td.col-name{background:#f5f7fc}
+  .hours-table td.hv{font-weight:600}
+  .hours-table td.hv.bad{color:var(--bad);font-weight:800}
+  .hours-table td.hv.none{color:var(--muted)}
+  .hours-table td.htotal,.hours-table th.htotal{background:#dfe6f7 !important;color:var(--accent-ink);font-weight:900}
+  .hours-table thead th.htotal{background:#28508a !important;color:#fff}
+  .hours-table tfoot td{background:#1c3f6e;color:#fff;font-weight:900;border-bottom:none}
+  .hours-table tfoot td.col-name{background:#1c3f6e;z-index:1}
+
   /* ===== Missing days (user details): date in a box + hours in a circle, card lifts on hover ===== */
   .days-wrap{width:100%}
   .days-title{font-weight:800;font-size:13.5px;color:var(--accent-ink);margin-bottom:12px}
@@ -428,6 +451,7 @@
       <button class="tab" role="tab" id="tab-single" aria-selected="false">Single Day</button>
       <button class="tab" role="tab" id="tab-teams" aria-selected="false">QC</button>
       <button class="tab" role="tab" id="tab-submit" aria-selected="false">Submit</button>
+      <button class="tab" role="tab" id="tab-hours" aria-selected="false">Team Hours</button>
     </div>
 
     <div class="panel">
@@ -490,7 +514,8 @@ var state = {
   submitRows: null, submitFrom: null, submitTo: null, submitSavedNote: "", submitSheetUrl: "",
   sdOpen: {},            /* users whose day details are open in the Single Day (period) tab */
   captureBad: false,     /* true = we're preparing an image of below-target users only */
-  capturing: false
+  capturing: false,
+  thTeam: ""             /* QC selected in the Team Hours tab */
 };
 
 /* State of the open details modal: { user, month, from, to, below } */
@@ -785,6 +810,7 @@ function render() {
   if (state.view === "submit") { renderSubmitTab(); return; }
   if (!state.rows.length) return noData();
   if (state.view === "teams") { renderTeamsTab(); return; }
+  if (state.view === "hours") { renderHoursTab(); return; }
   if (state.view === "single") { renderSingleDay(); return; }
   var rows = filtered();
   renderSingleStats_(usersStatsRange_(), true);   /* Cards use today's hours (like the Single Day tab), not the average of all days */
@@ -1254,6 +1280,107 @@ function renderTeamsTab() {
   document.getElementById("out").innerHTML = html;
 }
 
+/* --- Team Hours: pick a QC + a date range (or a month) → a table with every member's hours per day and a Total --- */
+function addDays_(iso, n) {
+  var p = String(iso).split("-");
+  return isoOf_(new Date(+p[0], +p[1] - 1, +p[2] + n));
+}
+
+/* From/To fields empty = the last 7 days that have data. Only one date = up to the latest day with data. */
+function hoursRange_() {
+  var f = document.getElementById("from").value;
+  var t = document.getElementById("to").value;
+  var latest = "";
+  state.rows.forEach(function (r) { if (r.date > latest) latest = r.date; });
+  latest = latest || todayStr();
+  var auto = false;
+  if (!f && !t) { t = latest; f = addDays_(latest, -6); auto = true; }
+  else { if (!f) f = DEFAULT_FROM; if (!t) t = latest; }
+  if (f > t) { var x = f; f = t; t = x; }
+  return { from: f, to: t, auto: auto };
+}
+
+function renderHoursTab() {
+  document.getElementById("stats").innerHTML = "";
+  var T = state.target;
+  var f0 = document.getElementById("from").value, t0 = document.getElementById("to").value;
+
+  var teamOpts = '<option value="">Select QC…</option>' + TEAM_ORDER.map(function (t) {
+    return '<option value="' + esc(t) + '"' + (t === state.thTeam ? " selected" : "") + '>' + esc(t) + '</option>';
+  }).join("");
+  var bar = '<div class="month-bar"><b>QC</b><select class="m-sel th-sel" aria-label="QC">' + teamOpts + '</select>' +
+    '<b>Month</b><select class="month-sel" aria-label="Month">' + monthOptionsHtml_(state.month, (f0 || "…") + " → " + (t0 || "…")) + '</select>' +
+    '<span class="mrange">' + esc(monthRangeText_(state.month, f0, t0)) + '</span></div>';
+
+  if (!state.thTeam) {
+    document.getElementById("count").textContent = "";
+    document.getElementById("out").innerHTML = bar +
+      '<div class="note">Select a QC to see the team\'s hours day by day.</div>';
+    return;
+  }
+
+  var team = state.thTeam;
+  var rg = hoursRange_();
+  var days = [];
+  for (var d = rg.from; d <= rg.to && days.length < 93; d = addDays_(d, 1)) days.push(d);
+
+  /* members = everyone on this team; hours summed per day inside the range */
+  var by = {};
+  state.rows.forEach(function (r) {
+    if (r.team !== team) return;
+    var u = by[r.user] || (by[r.user] = { user: r.user, name: "", map: {}, sum: 0 });
+    if (r.name) u.name = r.name;
+    if (r.date >= rg.from && r.date <= rg.to) {
+      u.map[r.date] = (u.map[r.date] || 0) + r.hours;
+      u.sum += r.hours;
+    }
+  });
+
+  var q = document.getElementById("q").value.trim();
+  var members = Object.keys(by).map(function (k) { return by[k]; })
+    .filter(function (u) { return matchUser(u.user, u.name, q); })
+    .sort(function (a, b) {
+      var an = (a.name || a.user).toLowerCase(), bn = (b.name || b.user).toLowerCase();
+      return an < bn ? -1 : (an > bn ? 1 : 0);
+    });
+
+  document.getElementById("count").textContent = members.length + " users · " + team + " · " + rg.from + " → " + rg.to;
+
+  if (!members.length) {
+    document.getElementById("out").innerHTML = bar + '<div class="note">No users found for this team.</div>';
+    return;
+  }
+
+  var info = "Team: " + team + " · from " + rg.from + " to " + rg.to +
+    (rg.auto ? " (last 7 days with data — pick dates or a month to change)" : "");
+
+  var html = bar + '<div class="sd-info" style="margin-top:12px">' + esc(info) + '</div>' +
+    '<div class="scroll-hint">⟵ مرر يمين وشمال لعرض باقي الأعمدة</div>' +
+    '<div class="th-wrap"><table class="hours-table"><thead><tr>' +
+    '<th class="col-name">Name</th><th class="col-user">User</th>';
+  days.forEach(function (d) { html += '<th title="' + esc(d) + '">' + esc(d.slice(5)) + '</th>'; });
+  html += '<th class="htotal">Total</th></tr></thead><tbody>';
+
+  var dayTot = {}, grand = 0;
+  members.forEach(function (u) {
+    html += '<tr><td class="col-name">' + nameCell(u.name) + '</td><td class="col-user">' + uidCell(u.user) + '</td>';
+    days.forEach(function (d) {
+      var v = u.map[d];
+      if (v === undefined) { html += '<td class="hv none">-</td>'; return; }
+      dayTot[d] = (dayTot[d] || 0) + v;
+      html += '<td class="hv' + (v < T ? " bad" : "") + '">' + v.toFixed(2) + '</td>';
+    });
+    grand += u.sum;
+    html += '<td class="htotal">' + u.sum.toFixed(2) + '</td></tr>';
+  });
+
+  html += '</tbody><tfoot><tr><td class="col-name" colspan="2" style="text-align:left">Team total</td>';
+  days.forEach(function (d) { html += '<td>' + (dayTot[d] !== undefined ? dayTot[d].toFixed(2) : "-") + '</td>'; });
+  html += '<td>' + grand.toFixed(2) + '</td></tr></tfoot></table></div>';
+
+  document.getElementById("out").innerHTML = html;
+}
+
 function empty() {
   /* Keep the month select visible so you can switch to another month when this one has no results */
   var bar = (state.view === "users" || state.view === "teams") ? monthBarHtml_() : "";
@@ -1527,6 +1654,14 @@ document.addEventListener("change", function (e) {
   refresh();
 });
 
+/* Team Hours tab: choosing a QC shows only that team's members */
+document.addEventListener("change", function (e) {
+  var el = e.target;
+  if (!el || !el.classList || !el.classList.contains("th-sel")) return;
+  state.thTeam = el.value;
+  render();
+});
+
 /* Manual date edits: the month select switches to the matching month or "Custom range" */
 ["from", "to"].forEach(function (id) {
   document.getElementById(id).addEventListener("change", function () {
@@ -1564,9 +1699,10 @@ document.getElementById("tab-users").onclick = function () { setView("users"); }
 document.getElementById("tab-single").onclick = function () { setView("single"); };
 document.getElementById("tab-teams").onclick = function () { setView("teams"); };
 document.getElementById("tab-submit").onclick = function () { setView("submit"); };
+document.getElementById("tab-hours").onclick = function () { setView("hours"); };
 function setView(v) {
   state.view = v;
-  ["users", "single", "teams", "submit"].forEach(function (id) {
+  ["users", "single", "teams", "submit", "hours"].forEach(function (id) {
     document.getElementById("tab-" + id).setAttribute("aria-selected", v === id);
   });
   var single = (v === "single");
