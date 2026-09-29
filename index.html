@@ -531,12 +531,12 @@ function load(silent) {
     if (st && st.external && st.external !== "ok") parts.push("External names sheet unavailable (using fallback names)");
     else if (st && st.gidFallback) parts.push("Names tab (gid) not found, reading the first tab instead");
     if (at) {
-      if (!at.okDays && (at.missingDays && at.missingDays.length || at.budgetSkipped)) {
-        var reason = at.lastError ? (": " + at.lastError) : "";
-        var skipNote = at.budgetSkipped ? (" · " + at.budgetSkipped + " day(s) skipped for speed") : "";
-        parts.push("Attendance unavailable" + reason + skipNote);
-      } else if (at.lastError && !at.okDays) {
-        parts.push("Attendance error: " + at.lastError);
+      var reason = at.lastError ? (": " + at.lastError) : "";
+      if (!at.okDays) {
+        parts.push("Attendance unavailable" + reason +
+          (at.budgetSkipped ? " · " + at.budgetSkipped + " day(s) skipped for speed" : ""));
+      } else if (at.emptyDays && at.emptyDays.length) {
+        parts.push("Attendance tab read but empty for: " + at.emptyDays.slice(0, 3).join(", "));
       }
     }
     document.getElementById("sub").textContent = parts.length ? ("⚠ " + parts.join(" · ⚠ ")) : "";
@@ -1212,8 +1212,10 @@ function saveSubmitData(date) {
 
 /* ===== Download image =====
    Regardless of which tab you're on, downloading the image always switches to the "Single Day" tab
-   for yesterday's date, shows the users who didn't meet the target with P attendance only,
-   then restores the page as it was. */
+   for the latest day that has data (the same day the Single Day tab opens on), shows the users
+   who didn't meet the target with P attendance only, then restores the page as it was.
+   The capture is always rendered at a fixed desktop width, so on a phone the image still
+   contains every column (Hours, Attendance, Name, User, Team). */
 function yesterdayStr_() {
   var d = new Date();
   d.setDate(d.getDate() - 1);
@@ -1252,7 +1254,9 @@ function downloadImage() {
   state.capturing = true;
   btn.disabled = true; btn.textContent = "Preparing image…";
 
-  var y = latestDate_() || yesterdayStr_();   /* آخر يوم فيه داتا (نفس اللي بيفتحه Single Day)، وامبارح احتياطي */  setView("single");
+  /* Latest day with data (falls back to yesterday if there's no data at all) */
+  var y = latestDate_() || yesterdayStr_();
+  setView("single");
   document.getElementById("sdFrom").value = y;
   document.getElementById("sdTo").value = y;
   document.getElementById("q").value = "";
@@ -1261,14 +1265,30 @@ function downloadImage() {
 
   if (!document.querySelector(".single-day-table")) {
     finish();
-    alert("No P-attendance users below target for the latest day (" + y + ") ✅ — no image to download.");    return;
+    alert("No P-attendance users below target for the latest day (" + y + ") ✅ — no image to download.");
+    return;
   }
   var fileName = "sf-below-target-P-" + y + ".png";
 
+  window.scrollTo(0, 0);
+  var CAP_W = 1100;   /* Image width in px — raise it if the table still gets cut */
+
   html2canvas(document.getElementById("capture"), {
     backgroundColor: "#eef1f8",
-    scale: 2,
-    useCORS: true
+    scale: window.innerWidth < 700 ? 1.5 : 2,   /* lighter on phones to save memory */
+    useCORS: true,
+    windowWidth: CAP_W + 100,   /* the clone is laid out at desktop width so every column shows */
+    onclone: function (doc) {
+      var cap = doc.getElementById("capture");
+      cap.style.width = CAP_W + "px";
+      cap.style.maxWidth = "none";
+      Array.prototype.forEach.call(doc.querySelectorAll(".single-day-wrap, .panel"), function (el) {
+        el.style.overflow = "visible";
+      });
+      Array.prototype.forEach.call(doc.querySelectorAll(".scroll-hint"), function (el) {
+        el.style.display = "none";
+      });
+    }
   }).then(function (canvas) {
     canvas.toBlob(function (blob) {
       var a = document.createElement("a");
