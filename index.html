@@ -1297,7 +1297,21 @@ function hoursRange_() {
   if (!f && !t) { t = latest; f = addDays_(latest, -6); auto = true; }
   else { if (!f) f = DEFAULT_FROM; if (!t) t = latest; }
   if (f > t) { var x = f; f = t; t = x; }
-  return { from: f, to: t, auto: auto };
+
+  /* A month is selected (26th → 25th): stop at the last day that actually has hours, not at the 25th.
+     Looks at the selected QC's records first, then at everyone's. Manual (custom) dates are kept as typed. */
+  var trimmed = false;
+  if (state.month && state.month !== "all" && state.month !== "custom") {
+    var lastTeam = "", lastAny = "";
+    state.rows.forEach(function (r) {
+      if (r.date < f || r.date > t) return;
+      if (r.date > lastAny) lastAny = r.date;
+      if (state.thTeam && r.team === state.thTeam && r.date > lastTeam) lastTeam = r.date;
+    });
+    var last = lastTeam || lastAny;
+    if (last && last < t) { t = last; trimmed = true; }
+  }
+  return { from: f, to: t, auto: auto, trimmed: trimmed };
 }
 
 function renderHoursTab() {
@@ -1352,7 +1366,8 @@ function renderHoursTab() {
   }
 
   var info = "Team: " + team + " · from " + rg.from + " to " + rg.to +
-    (rg.auto ? " (last 7 days with data — pick dates or a month to change)" : "");
+    (rg.auto ? " (last 7 days with data — pick dates or a month to change)" : "") +
+    (rg.trimmed ? " (up to the last day with data)" : "");
 
   var html = bar + '<div class="sd-info" style="margin-top:12px">' + esc(info) + '</div>' +
     '<div class="scroll-hint">⟵ مرر يمين وشمال لعرض باقي الأعمدة</div>' +
