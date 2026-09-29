@@ -1549,7 +1549,62 @@ function yesterdayStr_() {
   return local.toISOString().slice(0, 10);
 }
 
+/* Team Hours tab: the button downloads an image of the hours table only.
+   The table is cloned into an off-screen box so the whole width is captured even when it scrolls sideways. */
+function downloadHoursImage_() {
+  var btn = document.getElementById("img");
+  var tbl = document.querySelector("#out .hours-table");
+  if (!tbl) { alert("Select a QC first, then download the table image."); return; }
+
+  var rg = hoursRange_();
+  var fileName = "sf-team-hours-" + String(state.thTeam).replace(/\s+/g, "-") + "-" + rg.from + "_to_" + rg.to + ".png";
+
+  state.capturing = true;
+  btn.disabled = true; btn.textContent = "Preparing image…";
+
+  var holder = document.createElement("div");
+  holder.id = "hoursCap";
+  holder.style.cssText = "position:fixed;left:-20000px;top:0;padding:12px;background:#ffffff;width:max-content;";
+  var clone = tbl.cloneNode(true);
+  clone.style.width = "auto";
+  Array.prototype.forEach.call(clone.querySelectorAll(".col-name"), function (el) { el.style.position = "static"; });
+  holder.appendChild(clone);
+  document.body.appendChild(holder);
+
+  function finish() {
+    if (holder.parentNode) holder.parentNode.removeChild(holder);
+    state.capturing = false;
+    btn.disabled = false; btn.textContent = "Download Table Image";
+  }
+
+  html2canvas(holder, {
+    backgroundColor: "#ffffff",
+    scale: window.innerWidth < 700 ? 1.5 : 2,
+    useCORS: true,
+    windowWidth: Math.max(holder.scrollWidth + 60, 1200),
+    onclone: function (doc) {
+      var h = doc.getElementById("hoursCap");
+      if (h) { h.style.left = "0"; h.style.top = "0"; h.style.position = "absolute"; }
+    }
+  }).then(function (canvas) {
+    canvas.toBlob(function (blob) {
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      finish();
+    });
+  }).catch(function () {
+    finish();
+    alert("Failed to create the image. Try again.");
+  });
+}
+
 function downloadImage() {
+  /* On the Team Hours tab the button only downloads the hours table */
+  if (state.view === "hours") { downloadHoursImage_(); return; }
+
   var btn = document.getElementById("img");
 
   /* Current page state, so we can restore it after capturing */
@@ -1702,6 +1757,9 @@ document.getElementById("tab-submit").onclick = function () { setView("submit");
 document.getElementById("tab-hours").onclick = function () { setView("hours"); };
 function setView(v) {
   state.view = v;
+  if (!state.capturing) {
+    document.getElementById("img").textContent = (v === "hours") ? "Download Table Image" : "Download Image";
+  }
   ["users", "single", "teams", "submit", "hours"].forEach(function (id) {
     document.getElementById("tab-" + id).setAttribute("aria-selected", v === id);
   });
