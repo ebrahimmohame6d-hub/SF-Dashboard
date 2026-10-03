@@ -207,7 +207,7 @@
 
   .teamcard{display:flex;flex-wrap:wrap;gap:18px;padding:22px;justify-content:center}
   /* Team card: a plain square (not a circle) with one fixed color for every card */
-  .tcard{width:220px;min-height:170px;flex:0 0 auto;background:var(--surface);
+  .tcard{width:190px;min-height:170px;flex:0 0 auto;background:var(--surface);
     border:1px solid var(--line);border-top:6px solid var(--c,var(--accent));border-radius:var(--radius);
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     text-align:center;padding:16px 14px;transition:box-shadow .15s ease,transform .15s ease}
@@ -221,17 +221,23 @@
   .tcard .row2 b.good{color:var(--good)}
   .tcard .row2 b.bad{color:var(--bad)}
 
-  /* Weekly "Hours achieved" box + deduction label */
-  .tcard .ach{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;flex-wrap:wrap}
-  .tcard .ach-lbl{flex:0 0 100%;font-size:10.5px;color:var(--muted);font-weight:500;margin-bottom:-4px}
-  .tcard .ach-box{min-width:62px;padding:7px 12px;border-radius:8px;font-weight:900;font-size:15px;
-    line-height:1.2;color:#fff;text-align:center}
-  .tcard .ach-box.good{background:var(--good)}
-  .tcard .ach-box.warn{background:#eab308;color:#3b2f00}
-  .tcard .ach-box.bad{background:var(--bad)}
-  .tcard .ach-ded{font-size:12px;font-weight:900;direction:ltr}
-  .tcard .ach-ded.warn{color:#a16207}
-  .tcard .ach-ded.bad{color:var(--bad)}
+  /* Details modal: weekly blocks (black week bar, day cards, weekly average box + deduction) */
+  .wk-bar{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:8px 14px;margin:16px 0 10px;
+    background:#000;color:#fff;border-radius:8px;font-family:var(--font-latin);font-size:12.5px}
+  .wk-bar:first-child{margin-top:4px}
+  .wk-bar b{font-weight:800;color:#fff}
+  .wk-bar span{font-weight:600;color:#fff;opacity:.95}
+  .wk-sum{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:12px}
+  .wk-lbl{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#475569}
+  .wk-avg{min-width:74px;padding:8px 14px;border-radius:9px;font-weight:900;font-size:15px;line-height:1.2;
+    text-align:center;color:#fff}
+  .wk-avg.good{background:var(--good)}
+  .wk-avg.warn{background:#eab308;color:#3b2f00}
+  .wk-avg.bad{background:var(--bad)}
+  .wk-pct{font-size:12.5px;font-weight:700;color:#475569}
+  .wk-ded{font-size:13px;font-weight:900;direction:ltr}
+  .wk-ded.warn{color:#a16207}
+  .wk-ded.bad{color:var(--bad)}
 
   /* ===== Submit ===== */
   .submit-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;
@@ -1057,14 +1063,41 @@ function renderModal_() {
     list = recs;   /* everything, in date order */
   }
 
-  var cards;
-  if (list.length) {
-    cards = mCards_(list, function (m) { return m.hours >= T ? "ok" : "bad"; });
-  } else {
-    cards = '<span class="days-none">' + (ms.below
-      ? "No days below target in this period ✅"
-      : "No records in this period.") + '</span>';
+  /* Weekly blocks (Monday → Sunday): black bar, the week's day cards, then the weekly average box.
+     Average % = average hours / target. 80%+ green | 70–79% yellow (Deduction -100) | under 70% red (Deduction -200) */
+  var weeksHtml = "";
+  if (recs.length) {
+    var weeks = splitWeeks_(recs[0].date, recs[recs.length - 1].date);
+    weeks.forEach(function (w) {
+      var wr = recs.filter(function (r) { return r.date >= w.start && r.date <= w.end; });
+      if (!wr.length) return;
+      var sum = 0;
+      wr.forEach(function (r) { sum += r.hours; });
+      var avg = sum / wr.length;
+      var pct = Math.round(avg / T * 100);
+      var lvl = pct >= 80 ? "good" : (pct >= 70 ? "warn" : "bad");
+      var ded = lvl === "warn" ? "Deduction -100" : (lvl === "bad" ? "Deduction -200" : "");
+
+      var shown = ms.below
+        ? wr.filter(function (r) { return r.hours < T; }).sort(function (a, b) {
+            return attRank_(a.att) - attRank_(b.att) || (a.date < b.date ? -1 : (a.date > b.date ? 1 : 0));
+          })
+        : wr;
+      var wcards = shown.length
+        ? mCards_(shown, function (m) { return m.hours >= T ? "ok" : "bad"; })
+        : '<span class="days-none">No days below target this week ✅</span>';
+
+      weeksHtml += '<div class="wk-bar"><b>Week ' + w.index + '</b><span>from ' + esc(w.start) + ' to ' + esc(w.end) + '</span></div>' +
+        wcards +
+        '<div class="wk-sum"><span class="wk-lbl">Weekly average</span>' +
+        '<span class="wk-avg ' + lvl + '">' + avg.toFixed(2) + '</span>' +
+        '<span class="wk-pct">' + pct + '%</span>' +
+        (ded ? '<span class="wk-ded ' + lvl + '">' + ded + '</span>' : '') + '</div>';
+    });
   }
+  var cards = weeksHtml || ('<span class="days-none">' + (ms.below
+      ? "No days below target in this period ✅"
+      : "No records in this period.") + '</span>');
 
   var daysTile = '<div class="m-tile wide">' +
     '<div class="m-label m-label-row"><span>' + (ms.below ? "Below target days" : "All days") + ' (' + list.length + ')</span>' +
@@ -1305,12 +1338,8 @@ function teamStatsForRange_(team, from, to) {
   return { avgHours: n ? sum / n : 0, total: n, achievedPct: n ? (n - below) / n : 1 };
 }
 
-/* Team card. The "Hours achieved" box shows the team's percentage for the week (or the whole range):
-   80% and above → green | 70% to under 80% → yellow + "Deduction -100" | under 70% → red + "Deduction -200" */
 function teamCardHtml_(team, s) {
-  var pct = Math.round(s.achievedPct * 100);
-  var lvl = pct >= 80 ? "good" : (pct >= 70 ? "warn" : "bad");
-  var ded = lvl === "warn" ? "Deduction -100" : (lvl === "bad" ? "Deduction -200" : "");
+  var achievedPct = Math.round(s.achievedPct * 100);
   var col = teamColor_(team);
   var members = (state.teamMembers && state.teamMembers[team] != null) ? state.teamMembers[team] : "–";
   return '<div class="tcard" style="--c:' + col.c + '">' +
@@ -1318,11 +1347,7 @@ function teamCardHtml_(team, s) {
     '<div class="big">' + s.avgHours.toFixed(2) + '<small>hrs/day</small></div>' +
     '<div class="row2">' +
       '<span>Members<b>' + members + '</b></span>' +
-    '</div>' +
-    '<div class="ach">' +
-      '<span class="ach-lbl">Hours achieved (average)</span>' +
-      '<span class="ach-box ' + lvl + '">' + pct + '%</span>' +
-      (ded ? '<span class="ach-ded ' + lvl + '">' + ded + '</span>' : '') +
+      '<span>Hours achieved<b class="' + (achievedPct >= 70 ? "good" : "bad") + '">' + achievedPct + '%</b></span>' +
     '</div></div>';
 }
 
