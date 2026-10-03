@@ -132,6 +132,11 @@
     background:#f3f5fb;border-bottom:1px solid var(--line)}
   .month-bar b{font-size:13px;font-weight:800;color:var(--accent-ink)}
   .month-bar .mrange{color:var(--muted)}
+  .week-bar{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:10px 16px;margin-top:14px;
+    background:#eef1fb;border-inline-start:4px solid var(--accent);border-radius:8px}
+  .week-bar b{font-size:13px;font-weight:800;color:var(--accent-ink)}
+  .week-bar .mrange{color:var(--accent-ink);font-weight:600}
+  .teamcard{margin-top:0}
 
   /* ===== Team Hours tab: one row per member, one column per day, Total at the end ===== */
   .th-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:0 16px 16px}
@@ -510,12 +515,15 @@ var DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Sa
 var state = {
   rows: [], target: 5.5, view: "users",
   open: {}, teams: null,
+  teamMembers: null,     /* { teamName: fixed roster member count } — loaded once from ?action=teams */
   month: "all",          /* "all" | "YYYY-MM" (26th of previous month → 25th of that month) | "custom" */
   submitRows: null, submitFrom: null, submitTo: null, submitSavedNote: "", submitSheetUrl: "",
   sdOpen: {},            /* users whose day details are open in the Single Day (period) tab */
   captureBad: false,     /* true = we're preparing an image of below-target users only */
   capturing: false,
-  thTeam: ""             /* QC selected in the Team Hours tab */
+  thTeam: "",             /* QC selected in the Team Hours tab */
+  thWeek: "",             /* selected week's start date (yyyy-mm-dd) in the Team Hours tab */
+  thRangeFrom: "", thRangeTo: ""   /* last rendered Team Hours range, used by the image download */
 };
 
 /* State of the open details modal: { user, month, from, to, below } */
@@ -621,6 +629,34 @@ function defaultMonth_() {
   return DEFAULT_MONTH === "current" ? periodKeyOf_(todayStr()) : "all";
 }
 
+/* ===== Weeks: Monday → Sunday splits of a date range =====
+   Given a [from, to] range, returns weeks [{start, end, index}], Monday-start,
+   clipped to the range boundaries (the first/last week can be shorter than 7 days). */
+function addDays_(iso, n) {
+  var p = String(iso).split("-");
+  return isoOf_(new Date(+p[0], +p[1] - 1, +p[2] + n));
+}
+
+function splitWeeks_(from, to) {
+  var weeks = [];
+  if (!from || !to || from > to) return weeks;
+  var cur = from, n = 1;
+  while (cur <= to) {
+    var p = String(cur).split("-");
+    var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    var dow = d.getDay();                              /* 0=Sun..6=Sat */
+    var diffToSunday = (dow === 0) ? 0 : (7 - dow);     /* days left to this week's Sunday */
+    var sunday = addDays_(cur, diffToSunday);
+    var wEnd = sunday < to ? sunday : to;
+    weeks.push({ start: cur, end: wEnd, index: n });
+    n++;
+    cur = addDays_(wEnd, 1);
+  }
+  return weeks;
+}
+
+function weekLabel_(w) { return w.start + " → " + w.end; }
+
 /* ===== JSONP ===== */
 function jsonp(url, cb, onErr) {
   var name = "cb_" + Date.now() + Math.floor(Math.random() * 1e6);
@@ -670,8 +706,6 @@ function load(silent) {
 
     state.rows = res.rows || [];
     state.target = res.target || 5.5;
-    var keepTeams = silent && state.view === "teams";
-    if (!keepTeams) state.teams = null;
 
     if (res.minDate) {
       ["from", "to", "sdFrom", "sdTo"].forEach(function (id) {
@@ -708,7 +742,6 @@ function load(silent) {
     if (!state.rows.length && state.view !== "submit") return noData();
 
     render();
-    if (keepTeams) loadTeams(renderTeamsTab);   /* refresh team cards without blanking the screen */
   }, fail);
 
   function fail(msg) {
@@ -718,21 +751,16 @@ function load(silent) {
   }
 }
 
-function loadTeams(cb) {
-  var qs = "?action=teams";
-  var from = document.getElementById("from").value;
-  var to = document.getElementById("to").value;
-  if (from) qs += "&from=" + encodeURIComponent(from);
-  if (to) qs += "&to=" + encodeURIComponent(to);
-
-  jsonp(API + qs, function (res) {
-    if (!res || !res.ok) { document.getElementById("out").innerHTML =
-      '<div class="note error">' + esc((res && res.error) || "Failed to load team data.") + '</div>'; return; }
-    state.teams = res.teams || [];
+/* Loaded once: the fixed roster member count per QC team (doesn't depend on any date range).
+   Used by the QC tab's weekly cards so "Members" stays correct per week. */
+function loadTeamMembersOnce_(cb) {
+  if (state.teamMembers) { cb(); return; }
+  jsonp(API + "?action=teams", function (res) {
+    var m = {};
+    if (res && res.ok) (res.teams || []).forEach(function (t) { m[t.tl] = t.members; });
+    state.teamMembers = m;
     cb();
-  }, function (msg) {
-    document.getElementById("out").innerHTML = '<div class="note error">' + esc(msg) + '</div>';
-  });
+  }, function () { state.teamMembers = {}; cb(); });
 }
 
 /* ===== Submit: load saved data from the sheet ===== */
@@ -1246,72 +1274,98 @@ function renderSingleDay() {
   });
 }
 
-/* --- Team averages (QC) — the five rooms only (excluding Buffer, which shows on the "All Users" tab) --- */
+/* --- QC tab: weekly breakdown ---
+   When a specific month (or a custom range) is selected, the month is split into
+   Monday→Sunday weeks and each week gets its own row of team cards computed from
+   that week's records only. "All months" shows one overall set of cards (too many
+   weeks otherwise). Member counts come from the fixed roster (loaded once). */
+function teamStatsForRange_(team, from, to) {
+  var sum = 0, n = 0, below = 0;
+  state.rows.forEach(function (r) {
+    if (r.team !== team || r.date < from || r.date > to) return;
+    sum += r.hours; n++;
+    if (r.hours < state.target) below++;
+  });
+  return { avgHours: n ? sum / n : 0, total: n, achievedPct: n ? (n - below) / n : 1 };
+}
+
+function teamCardHtml_(team, s) {
+  var achievedPct = Math.round(s.achievedPct * 100);
+  var col = teamColor_(team);
+  var members = (state.teamMembers && state.teamMembers[team] != null) ? state.teamMembers[team] : "–";
+  return '<div class="tcard" style="--c:' + col.c + '">' +
+    '<h3>' + esc(team) + '</h3>' +
+    '<div class="big">' + s.avgHours.toFixed(2) + '<small>hrs/day</small></div>' +
+    '<div class="row2">' +
+      '<span>Members<b>' + members + '</b></span>' +
+      '<span>Hours achieved<b class="' + (achievedPct >= 70 ? "good" : "bad") + '">' + achievedPct + '%</b></span>' +
+    '</div></div>';
+}
+
 function renderTeamsTab() {
   document.getElementById("stats").innerHTML = "";
-  if (state.teams === null) {
-    document.getElementById("out").innerHTML = '<div class="note">Loading team data…</div>';
-    loadTeams(renderTeamsTab);
-    return;
-  }
-  var teams = state.teams.filter(function (t) { return t.tl !== "Buffer"; });
-  document.getElementById("count").textContent = teams.length + " teams";
-  if (!teams.length) {
-    document.getElementById("out").innerHTML = monthBarHtml_() +
-      '<div class="note">No records for known team rooms in the current range.</div>';
+
+  if (!state.teamMembers) {
+    document.getElementById("out").innerHTML = monthBarHtml_() + '<div class="note">Loading team data…</div>';
+    loadTeamMembersOnce_(renderTeamsTab);
     return;
   }
 
-  var html = monthBarHtml_() + '<div class="teamcard">';
-  teams.forEach(function (t) {
-    var achievedPct = Math.round(t.achievedPct * 100);
-    var col = teamColor_(t.tl);
-    html += '<div class="tcard" style="--c:' + col.c + '">' +
-      '<h3>' + esc(t.tl) + '</h3>' +
-      '<div class="big">' + t.avgHours.toFixed(2) + '<small>hrs/day</small></div>' +
-      '<div class="row2">' +
-        '<span>Members<b>' + t.members + '</b></span>' +
-        '<span>Hours achieved<b class="' + (achievedPct >= 70 ? "good" : "bad") + '">' + achievedPct + '%</b></span>' +
-      '</div>' +
-      '</div>';
-  });
-  html += '</div>';
+  var teams = TEAM_ORDER.filter(function (k) { return k !== "Buffer"; });
+  document.getElementById("count").textContent = teams.length + " teams";
+
+  var f = document.getElementById("from").value, t = document.getElementById("to").value;
+  var html = monthBarHtml_();
+
+  if (!f || !t) {
+    /* "All months": one overall set of cards over whatever data exists */
+    var lo = "0000-00-00", hi = "9999-99-99";
+    html += '<div class="teamcard">';
+    teams.forEach(function (team) { html += teamCardHtml_(team, teamStatsForRange_(team, lo, hi)); });
+    html += '</div>';
+  } else {
+    var weeks = splitWeeks_(f, t);
+    if (!weeks.length) {
+      html += '<div class="note">No valid date range selected.</div>';
+    }
+    weeks.forEach(function (w) {
+      html += '<div class="week-bar"><b>Week ' + w.index + '</b><span class="mrange">' + esc(weekLabel_(w)) + '</span></div>' +
+        '<div class="teamcard">';
+      teams.forEach(function (team) { html += teamCardHtml_(team, teamStatsForRange_(team, w.start, w.end)); });
+      html += '</div>';
+    });
+  }
 
   document.getElementById("out").innerHTML = html;
 }
 
-/* --- Team Hours: pick a QC + a date range (or a month) → a table with every member's hours per day and a Total --- */
-function addDays_(iso, n) {
-  var p = String(iso).split("-");
-  return isoOf_(new Date(+p[0], +p[1] - 1, +p[2] + n));
-}
+/* --- Team Hours: pick a QC + a week within the selected month → a table with every member's
+   daily hours for that week only (one column per day, 7 days max), plus a Total column. --- */
 
-/* From/To fields empty = the last 7 days that have data. Only one date = up to the latest day with data. */
-function hoursRange_() {
+/* Weeks available to pick from, based on the page's current From/To (month selector or custom dates).
+   "All months" / no dates → falls back to the last 7 days that actually have data. */
+function hoursWeeks_() {
   var f = document.getElementById("from").value;
   var t = document.getElementById("to").value;
-  var latest = "";
-  state.rows.forEach(function (r) { if (r.date > latest) latest = r.date; });
-  latest = latest || todayStr();
-  var auto = false;
-  if (!f && !t) { t = latest; f = addDays_(latest, -6); auto = true; }
-  else { if (!f) f = DEFAULT_FROM; if (!t) t = latest; }
-  if (f > t) { var x = f; f = t; t = x; }
-
-  /* A month is selected (26th → 25th): stop at the last day that actually has hours, not at the 25th.
-     Looks at the selected QC's records first, then at everyone's. Manual (custom) dates are kept as typed. */
-  var trimmed = false;
-  if (state.month && state.month !== "all" && state.month !== "custom") {
-    var lastTeam = "", lastAny = "";
-    state.rows.forEach(function (r) {
-      if (r.date < f || r.date > t) return;
-      if (r.date > lastAny) lastAny = r.date;
-      if (state.thTeam && r.team === state.thTeam && r.date > lastTeam) lastTeam = r.date;
-    });
-    var last = lastTeam || lastAny;
-    if (last && last < t) { t = last; trimmed = true; }
+  if (!f || !t) {
+    var latest = "";
+    state.rows.forEach(function (r) { if (r.date > latest) latest = r.date; });
+    latest = latest || todayStr();
+    t = latest; f = addDays_(latest, -6);
   }
-  return { from: f, to: t, auto: auto, trimmed: trimmed };
+  if (f < DEFAULT_FROM) f = DEFAULT_FROM;
+  if (f > t) { var x = f; f = t; t = x; }
+  return splitWeeks_(f, t);
+}
+
+/* Picks the week to show by default: the one containing today, else the most recent week in the list */
+function defaultWeekStart_(weeks) {
+  if (!weeks.length) return "";
+  var t = todayStr();
+  for (var i = 0; i < weeks.length; i++) {
+    if (t >= weeks[i].start && t <= weeks[i].end) return weeks[i].start;
+  }
+  return weeks[weeks.length - 1].start;
 }
 
 function renderHoursTab() {
@@ -1322,9 +1376,19 @@ function renderHoursTab() {
   var teamOpts = '<option value="">Select QC…</option>' + TEAM_ORDER.map(function (t) {
     return '<option value="' + esc(t) + '"' + (t === state.thTeam ? " selected" : "") + '>' + esc(t) + '</option>';
   }).join("");
+
+  var weeks = hoursWeeks_();
+  if (!weeks.some(function (w) { return w.start === state.thWeek; })) {
+    state.thWeek = defaultWeekStart_(weeks);
+  }
+  var weekOpts = weeks.map(function (w) {
+    return '<option value="' + w.start + '"' + (w.start === state.thWeek ? " selected" : "") + '>' +
+      'Week ' + w.index + ' (' + w.start + ' → ' + w.end + ')</option>';
+  }).join("");
+
   var bar = '<div class="month-bar"><b>QC</b><select class="m-sel th-sel" aria-label="QC">' + teamOpts + '</select>' +
     '<b>Month</b><select class="month-sel" aria-label="Month">' + monthOptionsHtml_(state.month, (f0 || "…") + " → " + (t0 || "…")) + '</select>' +
-    '<span class="mrange">' + esc(monthRangeText_(state.month, f0, t0)) + '</span></div>';
+    '<b>Week</b><select class="m-sel th-week-sel" aria-label="Week">' + weekOpts + '</select></div>';
 
   if (!state.thTeam) {
     document.getElementById("count").textContent = "";
@@ -1333,12 +1397,19 @@ function renderHoursTab() {
     return;
   }
 
-  var team = state.thTeam;
-  var rg = hoursRange_();
-  var days = [];
-  for (var d = rg.from; d <= rg.to && days.length < 93; d = addDays_(d, 1)) days.push(d);
+  var selWeek = weeks.filter(function (w) { return w.start === state.thWeek; })[0] || weeks[weeks.length - 1];
+  if (!selWeek) {
+    document.getElementById("out").innerHTML = bar + '<div class="note">No valid week in range.</div>';
+    return;
+  }
+  var rg = { from: selWeek.start, to: selWeek.end };
+  state.thRangeFrom = rg.from; state.thRangeTo = rg.to;
 
-  /* members = everyone on this team; hours summed per day inside the range */
+  var team = state.thTeam;
+  var days = [];
+  for (var d = rg.from; d <= rg.to; d = addDays_(d, 1)) days.push(d);
+
+  /* members = everyone on this team; hours per day inside this week only */
   var by = {};
   state.rows.forEach(function (r) {
     if (r.team !== team) return;
@@ -1358,22 +1429,20 @@ function renderHoursTab() {
       return an < bn ? -1 : (an > bn ? 1 : 0);
     });
 
-  document.getElementById("count").textContent = members.length + " users · " + team + " · " + rg.from + " → " + rg.to;
+  document.getElementById("count").textContent = members.length + " users · " + team + " · Week " + selWeek.index;
 
   if (!members.length) {
     document.getElementById("out").innerHTML = bar + '<div class="note">No users found for this team.</div>';
     return;
   }
 
-  var info = "Team: " + team + " · from " + rg.from + " to " + rg.to +
-    (rg.auto ? " (last 7 days with data — pick dates or a month to change)" : "") +
-    (rg.trimmed ? " (up to the last day with data)" : "");
+  var info = "Team: " + team + " · Week " + selWeek.index + " · " + rg.from + " → " + rg.to;
 
   var html = bar + '<div class="sd-info" style="margin-top:12px">' + esc(info) + '</div>' +
     '<div class="scroll-hint">⟵ مرر يمين وشمال لعرض باقي الأعمدة</div>' +
     '<div class="th-wrap"><table class="hours-table"><thead><tr>' +
     '<th class="col-name">Name</th><th class="col-user">User</th>';
-  days.forEach(function (d) { html += '<th title="' + esc(d) + '">' + esc(d.slice(5)) + '</th>'; });
+  days.forEach(function (d) { html += '<th title="' + esc(d) + '">' + esc(dayNameEn_(d).slice(0, 3)) + ' ' + esc(d.slice(5)) + '</th>'; });
   html += '<th class="htotal">Total</th></tr></thead><tbody>';
 
   var dayTot = {}, grand = 0;
@@ -1564,15 +1633,15 @@ function yesterdayStr_() {
   return local.toISOString().slice(0, 10);
 }
 
-/* Team Hours tab: the button downloads an image of the hours table only.
+/* Team Hours tab: the button downloads an image of the hours table only (the selected week).
    The table is cloned into an off-screen box so the whole width is captured even when it scrolls sideways. */
 function downloadHoursImage_() {
   var btn = document.getElementById("img");
   var tbl = document.querySelector("#out .hours-table");
   if (!tbl) { alert("Select a QC first, then download the table image."); return; }
 
-  var rg = hoursRange_();
-  var fileName = "sf-team-hours-" + String(state.thTeam).replace(/\s+/g, "-") + "-" + rg.from + "_to_" + rg.to + ".png";
+  var fileName = "sf-team-hours-" + String(state.thTeam).replace(/\s+/g, "-") + "-" +
+    state.thRangeFrom + "_to_" + state.thRangeTo + ".png";
 
   state.capturing = true;
   btn.disabled = true; btn.textContent = "Preparing image…";
@@ -1713,14 +1782,15 @@ function refresh() {
   render();
 }
 
-/* Month select (All Users bar / QC bar): fills From / To with the 26th → 25th period.
-   Delegated, because the select is re-created on every render. */
+/* Month select (All Users bar / QC bar / Team Hours bar): fills From / To with the 26th → 25th period.
+   Delegated, because the select is re-created on every render. Changing the month also resets the
+   Team Hours week pick, since the list of available weeks depends on the month. */
 document.addEventListener("change", function (e) {
   var el = e.target;
   if (!el || !el.classList || !el.classList.contains("month-sel")) return;
   state.month = el.value;
   applyMonthToInputs_();
-  if (state.view === "teams") state.teams = null;   /* Teams are reloaded from the server with the same range */
+  state.thWeek = "";
   refresh();
 });
 
@@ -1732,11 +1802,19 @@ document.addEventListener("change", function (e) {
   render();
 });
 
+/* Team Hours tab: choosing a week shows that week's daily columns */
+document.addEventListener("change", function (e) {
+  var el = e.target;
+  if (!el || !el.classList || !el.classList.contains("th-week-sel")) return;
+  state.thWeek = el.value;
+  render();
+});
+
 /* Manual date edits: the month select switches to the matching month or "Custom range" */
 ["from", "to"].forEach(function (id) {
   document.getElementById(id).addEventListener("change", function () {
     syncMonthFromInputs_();
-    if (state.view === "teams") state.teams = null;   /* Teams are reloaded from the server with the same range */
+    state.thWeek = "";
     refresh();
   });
 });
@@ -1759,6 +1837,7 @@ document.getElementById("reset").onclick = function () {
   document.getElementById("sdTo").value = "";
   state.month = defaultMonth_();
   applyMonthToInputs_();
+  state.thWeek = "";
   state.sdOpen = {};
   state.open = {};
   state.submitFrom = null; state.submitTo = null; state.submitSavedNote = "";
