@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SF Dashboard v8</title>
+<title>SF Dashboard v9</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -418,6 +418,32 @@
     .submit-table th,.submit-table td{padding:8px 8px;font-size:13px}
     .submit-table .s-name-cell{min-width:120px;font-size:12.5px}
   }
+  /* ===== Login screen ===== */
+  .login-back{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;
+    background:linear-gradient(120deg,#111a44 0%,var(--accent) 55%,var(--accent2) 130%)}
+  .login-back[hidden]{display:none}
+  .login-card{width:min(400px,100%);background:#fff;border-radius:18px;padding:28px 26px 24px;
+    box-shadow:0 30px 80px rgba(15,23,42,.45)}
+  .login-card h2{margin:0 0 4px;font-size:22px;font-weight:900;color:var(--accent-ink)}
+  .login-sub{margin:0 0 18px;font-size:13px;color:var(--muted);font-weight:500}
+  .login-card .field{margin-bottom:12px}
+  .login-card input,.login-card select{width:100%;min-width:0;font-family:inherit;font-size:14.5px;font-weight:600;
+    padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius);background:#fff;color:var(--ink)}
+  .login-card select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--glow)}
+  .login-err{min-height:20px;margin:2px 0 10px;font-size:13px;font-weight:700;color:var(--bad)}
+  .login-go{width:100%;padding:11px 18px;background:var(--accent-ink);border-color:var(--accent-ink);color:#fff;font-size:14.5px}
+
+  /* ===== Labeler view: name + flash number on top ===== */
+  .who-card{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+    padding:16px 20px;margin-bottom:14px;background:var(--surface);border:1px solid var(--line);
+    border-inline-start:6px solid var(--accent);border-radius:var(--radius)}
+  .who-card[hidden]{display:none}
+  .who-name{font-family:var(--font-latin);font-size:19px;font-weight:700;color:#0f172a}
+  .who-id{display:flex;flex-direction:column;align-items:flex-end;direction:ltr}
+  .who-id span{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#475569}
+  .who-id b{font-family:var(--font-latin);font-size:18px;font-weight:800;color:var(--accent-ink);letter-spacing:.6px}
+  .self-body{padding:18px 16px}
+  .panel.solo{border-radius:var(--radius)}
   @media (prefers-reduced-motion:reduce){
     *{transition:none !important}
   }
@@ -431,12 +457,14 @@
       <small id="sub"></small>
     </h1>
     <div class="head-actions">
+      <button id="logout" class="ghost" hidden>Log out</button>
       <button id="img" class="ghost">Download Image</button>
       <button id="reload" class="primary">Refresh Data</button>
     </div>
   </header>
 
   <div id="capture">
+    <div class="who-card" id="who" hidden></div>
     <div class="stats" id="stats"></div>
 
     <div class="filters">
@@ -488,6 +516,33 @@
     <span id="stamp"></span>
   </div>
 
+</div>
+
+<!-- Login -->
+<div id="login" class="login-back" hidden>
+  <div class="login-card">
+    <h2>SF Dashboard</h2>
+    <p class="login-sub">Sign in to continue</p>
+    <div class="field">
+      <label for="lgRole">Sign in as</label>
+      <select id="lgRole">
+        <option value="qc">QC</option>
+        <option value="labeler">Labeler</option>
+      </select>
+    </div>
+    <div id="lgQc">
+      <div class="field"><label for="lgUser">Username</label>
+        <input id="lgUser" autocomplete="username" autocapitalize="off" spellcheck="false"></div>
+      <div class="field"><label for="lgPass">Password</label>
+        <input type="password" id="lgPass" autocomplete="current-password"></div>
+    </div>
+    <div id="lgLab" style="display:none">
+      <div class="field"><label for="lgFlash">Flash number</label>
+        <input id="lgFlash" placeholder="ME123456" autocapitalize="characters" spellcheck="false"></div>
+    </div>
+    <div class="login-err" id="lgErr"></div>
+    <button class="login-go" id="lgGo">Enter</button>
+  </div>
 </div>
 
 <!-- Details modal -->
@@ -550,6 +605,9 @@ var state = {
 
 /* State of the open details modal: { user, month, from, to, below } */
 var modalState = null;
+
+/* Signed-in session: { token, role: "qc"|"labeler", name, user } — null = show the login screen */
+var session = null;
 
 /* ===== Month periods: month M = from the 26th of the previous month to the 25th of M =====
    Example: August 2026 = 2026-07-26 → 2026-08-25 */
@@ -687,9 +745,14 @@ function jsonp(url, cb, onErr) {
   var timer = setTimeout(function () {
     if (!done) { cleanup(); onErr("The request took too long. Make sure the deployment is running and accessible to anyone."); }
   }, 40000);
-  window[name] = function (d) { done = true; clearTimeout(timer); cleanup(); cb(d); };
+  window[name] = function (d) {
+    done = true; clearTimeout(timer); cleanup();
+    if (d && d.auth) { logout_(d.error); return; }   /* session expired → back to the login screen */
+    cb(d);
+  };
   function cleanup() { try { delete window[name]; } catch (e) { window[name] = undefined; } s.remove(); }
-  s.src = url + (url.indexOf("?") === -1 ? "?" : "&") + "callback=" + name + "&_=" + Date.now();
+  var tokenQs = (session && session.token && url.indexOf("action=login") === -1) ? "&token=" + encodeURIComponent(session.token) : "";
+  s.src = url + tokenQs + (url.indexOf("?") === -1 ? "?" : "&") + "callback=" + name + "&_=" + Date.now();
   s.onerror = function () {
     if (!done) { clearTimeout(timer); cleanup(); onErr("Can't reach the web app. Check the link and the deployment permissions."); }
   };
@@ -756,12 +819,13 @@ function load(silent) {
         parts.push("Attendance tab read but empty for: " + at.emptyDays.slice(0, 3).join(", "));
       }
     }
+    if (session && session.role === "labeler") parts = [];
     document.getElementById("sub").textContent = parts.length ? ("⚠ " + parts.join(" · ⚠ ")) : "";
 
     document.getElementById("stamp").textContent =
       "Last updated: " + new Date(res.generatedAt).toLocaleString("en-US");
 
-    if (!state.rows.length && state.view !== "submit") return noData();
+    if (!state.rows.length && state.view !== "submit" && !(session && session.role === "labeler")) return noData();
 
     render();
   }, fail);
@@ -806,7 +870,7 @@ function noData() {
   document.getElementById("out").innerHTML =
     '<div class="note">No records in this range.<br><br>' +
     'Data is only available from <code>' + esc(DEFAULT_FROM) + '</code> onward.<br>' +
-    '<a href="' + API + '?action=debug" target="_blank" rel="noopener">Open the diagnostics page</a></div>';
+    '<a href="' + API + '?action=debug&token=' + encodeURIComponent(session ? session.token : "") + '" target="_blank" rel="noopener">Open the diagnostics page</a></div>';
 }
 
 /* ===== Filtering ===== */
@@ -857,6 +921,7 @@ function groupUsers(rows) {
 
 /* ===== Rendering ===== */
 function render() {
+  if (session && session.role === "labeler") { renderLabeler_(); return; }
   if (state.view === "submit") { renderSubmitTab(); return; }
   if (!state.rows.length) return noData();
   if (state.view === "teams") { renderTeamsTab(); return; }
@@ -1032,14 +1097,13 @@ function setModalMonth_(k) {
   renderModal_();
 }
 
-function renderModal_() {
-  var ms = modalState;
-  if (!ms) return;
+function detailParts_(ms, withIdentity) {
+  if (!ms) return null;
   var T = state.target;
 
   var all = state.rows.filter(function (r) { return r.user === ms.user; })
     .sort(function (a, b) { return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
-  if (!all.length) return;
+  if (!all.length) return null;
 
   var recs = all.filter(function (r) {
     return (!ms.from || r.date >= ms.from) && (!ms.to || r.date <= ms.to);
@@ -1109,20 +1173,35 @@ function renderModal_() {
     '<select id="mMonth" class="m-sel" aria-label="Month">' + monthOptionsHtml_(ms.month, customText) + '</select>' +
     '<span class="mrange">' + esc(monthRangeText_(ms.month, ms.from, ms.to)) + '</span></div>';
 
-  document.getElementById("modalTitle").textContent = "Details: " + (name || ms.user);
-  document.getElementById("modalBody").innerHTML = monthBar +
-    '<div class="modal-grid">' +
-      mTile_("Name", name ? esc(name) : "—", "", false, true) +
-      mTile_("User", esc(ms.user), "", false, true) +
-      mTile_("Team (QC)", esc(last.team || "—")) +
-      mTile_("Room", esc(Object.keys(rooms).join(", "))) +
-    '</div>' +
-    '<div class="modal-grid g3">' +
-      mTile_("Days recorded", String(recs.length), "blue") +
-      mTile_("Met target", String(met), "good") +
-      mTile_("Below target", String(missedN), "bad") +
-    '</div>' +
-    '<div class="modal-grid mt">' + daysTile + '</div>';
+  var idTiles = withIdentity
+    ? '<div class="modal-grid">' +
+        mTile_("Name", name ? esc(name) : "—", "", false, true) +
+        mTile_("User", esc(ms.user), "", false, true) +
+        mTile_("Team (QC)", esc(last.team || "—")) +
+        mTile_("Room", esc(Object.keys(rooms).join(", "))) +
+      '</div>'
+    : '';
+
+  return {
+    title: "Details: " + (name || ms.user),
+    html: monthBar + idTiles +
+      '<div class="modal-grid g3">' +
+        mTile_("Days recorded", String(recs.length), "blue") +
+        mTile_("Met target", String(met), "good") +
+        mTile_("Below target", String(missedN), "bad") +
+      '</div>' +
+      '<div class="modal-grid mt">' + daysTile + '</div>'
+  };
+}
+
+/* Re-renders whatever is showing the details: the popup (QC) or the page itself (Labeler) */
+function renderModal_() {
+  if (!modalState) return;
+  if (session && session.role === "labeler") { renderLabeler_(); return; }
+  var d = detailParts_(modalState, true);
+  if (!d) return;
+  document.getElementById("modalTitle").textContent = d.title;
+  document.getElementById("modalBody").innerHTML = d.html;
 }
 
 function closeDetailsModal_() {
@@ -1898,7 +1977,7 @@ document.getElementById("tab-single").onclick = function () { setView("single");
 document.getElementById("tab-teams").onclick = function () { setView("teams"); };
 document.getElementById("tab-submit").onclick = function () { setView("submit"); };
 document.getElementById("tab-hours").onclick = function () { setView("hours"); };
-function setView(v) {
+function setView(v, noRender) {
   state.view = v;
   if (!state.capturing) {
     document.getElementById("img").textContent = (v === "hours") ? "Download Table Image" : "Download Image";
@@ -1911,7 +1990,7 @@ function setView(v) {
   document.getElementById("fTo").style.display = single ? "none" : "flex";
   document.getElementById("fSdFrom").style.display = single ? "flex" : "none";
   document.getElementById("fSdTo").style.display = single ? "flex" : "none";
-  render();
+  if (!noRender) render();
 }
 
 /* Details modal: its own month select and the "Below target" box */
@@ -1935,15 +2014,145 @@ document.getElementById("img").onclick = downloadImage;
 
 /* Quiet auto-refresh (skips the Submit tab, and skips while an image is being prepared) */
 setInterval(function () {
-  if (document.hidden || state.view === "submit" || state.capturing) return;
+  if (!session || document.hidden || state.view === "submit" || state.capturing) return;
   load(true);
 }, AUTO_REFRESH_MS);
+
+/* ===== Login / session ===== */
+var SESSION_KEY = "sf_session_v1";
+function saveSession_(x) { try { localStorage.setItem(SESSION_KEY, JSON.stringify(x)); } catch (e) {} }
+function readSession_() { try { var r = localStorage.getItem(SESSION_KEY); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
+function clearSession_() { try { localStorage.removeItem(SESSION_KEY); } catch (e) {} }
+
+/* Shows/hides the parts of the page according to who is signed in */
+function applyRole_() {
+  var lab = !!(session && session.role === "labeler");
+  document.querySelector(".filters").style.display = lab ? "none" : "";
+  document.querySelector(".tabs").style.display = lab ? "none" : "";
+  document.getElementById("img").style.display = lab ? "none" : "";
+  document.getElementById("who").hidden = !lab;
+  document.getElementById("logout").hidden = !session;
+  document.querySelector(".panel").classList.toggle("solo", lab);
+}
+
+function showLogin_(msg) {
+  document.getElementById("login").hidden = false;
+  document.getElementById("lgErr").textContent = msg || "";
+  document.getElementById("lgPass").value = "";
+  document.body.style.overflow = "hidden";
+}
+
+function logout_(msg) {
+  clearSession_();
+  session = null;
+  closeDetailsModal_();
+  state.rows = [];
+  document.getElementById("stats").innerHTML = "";
+  document.getElementById("out").innerHTML = "";
+  applyRole_();
+  showLogin_(msg);
+}
+
+function enterApp_() {
+  document.getElementById("login").hidden = true;
+  document.body.style.overflow = "";
+  state.rows = []; state.submitRows = null; state.teamMembers = null;
+  state.thTeam = ""; state.thWeek = ""; modalState = null;
+  setView("users", true);
+  applyRole_();
+  load();
+}
+
+function doLogin_() {
+  var role = document.getElementById("lgRole").value;
+  var err = document.getElementById("lgErr");
+  var btn = document.getElementById("lgGo");
+  var qs = "?action=login&role=" + role;
+  if (role === "qc") {
+    var u = document.getElementById("lgUser").value.trim();
+    var p = document.getElementById("lgPass").value;
+    if (!u || !p) { err.textContent = "Enter your username and password."; return; }
+    qs += "&u=" + encodeURIComponent(u) + "&p=" + encodeURIComponent(p);
+  } else {
+    var id = document.getElementById("lgFlash").value.trim();
+    if (!id) { err.textContent = "Enter your flash number."; return; }
+    qs += "&id=" + encodeURIComponent(id);
+  }
+  err.textContent = "";
+  btn.disabled = true; btn.textContent = "Signing in…";
+  jsonp(API + qs, function (res) {
+    btn.disabled = false; btn.textContent = "Enter";
+    if (!res || !res.ok) { err.textContent = (res && res.error) || "Sign-in failed."; return; }
+    session = { token: res.token, role: res.role, name: res.name || "", user: res.user || "" };
+    saveSession_(session);
+    document.getElementById("lgPass").value = "";
+    enterApp_();
+  }, function (msg) {
+    btn.disabled = false; btn.textContent = "Enter";
+    err.textContent = msg;
+  });
+}
+
+/* ===== Labeler view: name + flash number on top, then the weekly hours / average / deduction blocks ===== */
+function renderLabeler_() {
+  document.getElementById("stats").innerHTML = "";
+  document.getElementById("count").textContent = "";
+
+  var last = null;
+  state.rows.forEach(function (r) { if (!last || r.date > last.date) last = r; });
+  var user = last ? last.user : (session.user || "");
+  var name = (last && last.name) || session.name || "";
+  var id = String(user).split("@")[0].toUpperCase();
+
+  document.getElementById("who").innerHTML =
+    '<div class="who-name">' + (name ? esc(name) : "—") + '</div>' +
+    '<div class="who-id"><span>Flash number</span><b>' + esc(id) + '</b></div>';
+
+  if (!last) {
+    document.getElementById("out").innerHTML = '<div class="note">No records yet.</div>';
+    return;
+  }
+
+  if (!modalState || modalState.user !== user) {
+    var keys = periodKeys_();
+    var mk = keys.length ? keys[0] : "all", from = "", to = "";
+    if (mk !== "all") { var pr = periodRange_(mk); from = pr.start; to = pr.end; }
+    modalState = { user: user, month: mk, from: from, to: to, below: false };
+  }
+  var d = detailParts_(modalState, false);
+  document.getElementById("out").innerHTML = '<div class="self-body">' + (d ? d.html : "") + '</div>';
+}
+
+/* Labeler: month select and the "Below target" box live on the page itself */
+document.getElementById("out").addEventListener("change", function (e) {
+  var el = e.target;
+  if (!modalState || !el || !session || session.role !== "labeler") return;
+  if (el.id === "mMonth") { setModalMonth_(el.value); }
+  else if (el.id === "mBelow") { modalState.below = el.checked; renderModal_(); }
+});
+
+document.getElementById("lgRole").addEventListener("change", function () {
+  var lab = this.value === "labeler";
+  document.getElementById("lgQc").style.display = lab ? "none" : "";
+  document.getElementById("lgLab").style.display = lab ? "" : "none";
+  document.getElementById("lgErr").textContent = "";
+});
+document.getElementById("lgGo").onclick = doLogin_;
+["lgUser", "lgPass", "lgFlash"].forEach(function (id) {
+  document.getElementById(id).addEventListener("keydown", function (e) { if (e.key === "Enter") doLogin_(); });
+});
+document.getElementById("logout").onclick = function () { logout_(""); };
+
+function boot_() {
+  session = readSession_();
+  if (session && session.token) enterApp_(); else showLogin_("");
+}
 
 /* ===== Run ===== */
 document.getElementById("from").min = DEFAULT_FROM;
 state.month = defaultMonth_();
 applyMonthToInputs_();     /* "all" keeps the date fields empty (= all data); "current" fills the current 26th → 25th period */
-load();
+boot_();
 </script>
 </body>
 </html>
