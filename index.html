@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SF Dashboard v7</title>
+<title>SF Dashboard v8</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -132,10 +132,11 @@
     background:#f3f5fb;border-bottom:1px solid var(--line)}
   .month-bar b{font-size:13px;font-weight:800;color:var(--accent-ink)}
   .month-bar .mrange{color:var(--muted)}
-  .week-bar{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:10px 16px;margin-top:14px;
-    background:#eef1fb;border-inline-start:4px solid var(--accent);border-radius:8px}
-  .week-bar b{font-size:13px;font-weight:800;color:var(--accent-ink)}
-  .week-bar .mrange{color:var(--accent-ink);font-weight:600}
+  /* Week separator in the QC tab: solid black bar showing "Week N — from X to Y" */
+  .week-bar{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:11px 18px;margin-top:18px;
+    background:#000;color:#fff;border-radius:8px}
+  .week-bar b{font-size:14px;font-weight:900;color:#fff}
+  .week-bar .mrange{color:#fff;font-weight:600;font-size:13px;opacity:.95}
   .teamcard{margin-top:0}
 
   /* ===== Team Hours tab: one row per member, one column per day, Total at the end ===== */
@@ -206,7 +207,7 @@
 
   .teamcard{display:flex;flex-wrap:wrap;gap:18px;padding:22px;justify-content:center}
   /* Team card: a plain square (not a circle) with one fixed color for every card */
-  .tcard{width:190px;min-height:170px;flex:0 0 auto;background:var(--surface);
+  .tcard{width:220px;min-height:170px;flex:0 0 auto;background:var(--surface);
     border:1px solid var(--line);border-top:6px solid var(--c,var(--accent));border-radius:var(--radius);
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     text-align:center;padding:16px 14px;transition:box-shadow .15s ease,transform .15s ease}
@@ -219,6 +220,18 @@
   .tcard .row2 b{display:block;color:var(--ink);font-weight:900;font-size:14px;margin-top:2px}
   .tcard .row2 b.good{color:var(--good)}
   .tcard .row2 b.bad{color:var(--bad)}
+
+  /* Weekly "Hours achieved" box + deduction label */
+  .tcard .ach{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .tcard .ach-lbl{flex:0 0 100%;font-size:10.5px;color:var(--muted);font-weight:500;margin-bottom:-4px}
+  .tcard .ach-box{min-width:62px;padding:7px 12px;border-radius:8px;font-weight:900;font-size:15px;
+    line-height:1.2;color:#fff;text-align:center}
+  .tcard .ach-box.good{background:var(--good)}
+  .tcard .ach-box.warn{background:#eab308;color:#3b2f00}
+  .tcard .ach-box.bad{background:var(--bad)}
+  .tcard .ach-ded{font-size:12px;font-weight:900;direction:ltr}
+  .tcard .ach-ded.warn{color:#a16207}
+  .tcard .ach-ded.bad{color:var(--bad)}
 
   /* ===== Submit ===== */
   .submit-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;
@@ -493,6 +506,9 @@ var AUTO_REFRESH_MS = 5 * 60 * 1000;   /* Quiet auto-refresh every 5 minutes (na
    "current" = the current month (26th → 25th) */
 var DEFAULT_MONTH = "all";
 
+/* Target hours — used everywhere (All Users / Single Day / QC / Details / image) */
+var TARGET_HOURS = 6.4;
+
 var TEAM_ORDER = ["Mira Samir","Eman Gamal","Shimaa Nasser","Eslam Ali","Ahmed Adel","Buffer"];
 
 /* Team color: one fixed (solid) color everywhere — change it here only.
@@ -513,7 +529,7 @@ var SUBMIT_LABELS = { "Buffer": "Ibrahim Mohamed" };
 var DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 
 var state = {
-  rows: [], target: 5.5, view: "users",
+  rows: [], target: TARGET_HOURS, view: "users",
   open: {}, teams: null,
   teamMembers: null,     /* { teamName: fixed roster member count } — loaded once from ?action=teams */
   month: "all",          /* "all" | "YYYY-MM" (26th of previous month → 25th of that month) | "custom" */
@@ -705,7 +721,7 @@ function load(silent) {
     if (!res || !res.ok) return fail((res && res.error) || "The web app returned an unrecognized response.");
 
     state.rows = res.rows || [];
-    state.target = res.target || 5.5;
+    state.target = TARGET_HOURS;   /* fixed from the front-end so it's always 6.4 */
 
     if (res.minDate) {
       ["from", "to", "sdFrom", "sdTo"].forEach(function (id) {
@@ -1289,8 +1305,12 @@ function teamStatsForRange_(team, from, to) {
   return { avgHours: n ? sum / n : 0, total: n, achievedPct: n ? (n - below) / n : 1 };
 }
 
+/* Team card. The "Hours achieved" box shows the team's percentage for the week (or the whole range):
+   80% and above → green | 70% to under 80% → yellow + "Deduction -100" | under 70% → red + "Deduction -200" */
 function teamCardHtml_(team, s) {
-  var achievedPct = Math.round(s.achievedPct * 100);
+  var pct = Math.round(s.achievedPct * 100);
+  var lvl = pct >= 80 ? "good" : (pct >= 70 ? "warn" : "bad");
+  var ded = lvl === "warn" ? "Deduction -100" : (lvl === "bad" ? "Deduction -200" : "");
   var col = teamColor_(team);
   var members = (state.teamMembers && state.teamMembers[team] != null) ? state.teamMembers[team] : "–";
   return '<div class="tcard" style="--c:' + col.c + '">' +
@@ -1298,7 +1318,11 @@ function teamCardHtml_(team, s) {
     '<div class="big">' + s.avgHours.toFixed(2) + '<small>hrs/day</small></div>' +
     '<div class="row2">' +
       '<span>Members<b>' + members + '</b></span>' +
-      '<span>Hours achieved<b class="' + (achievedPct >= 70 ? "good" : "bad") + '">' + achievedPct + '%</b></span>' +
+    '</div>' +
+    '<div class="ach">' +
+      '<span class="ach-lbl">Hours achieved (average)</span>' +
+      '<span class="ach-box ' + lvl + '">' + pct + '%</span>' +
+      (ded ? '<span class="ach-ded ' + lvl + '">' + ded + '</span>' : '') +
     '</div></div>';
 }
 
@@ -1329,7 +1353,7 @@ function renderTeamsTab() {
       html += '<div class="note">No valid date range selected.</div>';
     }
     weeks.forEach(function (w) {
-      html += '<div class="week-bar"><b>Week ' + w.index + '</b><span class="mrange">' + esc(weekLabel_(w)) + '</span></div>' +
+      html += '<div class="week-bar"><b>Week ' + w.index + '</b><span class="mrange">from ' + esc(w.start) + ' to ' + esc(w.end) + '</span></div>' +
         '<div class="teamcard">';
       teams.forEach(function (team) { html += teamCardHtml_(team, teamStatsForRange_(team, w.start, w.end)); });
       html += '</div>';
