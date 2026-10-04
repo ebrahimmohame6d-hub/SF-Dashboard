@@ -977,6 +977,12 @@ function pcLabel_(pc) {
   return m ? "PC " + m[1] : "";
 }
 
+/* PC number for sorting (no number = last) */
+function pcNum_(pc) {
+  var m = String(pc == null ? "" : pc).match(/(\d+)\s*$/);
+  return m ? parseInt(m[1], 10) : 99999;
+}
+
 /* PC cell: "PC 12" in a small tag, or a dash when unknown */
 function pcCell_(pc) {
   var t = pcLabel_(pc);
@@ -1357,7 +1363,9 @@ function renderSingleDay() {
       ? all.filter(function (e) { return e.hours < T && (!state.captureBad || isRange || isP_(e.att)); })
       : all;
     if (!shown.length) return;
-    shown = shown.slice().sort(function (a, b) { return a.hours - b.hours; });
+    shown = shown.slice().sort(function (a, b) {
+      return pcNum_(a.pc) - pcNum_(b.pc) || (a.hours - b.hours);
+    });
 
     var col = teamColor_(key);
     var below = all.filter(function (e) { return e.hours < T; }).length;
@@ -1577,6 +1585,8 @@ function renderHoursTab() {
   var members = Object.keys(by).map(function (k) { return by[k]; })
     .filter(function (u) { return matchUser(u.user, u.name, q); })
     .sort(function (a, b) {
+      var d = pcNum_(a.pc) - pcNum_(b.pc);
+      if (d) return d;
       var an = (a.name || a.user).toLowerCase(), bn = (b.name || b.user).toLowerCase();
       return an < bn ? -1 : (an > bn ? 1 : 0);
     });
