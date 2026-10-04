@@ -313,6 +313,10 @@
   .uid .uid-id{font-weight:700;color:#0f172a;letter-spacing:.6px;text-transform:uppercase}
   .uid .uid-dom{font-weight:500;font-size:13px;color:#64748b;letter-spacing:.1px}
 
+  .pc-tag{display:inline-block;padding:4px 11px;border-radius:8px;background:#eef1fb;border:1px solid #d5dcf0;
+    font-family:var(--font-latin);font-weight:700;font-size:13px;color:var(--accent-ink);white-space:nowrap}
+  .pc-none{color:var(--muted);font-weight:600}
+
   .sd-hours{display:inline-flex;align-items:center;justify-content:center;
     width:46px;height:46px;border-radius:50%;
     font-weight:900;font-size:13px;transition:transform .12s ease,box-shadow .12s ease}
@@ -973,6 +977,12 @@ function pcLabel_(pc) {
   return m ? "PC " + m[1] : "";
 }
 
+/* PC cell: "PC 12" in a small tag, or a dash when unknown */
+function pcCell_(pc) {
+  var t = pcLabel_(pc);
+  return t ? '<span class="pc-tag">' + esc(t) + '</span>' : '<span class="pc-none">-</span>';
+}
+
 /* P attendance only (not PT and not empty) */
 function isP_(att) { return String(att == null ? "" : att).trim().toUpperCase() === "P"; }
 
@@ -1305,20 +1315,21 @@ function renderSingleDay() {
   var entries = [];
   if (!isRange) {
     base.forEach(function (r) {
-      entries.push({ user: r.user, name: r.name, team: r.team || "", hours: r.hours, att: r.att, days: 1, missed: r.hours < T ? 1 : 0 });
+      entries.push({ user: r.user, name: r.name, pc: r.pc, team: r.team || "", hours: r.hours, att: r.att, days: 1, missed: r.hours < T ? 1 : 0 });
     });
   } else {
     var by = {};
     base.forEach(function (r) {
-      var u = by[r.user] || (by[r.user] = { user: r.user, name: r.name, team: r.team || "", sum: 0, days: 0, missed: 0, recs: [] });
+      var u = by[r.user] || (by[r.user] = { user: r.user, name: r.name, team: r.team || "", pc: "", sum: 0, days: 0, missed: 0, recs: [] });
       u.sum += r.hours; u.days++;
       if (r.hours < T) u.missed++;
       if (!u.name && r.name) u.name = r.name;
+      if (r.pc) u.pc = r.pc;
       u.recs.push({ date: r.date, hours: r.hours, att: r.att });
     });
     Object.keys(by).forEach(function (k) {
       var u = by[k];
-      entries.push({ user: u.user, name: u.name, team: u.team, hours: u.sum / u.days, att: "", days: u.days, missed: u.missed, recs: u.recs });
+      entries.push({ user: u.user, name: u.name, pc: u.pc, team: u.team, hours: u.sum / u.days, att: "", days: u.days, missed: u.missed, recs: u.recs });
     });
   }
 
@@ -1335,7 +1346,7 @@ function renderSingleDay() {
     : '<th>Hours</th><th>Attendance</th>';
 
   var html = '<div class="single-day-wrap"><table class="single-day-table"><thead><tr>' +
-    head + '<th>Name</th><th>User</th><th>Team (QC)</th>' +
+    head + '<th>Name</th><th>User</th><th>PC</th><th>Team (QC)</th>' +
     '</tr></thead><tbody>';
 
   var shownCount = 0, shownUsers = {};
@@ -1369,7 +1380,8 @@ function renderSingleDay() {
         html += '<td>' + attBadge(e.att) + '</td>';
       }
       html += '<td><span class="sd-box sd-name' + (e.name ? "" : " empty") + '">' + (e.name ? esc(e.name) : "No name") + '</span></td>' +
-        '<td>' + uidCell(e.user) + '</td>';
+        '<td>' + uidCell(e.user) + '</td>' +
+        '<td>' + pcCell_(e.pc) + '</td>';
       if (i === 0) {
         html += '<td class="sd-team-cell" rowspan="' + shown.length + '" style="--team-c1:' + col.c + '">' +
           '<span class="sd-team-box">' + esc(key) +
@@ -1552,8 +1564,9 @@ function renderHoursTab() {
   var by = {};
   state.rows.forEach(function (r) {
     if (r.team !== team) return;
-    var u = by[r.user] || (by[r.user] = { user: r.user, name: "", map: {}, sum: 0 });
+    var u = by[r.user] || (by[r.user] = { user: r.user, name: "", pc: "", map: {}, sum: 0 });
     if (r.name) u.name = r.name;
+    if (r.pc) u.pc = r.pc;
     if (r.date >= rg.from && r.date <= rg.to) {
       u.map[r.date] = (u.map[r.date] || 0) + r.hours;
       u.sum += r.hours;
@@ -1580,13 +1593,13 @@ function renderHoursTab() {
   var html = bar + '<div class="sd-info" style="margin-top:12px">' + esc(info) + '</div>' +
     '<div class="scroll-hint">⟵ مرر يمين وشمال لعرض باقي الأعمدة</div>' +
     '<div class="th-wrap"><table class="hours-table"><thead><tr>' +
-    '<th class="col-name">Name</th><th class="col-user">User</th>';
+    '<th class="col-name">Name</th><th class="col-user">User</th><th>PC</th>';
   days.forEach(function (d) { html += '<th title="' + esc(d) + '">' + esc(dayNameEn_(d).slice(0, 3)) + ' ' + esc(d.slice(5)) + '</th>'; });
   html += '<th class="htotal">Total</th></tr></thead><tbody>';
 
   var dayTot = {}, grand = 0;
   members.forEach(function (u) {
-    html += '<tr><td class="col-name">' + nameCell(u.name) + '</td><td class="col-user">' + uidCell(u.user) + '</td>';
+    html += '<tr><td class="col-name">' + nameCell(u.name) + '</td><td class="col-user">' + uidCell(u.user) + '</td><td>' + pcCell_(u.pc) + '</td>';
     days.forEach(function (d) {
       var v = u.map[d];
       if (v === undefined) { html += '<td class="hv none">-</td>'; return; }
@@ -1597,7 +1610,7 @@ function renderHoursTab() {
     html += '<td class="htotal">' + u.sum.toFixed(2) + '</td></tr>';
   });
 
-  html += '</tbody><tfoot><tr><td class="col-name" colspan="2" style="text-align:left">Team total</td>';
+  html += '</tbody><tfoot><tr><td class="col-name" colspan="3" style="text-align:left">Team total</td>';
   days.forEach(function (d) { html += '<td>' + (dayTot[d] !== undefined ? dayTot[d].toFixed(2) : "-") + '</td>'; });
   html += '<td>' + grand.toFixed(2) + '</td></tr></tfoot></table></div>';
 
