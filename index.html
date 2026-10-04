@@ -433,7 +433,7 @@
   .login-err{min-height:20px;margin:2px 0 10px;font-size:13px;font-weight:700;color:var(--bad)}
   .login-go{width:100%;padding:11px 18px;background:var(--accent-ink);border-color:var(--accent-ink);color:#fff;font-size:14.5px}
 
-  /* ===== Labeler view: name + flash number on top ===== */
+  /* ===== Labeler view: name + PC + flash number on top ===== */
   .who-card{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
     padding:16px 20px;margin-bottom:14px;background:var(--surface);border:1px solid var(--line);
     border-inline-start:6px solid var(--accent);border-radius:var(--radius)}
@@ -967,6 +967,12 @@ function nameCell(name) {
   return name ? '<span class="name">' + esc(name) + '</span>' : '<span class="name empty">—</span>';
 }
 
+/* PC label: "ME-C2-12" or "12" → "PC 12" (empty if there is no number) */
+function pcLabel_(pc) {
+  var m = String(pc == null ? "" : pc).match(/(\d+)\s*$/);
+  return m ? "PC " + m[1] : "";
+}
+
 /* P attendance only (not PT and not empty) */
 function isP_(att) { return String(att == null ? "" : att).trim().toUpperCase() === "P"; }
 
@@ -1114,6 +1120,10 @@ function detailParts_(ms, withIdentity) {
   (recs.length ? recs : all).forEach(function (r) { rooms[r.room] = 1; });
   var name = last.name || "";
 
+  /* The user's PC number (latest non-empty value) */
+  var pcv = "";
+  all.forEach(function (r) { if (r.pc) pcv = r.pc; });
+
   var met = recs.filter(function (r) { return r.hours >= T; }).length;
   var missedN = recs.length - met;
 
@@ -1179,6 +1189,7 @@ function detailParts_(ms, withIdentity) {
         mTile_("User", esc(ms.user), "", false, true) +
         mTile_("Team (QC)", esc(last.team || "—")) +
         mTile_("Room", esc(Object.keys(rooms).join(", "))) +
+        mTile_("PC", esc(pcLabel_(pcv) || "—")) +
       '</div>'
     : '';
 
@@ -2093,7 +2104,7 @@ function doLogin_() {
   });
 }
 
-/* ===== Labeler view: name + flash number on top, then the weekly hours / average / deduction blocks ===== */
+/* ===== Labeler view: name + PC + flash number on top, then the weekly hours / average / deduction blocks ===== */
 function renderLabeler_() {
   document.getElementById("stats").innerHTML = "";
   document.getElementById("count").textContent = "";
@@ -2104,8 +2115,13 @@ function renderLabeler_() {
   var name = (last && last.name) || session.name || "";
   var id = String(user).split("@")[0].toUpperCase();
 
+  var pcv = "";
+  state.rows.forEach(function (r) { if (r.pc) pcv = r.pc; });
+  var pcTxt = pcLabel_(pcv);
+
   document.getElementById("who").innerHTML =
     '<div class="who-name">' + (name ? esc(name) : "—") + '</div>' +
+    (pcTxt ? '<div class="who-id"><b>' + esc(pcTxt) + '</b></div>' : '') +
     '<div class="who-id"><span>Flash number</span><b>' + esc(id) + '</b></div>';
 
   if (!last) {
