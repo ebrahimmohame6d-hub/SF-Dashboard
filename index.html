@@ -576,6 +576,9 @@ var DEFAULT_MONTH = "all";
 /* Target hours — used everywhere (All Users / Single Day / QC / Details / image) */
 var TARGET_HOURS = 6.4;
 
+/* Base shift hours (Expected hours when the backend doesn't send r.exp) */
+var BASE_HOURS = 8;
+
 var TEAM_ORDER = ["Mira Samir","Eman Gamal","Shimaa Nasser","Eslam Ali","Ahmed Adel","Buffer"];
 
 /* Team color: one fixed (solid) color everywhere — change it here only.
@@ -887,6 +890,7 @@ function noData() {
    Target = 80% of that day's Expected Hours (6.4 of 8). With overtime, Expected grows (e.g. 11.51),
    so the target grows with it (9.21). The backend sends it as r.tgt; falls back to 6.4 if missing. */
 function tgtOf_(r) { return (r && r.tgt != null && isFinite(r.tgt)) ? +r.tgt : state.target; }
+function expOf_(r) { return (r && r.exp != null && isFinite(r.exp) && +r.exp > 0) ? +r.exp : BASE_HOURS; }
 function isBelow_(r) { return r.hours < tgtOf_(r) - 1e-9; }
 function dayTip_(r) {
   if (!r || r.exp == null) return "";
@@ -1172,19 +1176,24 @@ function detailParts_(ms, withIdentity) {
   }
 
   /* Weekly blocks (Monday → Sunday): black bar, the week's day cards, then the weekly average box.
-     Average % = average hours / target. 80%+ green | 70–79% yellow (Deduction -100) | under 70% red (Deduction -200) */
+     Average % = total hours / total EXPECTED hours (so 80% = the 6.4 target of an 8-hour day).
+     80%+ green | 70–79% yellow (Deduction -100) | under 70% red (Deduction -200).
+     A week with only ONE recorded day never gets a deduction. */
   var weeksHtml = "";
   if (recs.length) {
     var weeks = splitWeeks_(recs[0].date, recs[recs.length - 1].date);
     weeks.forEach(function (w) {
       var wr = recs.filter(function (r) { return r.date >= w.start && r.date <= w.end; });
       if (!wr.length) return;
-      var sum = 0, tsum = 0;
-      wr.forEach(function (r) { sum += r.hours; tsum += tgtOf_(r); });
+      var sum = 0, esum = 0;
+      wr.forEach(function (r) { sum += r.hours; esum += expOf_(r); });
       var avg = sum / wr.length;
-      var pct = Math.round(sum / tsum * 100);   /* hours vs. target (overtime days weigh with their bigger target) */
+      var pct = Math.round(sum / esum * 100);   /* hours vs. EXPECTED hours (overtime days weigh with their bigger Expected) */
       var lvl = pct >= 80 ? "good" : (pct >= 70 ? "warn" : "bad");
-      var ded = lvl === "warn" ? "Deduction -100" : (lvl === "bad" ? "Deduction -200" : "");
+      var ded = "";
+      if (wr.length >= 2) {
+        ded = lvl === "warn" ? "Deduction -100" : (lvl === "bad" ? "Deduction -200" : "");
+      }
 
       var shown = ms.below
         ? wr.filter(function (r) { return isBelow_(r); }).sort(function (a, b) {
