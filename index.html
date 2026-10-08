@@ -1151,8 +1151,8 @@ function detailParts_(ms, withIdentity) {
   var name = last.name || "";
 
   /* The user's PC number (latest non-empty value) */
-  var pcv = "";
-  all.forEach(function (r) { if (r.pc) pcv = r.pc; });
+  var pcv = "", nidv = "";
+  all.forEach(function (r) { if (r.pc) pcv = r.pc; if (r.nid) nidv = r.nid; });
 
   var met = recs.filter(function (r) { return !isBelow_(r); }).length;
   var missedN = recs.length - met;
@@ -1220,6 +1220,7 @@ function detailParts_(ms, withIdentity) {
         mTile_("Team (QC)", esc(last.team || "—")) +
         mTile_("Room", esc(Object.keys(rooms).join(", "))) +
         mTile_("PC", esc(pcLabel_(pcv) || "—")) +
+        mTile_("National ID", esc(nidv || "—")) +
       '</div>'
     : '';
 
@@ -2157,10 +2158,13 @@ function renderLabeler_() {
   var pcv = "";
   state.rows.forEach(function (r) { if (r.pc) pcv = r.pc; });
   var pcTxt = pcLabel_(pcv);
+  var nidv = "";
+  state.rows.forEach(function (r) { if (r.nid) nidv = r.nid; });
 
   document.getElementById("who").innerHTML =
     '<div class="who-name">' + (name ? esc(name) : "—") + '</div>' +
     (pcTxt ? '<div class="who-id"><b>' + esc(pcTxt) + '</b></div>' : '') +
+    (nidv ? '<div class="who-id"><span>National ID</span><b>' + esc(nidv) + '</b></div>' : '') +
     '<div class="who-id"><span>Flash number</span><b>' + esc(id) + '</b></div>';
 
   if (!last) {
