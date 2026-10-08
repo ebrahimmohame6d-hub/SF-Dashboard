@@ -185,6 +185,8 @@
     border:2px solid #f5b8b3;font-weight:900;font-size:12.5px}
   .day-card .att{min-width:32px;padding:2px 8px;font-size:12px}
   .day-hours.ok{background:var(--good-bg);color:var(--good);border-color:#a8dfc0}
+  .ot-tag{font-family:var(--font-latin);font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:6px;
+    background:#fff4cc;color:#8a6100;border:1px solid #f1dc8f;letter-spacing:.3px}
 
   .name{font-family:var(--font-latin);font-weight:600;font-size:14px;color:#0f172a}
   .name.empty{font-family:"Tajawal",sans-serif;color:var(--muted);font-weight:500}
@@ -877,6 +879,17 @@ function noData() {
     '<a href="' + API + '?action=debug&token=' + encodeURIComponent(session ? session.token : "") + '" target="_blank" rel="noopener">Open the diagnostics page</a></div>';
 }
 
+/* ===== Per-record target =====
+   Target = 80% of that day's Expected Hours (6.4 of 8). With overtime, Expected grows (e.g. 11.51),
+   so the target grows with it (9.21). The backend sends it as r.tgt; falls back to 6.4 if missing. */
+function tgtOf_(r) { return (r && r.tgt != null && isFinite(r.tgt)) ? +r.tgt : state.target; }
+function isBelow_(r) { return r.hours < tgtOf_(r) - 1e-9; }
+function dayTip_(r) {
+  if (!r || r.exp == null) return "";
+  return "Expected " + (+r.exp).toFixed(2) + " · Target " + tgtOf_(r).toFixed(2) +
+    (r.pct != null ? " · " + r.pct + "%" : "") + (r.ot > 0 ? " · Overtime " + (+r.ot).toFixed(2) : "");
+}
+
 /* ===== Filtering ===== */
 function digits(s) { return String(s).replace(/\D+/g, ""); }
 
@@ -900,7 +913,7 @@ function filtered(ignoreBad) {
     if (from && r.date < from) return false;
     if (to && r.date > to) return false;
     if (!matchUser(r.user, r.name, q)) return false;
-    if (bad && r.hours >= state.target) return false;
+    if (bad && !isBelow_(r)) return false;
     return true;
   });
 }
@@ -910,7 +923,7 @@ function groupUsers(rows) {
   rows.forEach(function (r) {
     var u = m[r.user] || (m[r.user] = { user: r.user, name: r.name, team: r.team, rooms: {}, total: 0, sum: 0, missed: [] });
     u.rooms[r.room] = 1; u.total++; u.sum += r.hours;
-    if (r.hours < state.target) u.missed.push(r);
+    if (isBelow_(r)) u.missed.push(r);
   });
   return Object.keys(m).map(function (k) {
     var u = m[k];
@@ -1084,9 +1097,10 @@ function mCards_(arr, clsOf) {
     var a = String(m.att == null ? "" : m.att).trim();
     var cls = (typeof clsOf === "function") ? clsOf(m) : clsOf;
     /* No attendance = the user didn't show up: the card is light gray and shows a dash instead of P/PT */
-    return '<div class="day-card' + (a ? '' : ' noatt') + '">' +
+    return '<div class="day-card' + (a ? '' : ' noatt') + '" title="' + esc(dayTip_(m)) + '">' +
       '<div class="day-date"><b>' + esc(m.date) + '</b><small>' + esc(dayNameEn_(m.date)) + '</small></div>' +
       (a ? attBadge(a) : '<span class="att att-dash">-</span>') +
+      (m.ot > 0 ? '<span class="ot-tag">OT</span>' : '') +
       '<span class="day-hours ' + cls + '">' + m.hours.toFixed(2) + '</span></div>';
   }).join("") + '</div>';
 }
@@ -1140,13 +1154,13 @@ function detailParts_(ms, withIdentity) {
   var pcv = "";
   all.forEach(function (r) { if (r.pc) pcv = r.pc; });
 
-  var met = recs.filter(function (r) { return r.hours >= T; }).length;
+  var met = recs.filter(function (r) { return !isBelow_(r); }).length;
   var missedN = recs.length - met;
 
   var list;
   if (ms.below) {
     /* below target only: P first, then PT, then the rest (by date) */
-    list = recs.filter(function (r) { return r.hours < T; }).sort(function (a, b) {
+    list = recs.filter(function (r) { return isBelow_(r); }).sort(function (a, b) {
       return attRank_(a.att) - attRank_(b.att) || (a.date < b.date ? -1 : (a.date > b.date ? 1 : 0));
     });
   } else {
@@ -1161,20 +1175,20 @@ function detailParts_(ms, withIdentity) {
     weeks.forEach(function (w) {
       var wr = recs.filter(function (r) { return r.date >= w.start && r.date <= w.end; });
       if (!wr.length) return;
-      var sum = 0;
-      wr.forEach(function (r) { sum += r.hours; });
+      var sum = 0, tsum = 0;
+      wr.forEach(function (r) { sum += r.hours; tsum += tgtOf_(r); });
       var avg = sum / wr.length;
-      var pct = Math.round(avg / T * 100);
+      var pct = Math.round(sum / tsum * 100);   /* hours vs. target (overtime days weigh with their bigger target) */
       var lvl = pct >= 80 ? "good" : (pct >= 70 ? "warn" : "bad");
       var ded = lvl === "warn" ? "Deduction -100" : (lvl === "bad" ? "Deduction -200" : "");
 
       var shown = ms.below
-        ? wr.filter(function (r) { return r.hours < T; }).sort(function (a, b) {
+        ? wr.filter(function (r) { return isBelow_(r); }).sort(function (a, b) {
             return attRank_(a.att) - attRank_(b.att) || (a.date < b.date ? -1 : (a.date > b.date ? 1 : 0));
           })
         : wr;
       var wcards = shown.length
-        ? mCards_(shown, function (m) { return m.hours >= T ? "ok" : "bad"; })
+        ? mCards_(shown, function (m) { return isBelow_(m) ? "bad" : "ok"; })
         : '<span class="days-none">No days below target this week ✅</span>';
 
       weeksHtml += '<div class="wk-bar"><b>Week ' + w.index + '</b><span>from ' + esc(w.start) + ' to ' + esc(w.end) + '</span></div>' +
@@ -1280,12 +1294,12 @@ function renderSingleStats_(rg, withCaption) {
   var by = {};
   state.rows.forEach(function (r) {
     if (r.team === "Buffer" || r.date < rg.from || r.date > rg.to) return;
-    var u = by[r.user] || (by[r.user] = { sum: 0, n: 0 });
-    u.sum += r.hours; u.n++;
+    var u = by[r.user] || (by[r.user] = { sum: 0, tsum: 0, n: 0 });
+    u.sum += r.hours; u.tsum += tgtOf_(r); u.n++;
   });
   var ok = 0, bad = 0;
   Object.keys(by).forEach(function (k) {
-    if (by[k].sum / by[k].n >= state.target) ok++; else bad++;
+    if (by[k].sum >= by[k].tsum - 1e-9) ok++; else bad++;
   });
   var total = rosterTotal_();
   document.getElementById("stats").innerHTML =
@@ -1321,21 +1335,22 @@ function renderSingleDay() {
   var entries = [];
   if (!isRange) {
     base.forEach(function (r) {
-      entries.push({ user: r.user, name: r.name, pc: r.pc, team: r.team || "", hours: r.hours, att: r.att, days: 1, missed: r.hours < T ? 1 : 0 });
+      entries.push({ user: r.user, name: r.name, pc: r.pc, team: r.team || "", hours: r.hours, att: r.att, days: 1, missed: isBelow_(r) ? 1 : 0, tgt: tgtOf_(r), exp: r.exp, pct: r.pct });
     });
   } else {
     var by = {};
     base.forEach(function (r) {
-      var u = by[r.user] || (by[r.user] = { user: r.user, name: r.name, team: r.team || "", pc: "", sum: 0, days: 0, missed: 0, recs: [] });
+      var u = by[r.user] || (by[r.user] = { user: r.user, name: r.name, team: r.team || "", pc: "", sum: 0, tsum: 0, days: 0, missed: 0, recs: [] });
       u.sum += r.hours; u.days++;
-      if (r.hours < T) u.missed++;
+      u.tsum += tgtOf_(r);
+      if (isBelow_(r)) u.missed++;
       if (!u.name && r.name) u.name = r.name;
       if (r.pc) u.pc = r.pc;
       u.recs.push({ date: r.date, hours: r.hours, att: r.att });
     });
     Object.keys(by).forEach(function (k) {
       var u = by[k];
-      entries.push({ user: u.user, name: u.name, pc: u.pc, team: u.team, hours: u.sum / u.days, att: "", days: u.days, missed: u.missed, recs: u.recs });
+      entries.push({ user: u.user, name: u.name, pc: u.pc, team: u.team, hours: u.sum / u.days, tgt: u.tsum / u.days, att: "", days: u.days, missed: u.missed, recs: u.recs });
     });
   }
 
@@ -1360,7 +1375,7 @@ function renderSingleDay() {
   orderedKeys.forEach(function (key) {
     var all = groups[key];
     var shown = onlyBad
-      ? all.filter(function (e) { return e.hours < T && (!state.captureBad || isRange || isP_(e.att)); })
+      ? all.filter(function (e) { return e.hours < e.tgt - 1e-9 && (!state.captureBad || isRange || isP_(e.att)); })
       : all;
     if (!shown.length) return;
     shown = shown.slice().sort(function (a, b) {
@@ -1368,16 +1383,16 @@ function renderSingleDay() {
     });
 
     var col = teamColor_(key);
-    var below = all.filter(function (e) { return e.hours < T; }).length;
+    var below = all.filter(function (e) { return e.hours < e.tgt - 1e-9; }).length;
     var uniq = {};
     all.forEach(function (e) { uniq[e.user] = 1; });
     var usersN = Object.keys(uniq).length;
 
     shown.forEach(function (e, i) {
-      var bad = e.hours < T;
+      var bad = e.hours < e.tgt - 1e-9;
       shownCount++; shownUsers[e.user] = 1;
       html += '<tr>' +
-        '<td><span class="sd-hours ' + (bad ? "bad" : "ok") + '">' + e.hours.toFixed(2) + '</span></td>';
+        '<td><span class="sd-hours ' + (bad ? "bad" : "ok") + '" title="' + esc("Target " + e.tgt.toFixed(2) + (e.exp != null ? " · Expected " + (+e.exp).toFixed(2) : "") + (e.pct != null ? " · " + e.pct + "%" : "")) + '">' + e.hours.toFixed(2) + '</span></td>';
       if (isRange) {
         html += '<td><span class="sd-count plain">' + e.days + '</span></td>' +
           '<td><span class="sd-count ' + (e.missed ? "bad" : "ok") + '">' + e.missed + '</span></td>' +
@@ -1414,7 +1429,7 @@ function renderSingleDay() {
   /* A line clarifying which day/period is shown (since the fields are empty) — turns into a "below target" banner while preparing the image */
   var top;
   if (state.captureBad) {
-    top = '<div class="capture-banner">Users who did not meet the target (' + T + ' hours) · P attendance only · ' + esc(label) + '</div>';
+    top = '<div class="capture-banner">Users who did not meet the target (80% of expected hours) · P attendance only · ' + esc(label) + '</div>';
   } else {
     var dn = dayName_(rg.from);
     var infoText = isRange
@@ -1443,7 +1458,7 @@ function teamStatsForRange_(team, from, to) {
   state.rows.forEach(function (r) {
     if (r.team !== team || r.date < from || r.date > to) return;
     sum += r.hours; n++;
-    if (r.hours < state.target) below++;
+    if (isBelow_(r)) below++;
   });
   return { avgHours: n ? sum / n : 0, total: n, achievedPct: n ? (n - below) / n : 1 };
 }
@@ -1572,11 +1587,12 @@ function renderHoursTab() {
   var by = {};
   state.rows.forEach(function (r) {
     if (r.team !== team) return;
-    var u = by[r.user] || (by[r.user] = { user: r.user, name: "", pc: "", map: {}, sum: 0 });
+    var u = by[r.user] || (by[r.user] = { user: r.user, name: "", pc: "", map: {}, tmap: {}, sum: 0 });
     if (r.name) u.name = r.name;
     if (r.pc) u.pc = r.pc;
     if (r.date >= rg.from && r.date <= rg.to) {
       u.map[r.date] = (u.map[r.date] || 0) + r.hours;
+      u.tmap[r.date] = (u.tmap[r.date] || 0) + tgtOf_(r);
       u.sum += r.hours;
     }
   });
@@ -1614,7 +1630,7 @@ function renderHoursTab() {
       var v = u.map[d];
       if (v === undefined) { html += '<td class="hv none">-</td>'; return; }
       dayTot[d] = (dayTot[d] || 0) + v;
-      html += '<td class="hv' + (v < T ? " bad" : "") + '">' + v.toFixed(2) + '</td>';
+      html += '<td class="hv' + (v < (u.tmap[d] || T) - 1e-9 ? " bad" : "") + '">' + v.toFixed(2) + '</td>';
     });
     grand += u.sum;
     html += '<td class="htotal">' + u.sum.toFixed(2) + '</td></tr>';
