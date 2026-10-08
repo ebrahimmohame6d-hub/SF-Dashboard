@@ -1255,7 +1255,7 @@ function closeDetailsModal_() {
   modalState = null;
 }
 
-/* --- Single Day: opens on today automatically; for a period pick a from/to day (Buffer team excluded) --- */
+/* --- Single Day: opens on today automatically; for a period pick a from/to day (Buffer is shown last, below the other teams) --- */
 function latestDate_() {
   var m = "";
   state.rows.forEach(function (r) { if (r.team !== "Buffer" && r.date > m) m = r.date; });
@@ -1323,7 +1323,7 @@ function renderSingleDay() {
   var onlyBad = document.getElementById("onlyBad").checked || state.captureBad;
 
   var base = state.rows.filter(function (r) {
-    return r.date >= rg.from && r.date <= rg.to && r.team !== "Buffer" && matchUser(r.user, r.name, q);
+    return r.date >= rg.from && r.date <= rg.to && matchUser(r.user, r.name, q);
   });
   /* Below-target image: for a period we only count days with P attendance (for a single day, filtering happens below and team stats stay complete) */
   if (state.captureBad && isRange) base = base.filter(function (r) { return isP_(r.att); });
