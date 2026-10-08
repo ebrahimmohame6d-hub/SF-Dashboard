@@ -1286,7 +1286,7 @@ function singleRange_() {
 /* Total number of named users on the roster (excluding Buffer) — fixed across all days */
 function rosterTotal_() {
   var m = {};
-  state.rows.forEach(function (r) { if (r.team !== "Buffer") m[r.user] = 1; });
+  state.rows.forEach(function (r) { m[r.user] = 1; });   /* every user with a name, Buffer included (nameless Buffer slots are already filtered out) */
   return Object.keys(m).length;
 }
 
@@ -1298,19 +1298,26 @@ function rosterTotal_() {
 function renderSingleStats_(rg, withCaption) {
   var by = {};
   state.rows.forEach(function (r) {
-    if (r.team === "Buffer" || r.date < rg.from || r.date > rg.to) return;
+    if (r.date < rg.from || r.date > rg.to) return;
     var u = by[r.user] || (by[r.user] = { sum: 0, tsum: 0, n: 0 });
     u.sum += r.hours; u.tsum += tgtOf_(r); u.n++;
   });
-  var ok = 0, bad = 0;
+  /* active = has active hours in the range. meeting + below = active. active + none = total */
+  var active = 0, ok = 0, bad = 0;
   Object.keys(by).forEach(function (k) {
-    if (by[k].sum >= by[k].tsum - 1e-9) ok++; else bad++;
+    var u = by[k];
+    if (!(u.sum > 0)) return;
+    active++;
+    if (u.sum >= u.tsum - 1e-9) ok++; else bad++;
   });
   var total = rosterTotal_();
+  var none = Math.max(0, total - active);
   document.getElementById("stats").innerHTML =
-    stat(total, "Users", "#2b4b8f") +
+    stat(total, "Total users (with names)", "#2b4b8f") +
+    stat(active, "Users with active hours", "#0e7490") +
     stat(ok, "Users meeting target", "#0f9d58") +
     stat(bad, "Users below target", "#dc2626") +
+    stat(none, "Users with no active hours", "#64748b") +
     (withCaption ? '<div class="stats-cap">' + esc(statsCaption_(rg)) + '</div>' : '');
 }
 
