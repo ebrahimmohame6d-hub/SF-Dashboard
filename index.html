@@ -825,6 +825,9 @@ function load(silent) {
         parts.push("Attendance tab read but empty for: " + at.emptyDays.slice(0, 3).join(", "));
       }
     }
+    var bs = res.meta && res.meta.buffer;
+    if (bs && bs.lastError) parts.push(bs.lastError);
+    else if (st && st.bufferSource && st.bufferSource.indexOf("buffer-sheet") !== 0) parts.push("Buffer sheet unavailable (using the old Buffer list)");
     if (session && session.role === "labeler") parts = [];
     document.getElementById("sub").textContent = parts.length ? ("⚠ " + parts.join(" · ⚠ ")) : "";
 
