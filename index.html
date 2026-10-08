@@ -576,6 +576,10 @@ var DEFAULT_MONTH = "all";
 /* Target hours — used everywhere (All Users / Single Day / QC / Details / image) */
 var TARGET_HOURS = 6.4;
 
+/* Weekly deductions only apply to weeks starting on/after this date (2026-10-05).
+   Earlier weeks show the average and % but never a deduction. */
+var DEDUCTION_FROM = "2026-10-05";
+
 /* Base shift hours (Expected hours when the backend doesn't send r.exp) */
 var BASE_HOURS = 8;
 
@@ -1178,7 +1182,7 @@ function detailParts_(ms, withIdentity) {
   /* Weekly blocks (Monday → Sunday): black bar, the week's day cards, then the weekly average box.
      Average % = total hours / total EXPECTED hours (so 80% = the 6.4 target of an 8-hour day).
      80%+ green | 70–79% yellow (Deduction -100) | under 70% red (Deduction -200).
-     A week with only ONE recorded day never gets a deduction. */
+     Deductions only count for weeks starting on/after DEDUCTION_FROM (2026-10-05). */
   var weeksHtml = "";
   if (recs.length) {
     var weeks = splitWeeks_(recs[0].date, recs[recs.length - 1].date);
@@ -1191,7 +1195,7 @@ function detailParts_(ms, withIdentity) {
       var pct = Math.round(sum / esum * 100);   /* hours vs. EXPECTED hours (overtime days weigh with their bigger Expected) */
       var lvl = pct >= 80 ? "good" : (pct >= 70 ? "warn" : "bad");
       var ded = "";
-      if (wr.length >= 2) {
+      if (w.start >= DEDUCTION_FROM) {   /* deductions count from 2026-10-05, even for a week with one day */
         ded = lvl === "warn" ? "Deduction -100" : (lvl === "bad" ? "Deduction -200" : "");
       }
 
