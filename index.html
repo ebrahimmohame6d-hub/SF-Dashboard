@@ -795,7 +795,8 @@ function load(silent) {
     if (!silent) { btn.disabled = false; btn.textContent = "Refresh Data"; }
     if (!res || !res.ok) return fail((res && res.error) || "The web app returned an unrecognized response.");
 
-    state.rows = res.rows || [];
+    /* Empty Buffer slots (no name) are not real users — leave them out of every list and count */
+    state.rows = (res.rows || []).filter(function (r) { return !(r.team === "Buffer" && !r.name); });
     state.target = TARGET_HOURS;   /* fixed from the front-end so it's always 6.4 */
 
     if (res.minDate) {
